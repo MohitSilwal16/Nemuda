@@ -1,0 +1,137 @@
+package views
+
+templ Register() {
+	<html lang="en">
+		<head>
+			<title>Nemuda</title>
+			<script src="https://unpkg.com/htmx.org@1.9.10"></script>
+			<link rel="stylesheet" href="../static/output.css"/>
+		</head>
+		<body class="w-screen h-screen text-2xl font-semibold text-white">
+			<div class="grid grid-rows-4 h-screen w-screen">
+				<h1
+					id="heading"
+					class="font-bold text-5xl sm:mt-36 mt-16 text-center"
+				></h1>
+				<form
+					class="bg-transparent md:w-1/2 lg:w-1/4 h-3/4 m-10 rounded-xl p-10 row-span-3 container mx-auto backdrop-blur-md border shadow-2xl"
+					hx-post="/register"
+					hx-trigger="submit[onValidate()]"
+				>
+					<h1 class="flex justify-center text-4xl font-semibold mb-10">
+						Register
+					</h1>
+					<label for="username">Username:</label>
+					<div class="relative">
+						<input
+							class="shadow-lg rounded-md pl-2.5 py-1 w-full text-black outline-0"
+							type="text"
+							name="username"
+							id="username"
+							placeholder="Enter name"
+							autofocus
+							autocomplete="off"
+						/>
+						<img
+							class="h-8 absolute right-3 top-1"
+							src="../static/images/profile.png"
+							alt=""
+						/>
+					</div>
+					<p id="usernameError" class="text-lg text-red-600"></p>
+					<div class="h-5"></div>
+					<label for="pass">Password:</label>
+					<div class="relative">
+						<input
+							class="shadow-lg rounded-md pl-2.5 py-1 w-full text-black outline-0"
+							type="password"
+							name="pass"
+							id="pass"
+							placeholder="********"
+						/>
+						<img
+							class="h-8 absolute right-3 top-1"
+							src="../static/images/lock.png"
+							alt=""
+						/>
+					</div>
+					<p id="passError" class="text-lg text-red-600"></p>
+					<input
+						class="border-2 shadow-lg w-full py-2 rounded-full mt-8 cursor-pointer"
+						type="submit"
+						value="Submit"
+					/>
+					<br/>
+					<div class="h-8"></div>
+					<a class="flex justify-center hover:underline text-blue-500" href="">Have an Account ?</a>
+				</form>
+			</div>
+			<script>
+      let str = "Welcome to Nemu 2.0";
+      let i = 0;
+
+      function addLetter() {
+        if (i < str.length) {
+          document.getElementById("heading").innerHTML += str[i];
+          i++;
+          setTimeout(addLetter, 100);
+        } else {
+          setTimeout(removeLastLetters, 500); // Wait for 0.5 seconds
+        }
+      }
+
+      function removeLastLetters() {
+        let heading = document.getElementById("heading");
+        let text = heading.innerHTML;
+
+        if (text.length > 11) {
+          heading.innerHTML = text.slice(0, -1);
+          setTimeout(removeLastLetters, 100);
+        } else {
+          setTimeout(addNemudaLetters, 500); // Wait for 0.5 seconds before adding "Nemuda"
+        }
+      }
+
+      function addNemudaLetters() {
+        let nemuda = "Nemuda";
+        let j = 0;
+
+        function addLetterNemuda() {
+          if (j < nemuda.length) {
+            document.getElementById("heading").innerHTML += nemuda[j];
+            j++;
+            setTimeout(addLetterNemuda, 100);
+          }
+        }
+
+        addLetterNemuda();
+      }
+
+      addLetter();
+
+      function onValidate() {
+        let username = document.getElementById("username");
+        let pass = document.getElementById("pass");
+
+        if (username.value.trim() == "") {
+          document.getElementById("usernameError").innerHTML =
+            "This field is mandatory";
+          username.focus();
+          return false;
+        }
+        document.getElementById("usernameError").innerHTML = "";
+
+        pass.focus();
+        if (pass.value.trim() == "") {
+          document.getElementById("passError").innerHTML =
+            "This field is mandatory";
+          return false;
+        }
+        document.getElementById("passError").innerHTML = "";
+
+        return true;
+      }
+    </script>
+		</body>
+	</html>
+}
