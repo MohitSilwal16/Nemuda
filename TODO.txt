@@ -1,4 +1,3 @@
-Email verification
-Login
 Sessions
-Database
+hx-boost
+Set lock & user image in textfield image in background

@@ -1,0 +1,12 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: "Courier New", Courier, monospace;
+}
+
+input[type="text"],
+input[type="password"] {
+  @apply text-black;
+}

@@ -1,0 +1,18 @@
+<div>
+  Home Page
+
+  <form
+    hx-post="/tweets"
+    hx-target="#output"
+    hx-swap="beforeend"
+    hx-ext="json-enc"
+  >
+    <input type="text" name="content" autofocus />
+    <input type="submit" value="Submit" />
+  </form>
+  <div id="output">
+    {{ range .Tweets }} 
+    <div {{ if eq .Username "Nimesh"}} class="flex justify-end" {{ else }} class="flex justify-start" {{ end }} >{{ .Username}} - {{ .Content}}</div>
+    {{ end }}
+  </div>
+</div>

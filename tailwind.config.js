@@ -1,10 +1,14 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
-    './views/**/*.{html,js}',
+    './views/**/*.{html,templ}',
   ],
   theme: {
-    extend: {},
+    extend: {
+      backgroundImage:{
+        'register-login':"url('/static/images/background.jpg')",
+      }
+    },
   },
   plugins: [],
 }

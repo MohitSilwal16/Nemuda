@@ -1,0 +1,152 @@
+<div
+  class="grid grid-rows-4 h-screen w-screen text-2xl font-semibold text-white bg-register-login"
+  id="login-body"
+>
+  <h1
+    id="login-page-heading"
+    class="font-bold text-5xl sm:mt-36 mt-16 text-center"
+  ></h1>
+  <form
+    class="bg-transparent md:w-1/2 lg:w-1/4 h-3/4 m-10 rounded-xl p-10 row-span-3 container mx-auto backdrop-blur-md border shadow-2xl"
+    hx-post="/login"
+    hx-ext="json-enc"
+    hx-trigger="submit[onValidate()]"
+    hx-target="#login-body"
+    hx-swap="outerHTML"
+  >
+    <h1 class="flex justify-center text-4xl font-semibold mb-10">Login</h1>
+    <label for="username">Username:</label>
+    <div class="relative">
+      <input
+        class="shadow-lg rounded-md pl-2.5 py-1 w-full outline-0"
+        type="text"
+        name="username"
+        id="username"
+        placeholder="Enter name"
+        autofocus
+        autocomplete="off"
+      />
+      <img
+        class="h-8 absolute right-3 top-1"
+        src="../static/images/profile.png"
+        alt=""
+      />
+    </div>
+    <p id="usernameError" class="text-lg text-red-600"></p>
+    <div class="h-5"></div>
+    <label for="pass">Password:</label>
+    <div class="relative">
+      <input
+        class="shadow-lg rounded-md pl-2.5 py-1 w-full outline-0"
+        type="password"
+        name="password"
+        id="pass"
+        placeholder="********"
+      />
+      <img
+        class="h-8 absolute right-3 top-1"
+        src="../static/images/lock.png"
+        alt=""
+      />
+    </div>
+    <p id="passError" class="text-lg text-red-600"></p>
+    <input
+      class="border-2 shadow-lg w-full py-2 rounded-full mt-8 cursor-pointer"
+      type="submit"
+      value="Login"
+    />
+    <br />
+    <div class="h-8"></div>
+    <a
+      class="flex justify-center hover:underline text-blue-500 cursor-pointer"
+      hx-get="/register"
+      hx-target="#login-body"
+      hx-swap="outerHTML"
+      >New to Nemuda ?</a
+    >
+  </form>
+  <script>
+    var str = "Welcome to Nemu 2.0";
+    var i = 0;
+
+    function addLetter() {
+      try {
+        if (i < str.length) {
+          document.getElementById("login-page-heading").innerHTML += str[i];
+          i++;
+          setTimeout(addLetter, 100);
+        } else {
+          setTimeout(removeLastLetters, 500); // Wait for 0.5 seconds
+        }
+      } catch (err) {}
+    }
+
+    function removeLastLetters() {
+      try {
+        let heading = document.getElementById("login-page-heading");
+        let text = heading.innerHTML;
+
+        if (text.length > 11) {
+          heading.innerHTML = text.slice(0, -1);
+          setTimeout(removeLastLetters, 100);
+        } else {
+          setTimeout(addNemudaLetters, 500); // Wait for 0.5 seconds before adding "Nemuda"
+        }
+      } catch (err) {}
+    }
+
+    function addNemudaLetters() {
+      try {
+        let nemuda = "Nemuda";
+        let j = 0;
+
+        function addLetterNemuda() {
+          if (j < nemuda.length) {
+            document.getElementById("login-page-heading").innerHTML +=
+              nemuda[j];
+            j++;
+            setTimeout(addLetterNemuda, 100);
+          }
+        }
+        addLetterNemuda();
+      } catch (err) {}
+    }
+
+    addLetter();
+
+    function onValidate() {
+      let username = document.getElementById("username");
+      let pass = document.getElementById("pass");
+
+      username.value = username.value.trim();
+
+      if (username.value == "") {
+        document.getElementById("usernameError").innerHTML =
+          "This field is mandatory";
+        username.focus();
+        return false;
+      }
+
+      if (username.value.length > 20) {
+        document.getElementById("usernameError").innerHTML = "Max 20 letters";
+        username.focus();
+        return false;
+      }
+
+      pass.focus();
+      if (pass.value.trim() == "") {
+        document.getElementById("passError").innerHTML =
+          "This field is mandatory";
+        return false;
+      }
+
+      if (pass.value.length > 20) {
+        document.getElementById("passError").innerHTML = "Max 20 letters";
+        return false;
+      }
+
+      document.getElementById("passError").innerHTML = "";
+      return true;
+    }
+  </script>
+</div>
