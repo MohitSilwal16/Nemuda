@@ -1,3 +1,7 @@
-Sessions
+Sessions & Cookies
+Mongo DB Connection & db design
+Make statement for every db query
 hx-boost
-Set lock & user image in textfield image in background
+Make methods in db.go start with lower case
+Avoid SQL Injection
+Set hx-swap to innerHTML (default value)

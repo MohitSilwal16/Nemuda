@@ -1,4 +1,4 @@
-<div>
+<div id="home-body">
   Home Page
 
   <form
@@ -15,4 +15,6 @@
     <div {{ if eq .Username "Nimesh"}} class="flex justify-end" {{ else }} class="flex justify-start" {{ end }} >{{ .Username}} - {{ .Content}}</div>
     {{ end }}
   </div>
+
+    <button hx-delete="/login" hx-target="#home-body" hx-swap="outerHTML" class="bg-cyan-300">Sign - out</button>
 </div>

@@ -63,6 +63,37 @@ func checkDuplicateToken(token string) bool {
 	return rows.Next()
 }
 
+func UpdateTokenInDBAndReturn(username string) string {
+	sessionToken := utils.TokenGenerator()
+
+	for checkDuplicateToken(sessionToken) {
+		sessionToken = utils.TokenGenerator()
+		fmt.Println("Duplicate Token")
+	}
+
+	_, err := sqlDB.Query("UPDATE Users SET Token = ? WHERE Username = ?;", sessionToken, username)
+
+	if err != nil {
+		panic(err)
+	}
+	return sessionToken
+}
+
+func DeleteTokenInDB(token string) {
+	stmt, err := sqlDB.Prepare("UPDATE Users SET TOKEN = '' WHERE Token = ?;")
+
+	if err != nil {
+		panic(err)
+	}
+	result, err := stmt.Exec(token)
+
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(result.RowsAffected())
+}
+
 func SearchUserByName(username string) bool {
 	rows, err := sqlDB.Query("SELECT 1 FROM Users WHERE Username = ?;", username)
 
@@ -77,20 +108,13 @@ func SearchUserByName(username string) bool {
 }
 
 func AddUser(user models.User) {
-	sessionToken := utils.TokenGenerator()
-
-	for checkDuplicateToken(sessionToken) {
-		sessionToken = utils.TokenGenerator()
-		fmt.Println("Duplicate Token")
-	}
-
 	stmt, err := sqlDB.Prepare("INSERT INTO Users (Username , Password , Token) VALUE (? , ? , ?);")
 
 	if err != nil {
 		panic(err)
 	}
 
-	_, err = stmt.Exec(user.Username, user.Password, sessionToken)
+	_, err = stmt.Exec(user.Username, user.Password, user.Token)
 
 	if err != nil {
 		panic(err)

@@ -11,6 +11,8 @@
     hx-post="/register"
     hx-ext="json-enc"
     hx-trigger="submit[onValidate()]"
+    hx-target="#register-body"
+    hx-swap="outerHTML"
   >
     <h1 class="flex justify-center text-4xl font-semibold mb-10">Register</h1>
     <label for="username">Username:</label>
@@ -26,11 +28,14 @@
         hx-post="/contacts/username"
         hx-trigger="input delay:1s"
         hx-target="#usernameError"
+        hx-swap="innerHTML"
       />
       <img
-        class="h-8 absolute right-3 top-1"
+        class="h-8 absolute right-3 top-1 cursor-text"
         src="../static/images/profile.png"
         alt=""
+        draggable="false"
+        onclick="document.getElementById('username').focus()"
       />
     </div>
     <p id="usernameError" class="text-lg text-red-600"></p>
@@ -45,14 +50,16 @@
         placeholder="********"
       />
       <img
-        class="h-8 absolute right-3 top-1"
-        src="../static/images/lock.png"
+        class="h-8 absolute right-3 top-1 cursor-pointer"
+        src="../static/images/eye.png"
         alt=""
+        draggable="false"
+        onclick="document.getElementById('pass').getAttribute('type') == 'password' ? document.getElementById('pass').setAttribute('type','text') : document.getElementById('pass').setAttribute('type','password')"
       />
     </div>
     <p id="passError" class="text-lg text-red-600"></p>
     <input
-      class="border-2 shadow-lg w-full py-2 rounded-full mt-8 cursor-pointer"
+      class="border-2 shadow-lg w-full py-2 rounded-full mt-8 cursor-pointer opacity-80 hover:opacity-100"
       type="submit"
       value="Register"
     />
@@ -102,12 +109,14 @@
         let j = 0;
 
         function addLetterNemuda() {
-          if (j < nemuda.length) {
-            document.getElementById("register-page-heading").innerHTML +=
-              nemuda[j];
-            j++;
-            setTimeout(addLetterNemuda, 100);
-          }
+          try {
+            if (j < nemuda.length) {
+              document.getElementById("register-page-heading").innerHTML +=
+                nemuda[j];
+              j++;
+              setTimeout(addLetterNemuda, 100);
+            }
+          } catch (err) {}
         }
         addLetterNemuda();
       } catch (err) {}
@@ -121,38 +130,37 @@
 
       username.value = username.value.trim();
 
+      let userError = document.getElementById("usernameError");
       if (username.value == "") {
-        document.getElementById("usernameError").innerHTML =
-          "This field is mandatory";
+        userError.innerHTML = "This field is mandatory";
         username.focus();
         return false;
       }
 
       if (username.value.length > 20) {
-        document.getElementById("usernameError").innerHTML = "Max 20 letters";
+        userError.innerHTML = "Max 20 letters";
         username.focus();
         return false;
       }
 
-      let usernameError = document.getElementById("usernameError");
-
-      if (usernameError.innerHTML == "Username is already used") {
+      if (userError.innerHTML == "Username is already used") {
         return false;
       }
 
       pass.focus();
+      
+      let passError = document.getElementById("passError");
       if (pass.value.trim() == "") {
-        document.getElementById("passError").innerHTML =
-          "This field is mandatory";
+        passError.innerHTML = "This field is mandatory";
         return false;
       }
 
       if (pass.value.length > 20) {
-        document.getElementById("passError").innerHTML = "Max 20 letters";
+        passError.innerHTML = "Max 20 letters";
         return false;
       }
 
-      document.getElementById("passError").innerHTML = "";
+      passError.innerHTML = "";
       return true;
     }
   </script>
