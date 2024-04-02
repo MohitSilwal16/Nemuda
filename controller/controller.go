@@ -43,12 +43,15 @@ func getCookie(r *http.Request) string {
 	return cookie.Value
 }
 
+// How to return content of HTML file as innerHTML of div in index.html
 func RenderInitPage(w http.ResponseWriter, r *http.Request) {
 	sessionToken := getCookie(r)
 	var page map[string]string
 	if sessionToken != "" && checkDuplicateToken(sessionToken) {
+		// ServeHomePage(w, r)
 		page = map[string]string{"Page": "home"}
 	} else {
+		// RenderLoginPage(w, r)
 		page = map[string]string{"Page": "login"}
 	}
 

@@ -11,6 +11,8 @@ import (
 	"github.com/joho/godotenv"
 )
 
+var PORT = "6969"
+
 var sqlDB *sql.DB
 
 func init() {
@@ -33,7 +35,7 @@ func init() {
 	// On port 3306 MYSQL is running
 	// username:password@tcp(localhost:3306)/mydb
 
-	dbURL := fmt.Sprintf("%s:%s@tcp(localhost:3305)/%s", dbUser, dbPass, dbName)
+	dbURL := fmt.Sprintf("%s:%s@tcp(localhost:%s)/%s", dbUser, dbPass, PORT, dbName)
 
 	sqlDB, err = sql.Open("mysql", dbURL)
 
@@ -85,13 +87,11 @@ func DeleteTokenInDB(token string) {
 	if err != nil {
 		panic(err)
 	}
-	result, err := stmt.Exec(token)
+	_, err = stmt.Exec(token)
 
 	if err != nil {
 		panic(err)
 	}
-
-	fmt.Println(result.RowsAffected())
 }
 
 func SearchUserByName(username string) bool {

@@ -1,24 +1,26 @@
 <div
-  class="grid grid-rows-4 h-screen w-screen text-2xl font-semibold text-white bg-register-login"
+  class="grid w-screen h-screen grid-rows-4 text-5xl font-semibold text-white bg-no-repeat bg-cover lg:text-2xl bg-register-login"
   id="login-body"
 >
   <h1
     id="login-page-heading"
-    class="font-bold text-5xl sm:mt-36 mt-16 text-center"
+    class="font-bold text-center text-7xl lg:text-5xl mt-60 lg:mt-36"
   ></h1>
   <form
-    class="bg-transparent md:w-1/2 lg:w-1/4 h-3/4 m-10 rounded-xl p-10 row-span-3 container mx-auto backdrop-blur-md border shadow-2xl"
+    class="container w-full row-span-3 p-10 m-10 mx-auto bg-transparent border shadow-2xl lg:w-1/4 h-3/4 rounded-xl backdrop-blur-md"
     hx-post="/login"
     hx-ext="json-enc"
     hx-trigger="submit[onValidate()]"
     hx-target="#login-body"
     hx-swap="outerHTML"
   >
-    <h1 class="flex justify-center text-4xl font-semibold mb-10">Login</h1>
+    <h1 class="flex justify-center mb-20 text-6xl font-semibold lg:mb-10 lg:text-4xl">
+      Login
+    </h1>
     <label for="username">Username:</label>
     <div class="relative">
       <input
-        class="shadow-lg rounded-md pl-2.5 py-1 w-full outline-0"
+        class="shadow-lg rounded-md pl-2.5 py-1 w-full lg:h-10 h-16 outline-0"
         type="text"
         name="username"
         id="username"
@@ -27,44 +29,44 @@
         autofocus
       />
       <img
-        class="h-8 absolute right-3 top-1 cursor-text"
+        class="h-8 absolute lg:right-3 lg:top-1 right-3 top-2.5 cursor-text"
         src="../static/images/profile.png"
         alt=""
         draggable="false"
         onclick="document.getElementById('username').focus()"
       />
     </div>
-    <p id="usernameError" class="text-lg text-red-600"></p>
-    <div class="h-5"></div>
+    <p id="usernameError" class="text-3xl text-red-600 lg:text-lg"></p>
+    <div class="h-8 lg:h-4"></div>
     <label for="pass">Password:</label>
     <div class="relative">
       <input
-        class="shadow-lg rounded-md pl-2.5 py-1 w-full outline-0 z-30"
+        class="shadow-lg rounded-md pl-2.5 py-1 w-full lg:h-10 h-16 outline-0"
         type="password"
         name="password"
         id="pass"
         placeholder="********"
       />
       <img
-        class="h-8 absolute right-3 top-1 z-40 cursor-pointer"
+        class="h-8 absolute lg:right-3 lg:top-1 right-3 top-2.5 cursor-pointer"
         src="../static/images/eye.png"
         alt=""
         draggable="false"
         onclick="document.getElementById('pass').getAttribute('type') == 'password' ? document.getElementById('pass').setAttribute('type','text') : document.getElementById('pass').setAttribute('type','password')"
       />
     </div>
-    <p id="passError" class="text-lg text-red-600"></p>
-    <div class="h-4"></div>
+    <p id="passError" class="text-3xl text-red-600 lg:text-lg"></p>
+    <div class="h-20 lg:h-4"></div>
     <div id="output" class="flex justify-center text-red-600">{{ .Data }}</div>
     <input
-      class="border-2 shadow-lg w-full py-2 rounded-full mt-5 cursor-pointer opacity-80 hover:opacity-100"
+      class="w-full h-24 py-2 mt-5 border-2 rounded-full shadow-lg cursor-pointer lg:h-14 opacity-80 hover:opacity-100"
       type="submit"
       value="Login"
     />
     <br />
-    <div class="h-8"></div>
+    <div class="h-10 lg:h-8"></div>
     <a
-      class="flex justify-center hover:underline text-blue-500 cursor-pointer"
+      class="flex justify-center text-blue-500 cursor-pointer hover:underline"
       hx-get="/register"
       hx-target="#login-body"
       hx-swap="outerHTML"
@@ -72,6 +74,21 @@
     >
   </form>
   <script>
+    // document.addEventListener("DOMContentLoaded", function () {
+    //   let link = document.createElement("link");
+    //   link.rel = "stylesheet";
+    //   link.href = "../static/css/output.css";
+    //   document.head.appendChild(link);
+
+    //   let script1 = document.createElement("script");
+    //   script1.src = "../static/js/htmx.min.js";
+    //   document.head.appendChild(script1);
+
+    //   let script = document.createElement("script");
+    //   script.src = "../static/js/json-enc.js";
+    //   document.head.appendChild(script);
+
+    // });
     var str = "Welcome to Nemu 2.0";
     var i = 0;
 
@@ -123,7 +140,7 @@
     addLetter();
 
     function onValidate() {
-      document.getElementById("output").innerHTML=""
+      document.getElementById("output").innerHTML = "";
       let username = document.getElementById("username");
       let pass = document.getElementById("pass");
 

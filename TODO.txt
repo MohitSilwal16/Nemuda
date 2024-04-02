@@ -1,7 +1,10 @@
-Sessions & Cookies
+Responsive
+Solve that prob when template of html gets in text format
+Make login register secure only allow alphanumeric values
 Mongo DB Connection & db design
 Make statement for every db query
 hx-boost
 Make methods in db.go start with lower case
 Avoid SQL Injection
 Set hx-swap to innerHTML (default value)
+Create user in Maria DB
