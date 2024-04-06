@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"regexp"
 
 	"github.com/MohitSilwal16/Nemuda/models"
 	"github.com/MohitSilwal16/Nemuda/utils"
@@ -43,23 +44,12 @@ func getCookie(r *http.Request) string {
 	return cookie.Value
 }
 
-// How to return content of HTML file as innerHTML of div in index.html
 func RenderInitPage(w http.ResponseWriter, r *http.Request) {
 	sessionToken := getCookie(r)
-	var page map[string]string
 	if sessionToken != "" && checkDuplicateToken(sessionToken) {
-		// ServeHomePage(w, r)
-		page = map[string]string{"Page": "home"}
+		ServeHomePage(w, r)
 	} else {
-		// RenderLoginPage(w, r)
-		page = map[string]string{"Page": "login"}
-	}
-
-	tmpl := template.Must(template.ParseFiles("views/index.html"))
-	err := tmpl.Execute(w, page)
-
-	if err != nil {
-		fmt.Println(err)
+		RenderLoginPage(w, r)
 	}
 }
 
@@ -102,22 +92,35 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	// Generate session token
-	sessionToken := utils.TokenGenerator()
+	var data map[string]string
+	page := "views/register.html"
 
-	for checkDuplicateToken(sessionToken) {
-		sessionToken = utils.TokenGenerator()
-		fmt.Println("Duplicate Token")
+	if user.Username == "" || user.Password == "" {
+		data = map[string]string{"Data": "All fields're manadatory"}
+	} else if !regexp.MustCompile(`^[a-zA-Z0-9]{5,20}$`).MatchString(user.Username) {
+		data = map[string]string{"Data": "Username must be alphanumeric"}
+	} else if !utils.IsPasswordInFormat(user.Password) {
+		data = map[string]string{"Data": "Password: 8+ chars, lower & upper case, digit, symbol"}
+	} else {
+		page = "views/homepage.html"
+		data = map[string]string{"Data": user.Username}
+
+		// Generate session token
+		sessionToken := utils.TokenGenerator()
+
+		for checkDuplicateToken(sessionToken) {
+			sessionToken = utils.TokenGenerator()
+			fmt.Println("Duplicate Token")
+		}
+		user.Token = sessionToken
+
+		fmt.Printf("Form Data: %#v\n", user)
+		AddUser(user)
+		setCookie(w, user.Token)
 	}
-	user.Token = sessionToken
 
-	fmt.Printf("Form Data: %#v\n", user)
-	AddUser(user)
-	setCookie(w, user.Token)
-
-	tmpl := template.Must(template.ParseFiles("views/homepage.html"))
-	err = tmpl.Execute(w, nil)
-
+	tmpl := template.Must(template.ParseFiles(page))
+	err = tmpl.Execute(w, data)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -131,25 +134,28 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
+	var data map[string]string
+	page := "views/login.html"
 
-	if VerifyIdPass(user) {
+	if user.Username == "" || user.Password == "" {
+		data = map[string]string{"Data": "All fields're manadatory"}
+	} else if !regexp.MustCompile(`^[a-zA-Z0-9]{5,20}$`).MatchString(user.Username) || !utils.IsPasswordInFormat(user.Password) {
+		data = map[string]string{"Data": "Invalid Credentials"}
+	} else if VerifyIdPass(user) {
 		user.Token = UpdateTokenInDBAndReturn(user.Username)
 		setCookie(w, user.Token)
 
-		tmpl := template.Must(template.ParseFiles("views/homepage.html"))
-		err = tmpl.Execute(w, nil)
-
-		if err != nil {
-			fmt.Println(err)
-		}
+		data = map[string]string{"Data": user.Username}
+		page = "views/homepage.html"
 	} else {
-		data := map[string]string{"Data": "Invalid Credentials"}
+		data = map[string]string{"Data": "Invalid Credentials"}
+	}
 
-		tmpl := template.Must(template.ParseFiles("views/login.html"))
-		err = tmpl.Execute(w, data)
-		if err != nil {
-			fmt.Println(err)
-		}
+	tmpl := template.Must(template.ParseFiles(page))
+	err = tmpl.Execute(w, data)
+
+	if err != nil {
+		fmt.Println(err)
 	}
 }
 

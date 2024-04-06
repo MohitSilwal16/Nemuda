@@ -1,3 +1,9 @@
+<!doctype html>
+<script src="../static/js/htmx.min.js"></script>
+<!-- Extension to send data in JSON Format using hx-ext="json-enc" -->
+<script src="../static/js/json-enc.js"></script>
+<link rel="stylesheet" href="../static/css/output.css" />
+
 <div
   class="grid w-screen h-screen grid-rows-4 text-5xl font-semibold text-white bg-no-repeat bg-cover lg:text-2xl bg-register-login"
   id="login-body"
@@ -14,7 +20,9 @@
     hx-target="#login-body"
     hx-swap="outerHTML"
   >
-    <h1 class="flex justify-center mb-20 text-6xl font-semibold lg:mb-10 lg:text-4xl">
+    <h1
+      class="flex justify-center mb-20 text-6xl font-semibold lg:mb-10 lg:text-4xl"
+    >
       Login
     </h1>
     <label for="username">Username:</label>
@@ -74,32 +82,18 @@
     >
   </form>
   <script>
-    // document.addEventListener("DOMContentLoaded", function () {
-    //   let link = document.createElement("link");
-    //   link.rel = "stylesheet";
-    //   link.href = "../static/css/output.css";
-    //   document.head.appendChild(link);
-
-    //   let script1 = document.createElement("script");
-    //   script1.src = "../static/js/htmx.min.js";
-    //   document.head.appendChild(script1);
-
-    //   let script = document.createElement("script");
-    //   script.src = "../static/js/json-enc.js";
-    //   document.head.appendChild(script);
-
-    // });
     var str = "Welcome to Nemu 2.0";
     var i = 0;
+    var timeoutList = [];
 
     function addLetter() {
       try {
         if (i < str.length) {
           document.getElementById("login-page-heading").innerHTML += str[i];
           i++;
-          setTimeout(addLetter, 100);
+          timeoutList.push(setTimeout(addLetter, 100));
         } else {
-          setTimeout(removeLastLetters, 500); // Wait for 0.5 seconds
+          timeoutList.push(setTimeout(removeLastLetters, 500)); // Wait for 0.5 seconds
         }
       } catch (err) {}
     }
@@ -111,9 +105,9 @@
 
         if (text.length > 11) {
           heading.innerHTML = text.slice(0, -1);
-          setTimeout(removeLastLetters, 100);
+          timeoutList.push(setTimeout(removeLastLetters, 100));
         } else {
-          setTimeout(addNemudaLetters, 500); // Wait for 0.5 seconds before adding "Nemuda"
+          timeoutList.push(setTimeout(addNemudaLetters, 500)); // Wait for 0.5 seconds before adding "Nemuda"
         }
       } catch (err) {}
     }
@@ -129,7 +123,7 @@
               document.getElementById("login-page-heading").innerHTML +=
                 nemuda[j];
               j++;
-              setTimeout(addLetterNemuda, 100);
+              timeoutList.push(setTimeout(addLetterNemuda, 100));
             }
           } catch (err) {}
         }
@@ -146,18 +140,20 @@
 
       username.value = username.value.trim();
 
+      let userError = document.getElementById("usernameError");
       if (username.value == "") {
-        document.getElementById("usernameError").innerHTML =
-          "This field is mandatory";
+        userError.innerHTML = "This field is mandatory";
         username.focus();
         return false;
       }
 
-      if (username.value.length > 20) {
-        document.getElementById("usernameError").innerHTML = "Max 20 letters";
+      if (username.value.length < 5 || username.value.length > 20) {
+        userError.innerHTML = "Min 5 letters & Max 20 letters";
         username.focus();
         return false;
       }
+
+      userError.innerHTML = "";
 
       pass.focus();
       if (pass.value.trim() == "") {
@@ -172,6 +168,32 @@
       }
 
       document.getElementById("passError").innerHTML = "";
+
+      if (username.value.match(/^[a-zA-Z0-9]+$/) === null) {
+        document.getElementById("output").innerHTML = "Invalid Credentials";
+        username.focus();
+        pass.value = "";
+        return false;
+      }
+      userError.innerHTML = "";
+
+      if (
+        !pass.value.match(
+          /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@#$%^&+=])[a-zA-Z\d@#$%^&+=]{8,}$/
+        )
+      ) {
+        document.getElementById("output").innerHTML = "Invalid Credentials";
+        username.focus();
+        pass.value = "";
+        return false;
+      }
+      document.getElementById("passError").innerHTML = "";
+
+      // Clear timeouts for heading
+      // Clearing timeouts else those timeouts'll be in next page as  well
+      timeoutList.forEach((t) => {
+        clearTimeout(t);
+      });
       return true;
     }
   </script>

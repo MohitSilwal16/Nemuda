@@ -1,6 +1,14 @@
+<!doctype html>
+
+<script src="../static/js/htmx.min.js"></script>
+<!-- Extension to send data in JSON Format using hx-ext="json-enc" -->
+<script src="../static/js/json-enc.js"></script>
+<link rel="stylesheet" href="../static/css/output.css" />
+
 <div id="home-body">
   Home Page
-
+  <br />
+  Hello {{ .Data }}
   <form
     hx-post="/tweets"
     hx-target="#output"
@@ -11,10 +19,17 @@
     <input type="submit" value="Submit" />
   </form>
   <div id="output">
-    {{ range .Tweets }} 
+    <!-- {{ range .Tweets }} 
     <div {{ if eq .Username "Nimesh"}} class="flex justify-end" {{ else }} class="flex justify-start" {{ end }} >{{ .Username}} - {{ .Content}}</div>
-    {{ end }}
+    {{ end }} -->
   </div>
 
-    <button hx-delete="/login" hx-target="#home-body" hx-swap="outerHTML" class="bg-cyan-300">Sign - out</button>
+  <button
+    hx-delete="/login"
+    hx-target="#home-body"
+    hx-swap="outerHTML"
+    class="bg-cyan-300"
+  >
+    Sign - out
+  </button>
 </div>

@@ -1,3 +1,9 @@
+<!doctype html>
+<script src="../static/js/htmx.min.js"></script>
+<!-- Extension to send data in JSON Format using hx-ext="json-enc" -->
+<script src="../static/js/json-enc.js"></script>
+<link rel="stylesheet" href="../static/css/output.css" />
+
 <div
   class="grid w-screen h-screen grid-rows-4 text-5xl font-semibold text-white bg-no-repeat bg-cover lg:text-2xl bg-register-login"
   id="register-body"
@@ -14,7 +20,11 @@
     hx-target="#register-body"
     hx-swap="outerHTML"
   >
-    <h1 class="flex justify-center mb-20 text-6xl font-semibold lg:mb-10 lg:text-4xl">Register</h1>
+    <h1
+      class="flex justify-center mb-20 text-6xl font-semibold lg:mb-10 lg:text-4xl"
+    >
+      Register
+    </h1>
     <label for="username">Username:</label>
     <div class="relative">
       <input
@@ -59,6 +69,7 @@
     </div>
     <p id="passError" class="text-3xl text-red-600 lg:text-lg"></p>
     <div class="h-20 lg:h-4"></div>
+    <div id="output" class="flex justify-center text-red-600">{{ .Data }}</div>
     <input
       class="w-full h-24 py-2 mt-5 border-2 rounded-full shadow-lg cursor-pointer lg:h-14 opacity-80 hover:opacity-100"
       type="submit"
@@ -77,15 +88,16 @@
   <script>
     var str = "Welcome to Nemu 2.0";
     var i = 0;
+    var timeoutList = [];
 
     function addLetter() {
       try {
         if (i < str.length) {
           document.getElementById("register-page-heading").innerHTML += str[i];
           i++;
-          setTimeout(addLetter, 100);
+          timeoutList.push(setTimeout(addLetter, 100));
         } else {
-          setTimeout(removeLastLetters, 500); // Wait for 0.5 seconds
+          timeoutList.push(setTimeout(removeLastLetters, 500)); // Wait for 0.5 seconds
         }
       } catch (err) {}
     }
@@ -97,9 +109,9 @@
 
         if (text.length > 11) {
           heading.innerHTML = text.slice(0, -1);
-          setTimeout(removeLastLetters, 100);
+          timeoutList.push(setTimeout(removeLastLetters, 100));
         } else {
-          setTimeout(addNemudaLetters, 500); // Wait for 0.5 seconds before adding "Nemuda"
+          timeoutList.push(setTimeout(addNemudaLetters, 500)); // Wait for 0.5 seconds before adding "Nemuda"
         }
       } catch (err) {}
     }
@@ -115,7 +127,7 @@
               document.getElementById("register-page-heading").innerHTML +=
                 nemuda[j];
               j++;
-              setTimeout(addLetterNemuda, 100);
+              timeoutList.push(setTimeout(addLetterNemuda, 100));
             }
           } catch (err) {}
         }
@@ -126,6 +138,7 @@
     addLetter();
 
     function onValidate() {
+      document.getElementById("output").innerHTML = "";
       let username = document.getElementById("username");
       let pass = document.getElementById("pass");
 
@@ -138,19 +151,28 @@
         return false;
       }
 
-      if (username.value.length > 20) {
-        userError.innerHTML = "Max 20 letters";
+      if (username.value.length < 5 || username.value.length > 20) {
+        userError.innerHTML = "Min 5 letters & Max 20 letters";
         username.focus();
         return false;
       }
 
-      if (userError.innerHTML == "Username is already used") {
+      if (username.value.match(/^[a-zA-Z0-9]+$/) === null) {
+        userError.innerHTML = "Username should be alphanumeric";
+        username.focus();
         return false;
       }
 
-      pass.focus();
-      
       let passError = document.getElementById("passError");
+      if (userError.innerHTML == "Username is already used") {
+        passError.innerHTML = "";
+        username.focus();
+        return false;
+      }
+      userError.innerHTML = "";
+
+      pass.focus();
+
       if (pass.value.trim() == "") {
         passError.innerHTML = "This field is mandatory";
         return false;
@@ -161,6 +183,15 @@
         return false;
       }
 
+      if (
+        !pass.value.match(
+          /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@#$%^&+=])[a-zA-Z\d@#$%^&+=]{8,}$/
+        )
+      ) {
+        passError.innerHTML =
+          "Password: 8+ chars, lower & upper case, digit, symbol";
+        return false;
+      }
       passError.innerHTML = "";
       return true;
     }
