@@ -14,11 +14,15 @@ import (
 func main() {
 	r := mux.NewRouter()
 
+	// For logging requests & response
+	r.Use(utils.LoggingMiddleware)
+
 	// Serve static files from the 'static' directory
 	fs := http.FileServer(http.Dir("static"))
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", fs))
 
-	r.HandleFunc("/", controller.RenderInitPage).Methods("GET")
+	r.HandleFunc("/", controller.DefaultRoute).Methods("GET")
+	r.HandleFunc("/nemuda", controller.RenderInitPage).Methods("GET")
 
 	r.HandleFunc("/register", controller.RenderRegsiterPage).Methods("GET")
 	r.HandleFunc("/register", controller.Register).Methods("POST")
@@ -32,7 +36,7 @@ func main() {
 	r.HandleFunc("/tweets", controller.GetTweets).Methods("GET")
 	r.HandleFunc("/tweets", controller.CreateTweet).Methods("POST")
 
-	r.HandleFunc("/contacts/username", controller.SearchUser).Methods("POST")
+	r.HandleFunc("/users/username", controller.SearchUser).Methods("POST")
 
 	fmt.Println("Listening on 8080 port ...")
 

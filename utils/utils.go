@@ -3,6 +3,8 @@ package utils
 import (
 	"crypto/rand"
 	"fmt"
+	"log"
+	"net/http"
 	"os"
 	"os/exec"
 	"runtime"
@@ -36,14 +38,13 @@ func TokenGenerator() string {
 
 func IsPasswordInFormat(s string) bool {
 	var (
-		hasMinLen  = false
 		hasUpper   = false
 		hasLower   = false
 		hasNumber  = false
 		hasSpecial = false
 	)
-	if len(s) >= 7 {
-		hasMinLen = true
+	if len(s) < 8 || len(s) > 20 {
+		return false
 	}
 	for _, char := range s {
 		switch {
@@ -57,5 +58,15 @@ func IsPasswordInFormat(s string) bool {
 			hasSpecial = true
 		}
 	}
-	return hasMinLen && hasUpper && hasLower && hasNumber && hasSpecial
+	return hasUpper && hasLower && hasNumber && hasSpecial
+}
+
+func LoggingMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Log the incoming request
+		log.Printf("Request: %s %s %s\n", r.Method, r.Host, r.URL.Path)
+
+		// Pass the request to the next handler
+		next.ServeHTTP(w, r)
+	})
 }

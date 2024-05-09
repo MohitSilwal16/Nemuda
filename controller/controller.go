@@ -44,6 +44,10 @@ func getCookie(r *http.Request) string {
 	return cookie.Value
 }
 
+func DefaultRoute(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "views/index.html")
+}
+
 func RenderInitPage(w http.ResponseWriter, r *http.Request) {
 	sessionToken := getCookie(r)
 	if sessionToken != "" && checkDuplicateToken(sessionToken) {

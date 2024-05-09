@@ -6,13 +6,12 @@
 
     <!-- Extension to send data in JSON Format using hx-ext="json-enc" -->
     <!-- <script src="https://unpkg.com/htmx.org/dist/ext/json-enc.js"></script> -->
-
-    <!-- <script src="../static/js/json-enc.js"></script> -->
-    <!-- <link rel="stylesheet" href="../static/css/output.css" /> -->
+    <script src="../static/js/json-enc.js"></script>
+    <link rel="stylesheet" href="../static/css/output.css" />
   </head>
   <body>
     <div id="main-div">
-      <div hx-get="/" hx-swap="outerHTML" hx-trigger="load"></div>
+      <div hx-get="/nemuda" hx-swap="outerHTML" hx-trigger="load"></div>
     </div>
   </body>
 </html>

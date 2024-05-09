@@ -18,7 +18,7 @@ var sqlDB *sql.DB
 func init() {
 	utils.ClearScreen()
 
-	err := godotenv.Load("dotenv")
+	err := godotenv.Load()
 
 	if err != nil {
 		panic(err)

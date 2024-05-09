@@ -1,35 +1,177 @@
 <!doctype html>
+<div
+  id="home-body"
+  style="background-color: #d7f2f6;"
+  class="flex flex-col h-screen px-10 pb-2 overflow-hidden text-2xl text-white"
+>
+  <header class="flex font-semibold">
+    <div class="w-1/6 py-6 border-r-2 cursor-pointer">Nemu</div>
+    <div class="w-4/6 py-6 text-center">Title</div>
+    <button
+      class="m-4 text-2xl font-normal bg-blue-700 rounded-md w-36 hover:bg-blue-800"
+      hx-delete="/login"
+      hx-target="#home-body"
+      hx-swap="outerHTML"
+    >
+      Log Out
+    </button>
+  </header>
+  <hr/>
+  <div class="relative flex overflow-hidden">
+    <nav class="w-1/6 h-screen pt-6 font-semibold border-r-2 ">
+      <p class="m-2 cursor-pointer hover:underline">All</p>
+      <p class="m-2 cursor-pointer hover:underline">Political</p>
+      <p class="m-2 cursor-pointer hover:underline">Science</p>
+      <p class="m-2 cursor-pointer hover:underline">Technical</p>
+      <p class="m-2 cursor-pointer hover:underline">Technical</p>
+      <p class="m-2 cursor-pointer hover:underline">Technical</p>
+      <p class="m-2 cursor-pointer hover:underline">Technical</p>
+      <p class="m-2 cursor-pointer hover:underline">Technical</p>
+    </nav>
+    <main class="w-5/6 overflow-y-auto">
+      <div
+        class="grid grid-flow-col grid-cols-3 mx-32 my-10 overflow-hidden border rounded-lg shadow-xl cursor-pointer"
+      >
+        <img
+          src="../static/images/image.png"
+          class="transition duration-500 ease-in bg-white h-60 hover:scale-125"
+          alt="Image"
+        />
+        <div class="col-span-2 px-8 py-6">
+          <span class="font-semibold">Username:</span>
+          Nimesh
+          <br />
+          <span class="font-semibold">Title:</span>
+          I love Hitler's wife
+          <br />
+          <span class="font-semibold">Tags:</span>
+          Political
+          <br />
+          <span class="font-semibold">Description:</span>
+          I'm Nimesh Gadhvi, owner of Gadhvi Airlines. I hereby announce that I
+          like Hilter's wife. I don't know why Hilter wanted to ...
+        </div>
+      </div>
 
-<script src="../static/js/htmx.min.js"></script>
-<!-- Extension to send data in JSON Format using hx-ext="json-enc" -->
-<script src="../static/js/json-enc.js"></script>
-<link rel="stylesheet" href="../static/css/output.css" />
+      <!-- 2nd post -->
+      <div
+        class="grid grid-flow-col grid-cols-3 mx-32 my-10 overflow-hidden border rounded-lg shadow-xl cursor-pointer"
+      >
+        <img
+          src="../static/images/image.png"
+          class="transition duration-500 ease-in bg-white h-60 hover:scale-125"
+          alt="Image"
+        />
+        <div class="col-span-2 px-8 py-6">
+          <span class="font-semibold">Username:</span>
+          Nimesh
+          <br />
+          <span class="font-semibold">Title:</span>
+          I love Hitler's wife
+          <br />
+          <span class="font-semibold">Tags:</span>
+          Political
+          <br />
+          <span class="font-semibold">Description:</span>
+          I'm Nimesh Gadhvi, owner of Gadhvi Airlines. I hereby announce that I
+          like Hilter's wife. I don't know why Hilter wanted to ...
+        </div>
+      </div>
 
-<div id="home-body">
-  Home Page
-  <br />
-  Hello {{ .Data }}
-  <form
-    hx-post="/tweets"
-    hx-target="#output"
-    hx-swap="beforeend"
-    hx-ext="json-enc"
-  >
-    <input type="text" name="content" autofocus />
-    <input type="submit" value="Submit" />
-  </form>
-  <div id="output">
-    <!-- {{ range .Tweets }} 
-    <div {{ if eq .Username "Nimesh"}} class="flex justify-end" {{ else }} class="flex justify-start" {{ end }} >{{ .Username}} - {{ .Content}}</div>
-    {{ end }} -->
+      <!-- 3rd post -->
+      <div
+        class="grid grid-flow-col grid-cols-3 mx-32 my-10 overflow-hidden border rounded-lg shadow-xl cursor-pointer"
+      >
+        <img
+          src="../static/images/image.png"
+          class="transition duration-500 ease-in bg-white h-60 hover:scale-125"
+          alt="Image"
+        />
+        <div class="col-span-2 px-8 py-6">
+          <span class="font-semibold">Username:</span>
+          Nimesh
+          <br />
+          <span class="font-semibold">Title:</span>
+          I love Hitler's wife
+          <br />
+          <span class="font-semibold">Tags:</span>
+          Political
+          <br />
+          <span class="font-semibold">Description:</span>
+          I'm Nimesh Gadhvi, owner of Gadhvi Airlines. I hereby announce that I
+          like Hilter's wife. I don't know why Hilter wanted to ...
+        </div>
+      </div>
+
+      <!-- 4th -->
+      <div
+        class="grid grid-flow-col grid-cols-3 mx-32 my-10 overflow-hidden border rounded-lg shadow-xl cursor-pointer"
+      >
+        <img
+          src="../static/images/image.png"
+          class="transition duration-500 ease-in bg-white h-60 hover:scale-125"
+          alt="Image"
+        />
+        <div class="col-span-2 px-8 py-6">
+          <span class="font-semibold">Username:</span>
+          Nimesh
+          <br />
+          <span class="font-semibold">Title:</span>
+          I love Hitler's wife
+          <br />
+          <span class="font-semibold">Tags:</span>
+          Political
+          <br />
+          <span class="font-semibold">Description:</span>
+          I'm Nimesh Gadhvi, owner of Gadhvi Airlines. I hereby announce that I
+          like Hilter's wife. I don't know why Hilter wanted to ...
+        </div>
+      </div>
+
+      <!-- 5 -->
+      <div
+        class="grid grid-flow-col grid-cols-3 mx-32 my-10 overflow-hidden border rounded-lg shadow-xl cursor-pointer"
+      >
+        <img
+          src="../static/images/image.png"
+          class="transition duration-500 ease-in bg-white h-60 hover:scale-125"
+          alt="Image"
+        />
+        <div class="col-span-2 px-8 py-6">
+          <span class="font-semibold">Username:</span>
+          Nimesh
+          <br />
+          <span class="font-semibold">Title:</span>
+          I love Hitler's wife
+          <br />
+          <span class="font-semibold">Tags:</span>
+          Political
+          <br />
+          <span class="font-semibold">Description:</span>
+          I'm Nimesh Gadhvi, owner of Gadhvi Airlines. I hereby announce that I
+          like Hilter's wife. I don't know why Hilter wanted to ...
+        </div>
+      </div>
+    </main>
+    <img src="../static/images/plus.png" class="absolute h-16 cursor-pointer right-10 bottom-10"></img>
   </div>
-
-  <button
-    hx-delete="/login"
-    hx-target="#home-body"
-    hx-swap="outerHTML"
-    class="bg-cyan-300"
-  >
-    Sign - out
-  </button>
 </div>
+
+<!-- Home Page
+Hello {{ .Data }}
+<form
+  hx-post="/tweets"
+  hx-target="#output"
+  hx-swap="beforeend"
+  hx-ext="json-enc"
+>
+  <input type="text" name="content" autofocus />
+  <input type="submit" value="Submit" />
+</form>
+<div id="output">
+</div>
+
+-->
+<!-- {{ range .Tweets }} 
+  <div {{ if eq .Username "Nimesh"}} class="flex justify-end" {{ else }} class="flex justify-start" {{ end }} >{{ .Username}} - {{ .Content}}</div>
+    {{ end }} -->
