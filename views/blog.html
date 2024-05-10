@@ -1,0 +1,24 @@
+{{ range .}}
+<div
+  class="grid grid-flow-col grid-cols-3 mx-32 my-10 overflow-hidden border rounded-lg shadow-xl cursor-pointer hover:border-2 hover:border-white"
+>
+  <img
+    src="../static/images/image.png"
+    class="transition duration-500 ease-in bg-white h-60 hover:scale-125"
+    alt="Image"
+  />
+  <div class="col-span-2 px-8 py-6">
+    <span class="font-semibold">Username:</span>
+    {{ .Username }}
+    <br />
+    <span class="font-semibold">Title:</span>
+    {{ .Title }}
+    <br />
+    <span class="font-semibold">Tags:</span>
+    {{ range .Tags }} {{ . }} {{ end }}
+    <br />
+    <span class="font-semibold">Description:</span>
+    {{ .Description }}
+  </div>
+</div>
+{{ end }}

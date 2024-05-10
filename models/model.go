@@ -6,8 +6,10 @@ type User struct {
 	Token    string `json:"token,omitempty"`
 }
 
-type Tweet struct {
+type Blog struct {
 	// ID       string `json:"id"`
-	Username string `json:"username"`
-	Content  string `json:"content"`
+	Username    string   `json:"username"`
+	Title       string   `json:"title"`
+	Tags        []string `json:"tags"`
+	Description string   `json:"description"`
 }

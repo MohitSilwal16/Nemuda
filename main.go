@@ -31,10 +31,9 @@ func main() {
 	r.HandleFunc("/login", controller.Login).Methods("POST")
 	r.HandleFunc("/login", controller.Logout).Methods("DELETE")
 
-	r.HandleFunc("/home", controller.ServeHomePage).Methods("GET")
+	r.HandleFunc("/home", controller.RenderHomePage).Methods("GET")
 
-	r.HandleFunc("/tweets", controller.GetTweets).Methods("GET")
-	r.HandleFunc("/tweets", controller.CreateTweet).Methods("POST")
+	r.HandleFunc("/blog/{tag}", controller.GetBlogsByTags).Methods("GET")
 
 	r.HandleFunc("/users/username", controller.SearchUser).Methods("POST")
 

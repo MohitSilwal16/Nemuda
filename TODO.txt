@@ -27,6 +27,7 @@ Create user in Maria DB
 Design home page
 Testing (Boringg)
 Microservices
+Refactor code
 
 Solved: ---------------------------------------------------------------------------------------------
 Solve that prob when template of html gets in text format => <!DOCTYPE html>

@@ -6,7 +6,7 @@
 >
   <header class="flex font-semibold">
     <div class="w-1/6 py-6 border-r-2 cursor-pointer">Nemu</div>
-    <div class="w-4/6 py-6 text-center">Title</div>
+    <div class="w-4/6 py-6 text-center" id="title-heading">All</div>
     <button
       class="m-4 text-2xl font-normal bg-blue-700 rounded-md w-36 hover:bg-blue-800"
       hx-delete="/login"
@@ -18,160 +18,32 @@
   </header>
   <hr/>
   <div class="relative flex overflow-hidden">
-    <nav class="w-1/6 h-screen pt-6 font-semibold border-r-2 ">
-      <p class="m-2 cursor-pointer hover:underline">All</p>
-      <p class="m-2 cursor-pointer hover:underline">Political</p>
-      <p class="m-2 cursor-pointer hover:underline">Science</p>
-      <p class="m-2 cursor-pointer hover:underline">Technical</p>
-      <p class="m-2 cursor-pointer hover:underline">Technical</p>
-      <p class="m-2 cursor-pointer hover:underline">Technical</p>
-      <p class="m-2 cursor-pointer hover:underline">Technical</p>
-      <p class="m-2 cursor-pointer hover:underline">Technical</p>
+    <nav class="w-1/6 h-screen pt-6 font-semibold border-r-2" id = "nav-bar">
+      <p class="m-2 cursor-pointer" style="text-decoration: underline;" onclick="toggleNavbarFocus('All')" hx-get="/blog/All" hx-target="#blogs">All</p>
+      <p class="m-2 cursor-pointer" onclick="toggleNavbarFocus('Political')" hx-get="/blog/Political" hx-target="#blogs">Political</p>
+      <p class="m-2 cursor-pointer" onclick="toggleNavbarFocus('Science')" hx-get="/blog/Science" hx-target="#blogs">Science</p>
+      <p class="m-2 cursor-pointer" onclick="toggleNavbarFocus('Technical')" hx-get="/blog/Technical" hx-target="#blogs">Technical</p>
+      <p class="m-2 cursor-pointer" onclick="toggleNavbarFocus('Educational')" hx-get="/blog/Educational" hx-target="#blogs">Educational</p>
+      <p class="m-2 cursor-pointer" onclick="toggleNavbarFocus('Geographical')" hx-get="/blog/Geographical" hx-target="#blogs">Geographical</p>
+      <p class="m-2 cursor-pointer" onclick="toggleNavbarFocus('Other')" hx-get="/blog/Other" hx-target="#blogs">Other</p>
     </nav>
-    <main class="w-5/6 overflow-y-auto">
-      <div
-        class="grid grid-flow-col grid-cols-3 mx-32 my-10 overflow-hidden border rounded-lg shadow-xl cursor-pointer"
-      >
-        <img
-          src="../static/images/image.png"
-          class="transition duration-500 ease-in bg-white h-60 hover:scale-125"
-          alt="Image"
-        />
-        <div class="col-span-2 px-8 py-6">
-          <span class="font-semibold">Username:</span>
-          Nimesh
-          <br />
-          <span class="font-semibold">Title:</span>
-          I love Hitler's wife
-          <br />
-          <span class="font-semibold">Tags:</span>
-          Political
-          <br />
-          <span class="font-semibold">Description:</span>
-          I'm Nimesh Gadhvi, owner of Gadhvi Airlines. I hereby announce that I
-          like Hilter's wife. I don't know why Hilter wanted to ...
-        </div>
-      </div>
-
-      <!-- 2nd post -->
-      <div
-        class="grid grid-flow-col grid-cols-3 mx-32 my-10 overflow-hidden border rounded-lg shadow-xl cursor-pointer"
-      >
-        <img
-          src="../static/images/image.png"
-          class="transition duration-500 ease-in bg-white h-60 hover:scale-125"
-          alt="Image"
-        />
-        <div class="col-span-2 px-8 py-6">
-          <span class="font-semibold">Username:</span>
-          Nimesh
-          <br />
-          <span class="font-semibold">Title:</span>
-          I love Hitler's wife
-          <br />
-          <span class="font-semibold">Tags:</span>
-          Political
-          <br />
-          <span class="font-semibold">Description:</span>
-          I'm Nimesh Gadhvi, owner of Gadhvi Airlines. I hereby announce that I
-          like Hilter's wife. I don't know why Hilter wanted to ...
-        </div>
-      </div>
-
-      <!-- 3rd post -->
-      <div
-        class="grid grid-flow-col grid-cols-3 mx-32 my-10 overflow-hidden border rounded-lg shadow-xl cursor-pointer"
-      >
-        <img
-          src="../static/images/image.png"
-          class="transition duration-500 ease-in bg-white h-60 hover:scale-125"
-          alt="Image"
-        />
-        <div class="col-span-2 px-8 py-6">
-          <span class="font-semibold">Username:</span>
-          Nimesh
-          <br />
-          <span class="font-semibold">Title:</span>
-          I love Hitler's wife
-          <br />
-          <span class="font-semibold">Tags:</span>
-          Political
-          <br />
-          <span class="font-semibold">Description:</span>
-          I'm Nimesh Gadhvi, owner of Gadhvi Airlines. I hereby announce that I
-          like Hilter's wife. I don't know why Hilter wanted to ...
-        </div>
-      </div>
-
-      <!-- 4th -->
-      <div
-        class="grid grid-flow-col grid-cols-3 mx-32 my-10 overflow-hidden border rounded-lg shadow-xl cursor-pointer"
-      >
-        <img
-          src="../static/images/image.png"
-          class="transition duration-500 ease-in bg-white h-60 hover:scale-125"
-          alt="Image"
-        />
-        <div class="col-span-2 px-8 py-6">
-          <span class="font-semibold">Username:</span>
-          Nimesh
-          <br />
-          <span class="font-semibold">Title:</span>
-          I love Hitler's wife
-          <br />
-          <span class="font-semibold">Tags:</span>
-          Political
-          <br />
-          <span class="font-semibold">Description:</span>
-          I'm Nimesh Gadhvi, owner of Gadhvi Airlines. I hereby announce that I
-          like Hilter's wife. I don't know why Hilter wanted to ...
-        </div>
-      </div>
-
-      <!-- 5 -->
-      <div
-        class="grid grid-flow-col grid-cols-3 mx-32 my-10 overflow-hidden border rounded-lg shadow-xl cursor-pointer"
-      >
-        <img
-          src="../static/images/image.png"
-          class="transition duration-500 ease-in bg-white h-60 hover:scale-125"
-          alt="Image"
-        />
-        <div class="col-span-2 px-8 py-6">
-          <span class="font-semibold">Username:</span>
-          Nimesh
-          <br />
-          <span class="font-semibold">Title:</span>
-          I love Hitler's wife
-          <br />
-          <span class="font-semibold">Tags:</span>
-          Political
-          <br />
-          <span class="font-semibold">Description:</span>
-          I'm Nimesh Gadhvi, owner of Gadhvi Airlines. I hereby announce that I
-          like Hilter's wife. I don't know why Hilter wanted to ...
-        </div>
-      </div>
+    <main class="w-5/6 overflow-y-auto scroll-bar" id="blogs">
+     {{ template "blog.html" . }}
     </main>
-    <img src="../static/images/plus.png" class="absolute h-16 cursor-pointer right-10 bottom-10"></img>
+    <img src="../static/images/add_post.png" class="absolute h-16 cursor-pointer right-10 bottom-10 hover:opacity-70"></img>
   </div>
+  <script>
+    // Toggle underline for tags
+    function toggleNavbarFocus(title){
+      let titles = document.getElementById("nav-bar").children;
+      for (let t of titles){
+        if (t.innerHTML != title){
+          t.removeAttribute("style");
+        } else{
+          t.setAttribute("style","text-decoration:underline");
+          document.getElementById("title-heading").innerHTML = title;
+        }
+      }
+    }
+  </script>
 </div>
-
-<!-- Home Page
-Hello {{ .Data }}
-<form
-  hx-post="/tweets"
-  hx-target="#output"
-  hx-swap="beforeend"
-  hx-ext="json-enc"
->
-  <input type="text" name="content" autofocus />
-  <input type="submit" value="Submit" />
-</form>
-<div id="output">
-</div>
-
--->
-<!-- {{ range .Tweets }} 
-  <div {{ if eq .Username "Nimesh"}} class="flex justify-end" {{ else }} class="flex justify-start" {{ end }} >{{ .Username}} - {{ .Content}}</div>
-    {{ end }} -->

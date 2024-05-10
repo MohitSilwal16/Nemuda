@@ -11,6 +11,7 @@ import (
 
 	"github.com/MohitSilwal16/Nemuda/models"
 	"github.com/MohitSilwal16/Nemuda/utils"
+	"github.com/gorilla/mux"
 )
 
 func ShowFiles() {
@@ -51,7 +52,7 @@ func DefaultRoute(w http.ResponseWriter, r *http.Request) {
 func RenderInitPage(w http.ResponseWriter, r *http.Request) {
 	sessionToken := getCookie(r)
 	if sessionToken != "" && checkDuplicateToken(sessionToken) {
-		ServeHomePage(w, r)
+		RenderHomePage(w, r)
 	} else {
 		RenderLoginPage(w, r)
 	}
@@ -77,10 +78,10 @@ func RenderLoginPage(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func ServeHomePage(w http.ResponseWriter, r *http.Request) {
-	tmpl := template.Must(template.ParseFiles("views/homepage.html"))
+func RenderHomePage(w http.ResponseWriter, r *http.Request) {
+	tmpl := template.Must(template.ParseFiles("views/homepage.html", "views/blog.html"))
 
-	err := tmpl.Execute(w, nil)
+	err := tmpl.Execute(w, fakeBlogDB)
 
 	if err != nil {
 		panic(err)
@@ -149,8 +150,8 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		user.Token = UpdateTokenInDBAndReturn(user.Username)
 		setCookie(w, user.Token)
 
-		data = map[string]string{"Data": user.Username}
-		page = "views/homepage.html"
+		RenderHomePage(w, r)
+		return
 	} else {
 		data = map[string]string{"Data": "Invalid Credentials"}
 	}
@@ -187,41 +188,46 @@ func SearchUser(w http.ResponseWriter, r *http.Request) {
 }
 
 // Temp database
-var tweetBox = map[string][]models.Tweet{
-	"Tweets": {
-		{Username: "Nimesh", Content: "Hello"},
-		{Username: "Nimesh", Content: "Owner of Gadhvi Airlines"},
-		{Username: "Konark", Content: "Front-end god"},
-	},
+var fakeBlogDB = []models.Blog{
+	{Username: "Nimesh", Title: "I love Hitler's wife", Tags: []string{"Political"}, Description: " I'm Nimesh Gadhvi, owner of Gadhvi Airlines. I hereby announce that I like Hilter's wife. I don't know why Hilter wanted to ..."},
+	{Username: "Konark", Title: "I love Messi's wife", Tags: []string{"Educational"}, Description: " I'm Nimesh Gadhvi, owner of Gadhvi Airlines. I hereby announce that I like Hilter's wife. I don't know why Hilter wanted to ..."},
+	{Username: "Nimesh", Title: "I love Hitler's wife", Tags: []string{"Political"}, Description: " I'm Nimesh Gadhvi, owner of Gadhvi Airlines. I hereby announce that I like Hilter's wife. I don't know why Hilter wanted to ..."},
+	{Username: "Konark", Title: "I love Messi's wife", Tags: []string{"Educational"}, Description: " I'm Nimesh Gadhvi, owner of Gadhvi Airlines. I hereby announce that I like Hilter's wife. I don't know why Hilter wanted to ..."},
+	{Username: "Nimesh", Title: "I love Hitler's wife", Tags: []string{"Political"}, Description: " I'm Nimesh Gadhvi, owner of Gadhvi Airlines. I hereby announce that I like Hilter's wife. I don't know why Hilter wanted to ..."},
+	{Username: "Konark", Title: "I love Messi's wife", Tags: []string{"Educational"}, Description: " I'm Nimesh Gadhvi, owner of Gadhvi Airlines. I hereby announce that I like Hilter's wife. I don't know why Hilter wanted to ..."},
 }
 
-func CreateTweet(w http.ResponseWriter, r *http.Request) {
-	var tweet models.Tweet
+// var fakeBlogsDB = map[string][]models.Blog{
+// 	"Blogs": {
+// 		{Username: "Nimesh", Title: "I love Hitler's wife", Tags: []string{"Political"}, Description: " I'm Nimesh Gadhvi, owner of Gadhvi Airlines. I hereby announce that I like Hilter's wife. I don't know why Hilter wanted to ..."},
+// 		{Username: "Konark", Title: "I love Messi's wife", Tags: []string{"Educational"}, Description: " I'm Nimesh Gadhvi, owner of Gadhvi Airlines. I hereby announce that I like Hilter's wife. I don't know why Hilter wanted to ..."},
+// 		{Username: "Nimesh", Title: "I love Hitler's wife", Tags: []string{"Political"}, Description: " I'm Nimesh Gadhvi, owner of Gadhvi Airlines. I hereby announce that I like Hilter's wife. I don't know why Hilter wanted to ..."},
+// 		{Username: "Konark", Title: "I love Messi's wife", Tags: []string{"Educational"}, Description: " I'm Nimesh Gadhvi, owner of Gadhvi Airlines. I hereby announce that I like Hilter's wife. I don't know why Hilter wanted to ..."},
+// 		{Username: "Nimesh", Title: "I love Hitler's wife", Tags: []string{"Political"}, Description: " I'm Nimesh Gadhvi, owner of Gadhvi Airlines. I hereby announce that I like Hilter's wife. I don't know why Hilter wanted to ..."},
+// 		{Username: "Konark", Title: "I love Messi's wife", Tags: []string{"Educational"}, Description: " I'm Nimesh Gadhvi, owner of Gadhvi Airlines. I hereby announce that I like Hilter's wife. I don't know why Hilter wanted to ..."},
+// 	},
+// }
 
-	err := json.NewDecoder(r.Body).Decode(&tweet)
+func GetBlogsByTags(w http.ResponseWriter, r *http.Request) {
+	tag := mux.Vars(r)["tag"]
+	fmt.Println(tag)
 
-	if err != nil {
-		fmt.Println(err)
+	tmpl := template.Must(template.ParseFiles("views/blog.html"))
+	if tag == "All" {
+		tmpl.Execute(w, fakeBlogDB)
 		return
 	}
-	tweet.Username = "Nimesh"
-	fmt.Printf("%#v\n", tweet)
-	tweetBox["Tweets"] = append(tweetBox["Tweets"], tweet)
 
-	htmlStr := fmt.Sprintf("<div class='flex justify-end'>%s - %s</div>", tweet.Username, tweet.Content)
+	var filtredBlogs []models.Blog
 
-	tmpl, err := template.New("t").Parse(htmlStr)
-
-	if err != nil {
-		fmt.Println(err)
-		return
+	for _, val := range fakeBlogDB {
+		for _, t := range val.Tags {
+			if t == tag {
+				filtredBlogs = append(filtredBlogs, val)
+			}
+		}
 	}
+	fmt.Println(filtredBlogs)
 
-	tmpl.Execute(w, nil)
-}
-
-func GetTweets(w http.ResponseWriter, r *http.Request) {
-	tmpl := template.Must(template.ParseFiles("views/homepage.html"))
-
-	tmpl.Execute(w, tweetBox)
+	tmpl.Execute(w, filtredBlogs)
 }
