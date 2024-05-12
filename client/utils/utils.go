@@ -1,10 +1,7 @@
 package utils
 
 import (
-	"crypto/rand"
-	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"os/exec"
 	"runtime"
@@ -21,19 +18,13 @@ func ClearScreen() {
 	case "windows":
 		cmd = exec.Command("cmd", "/c", "cls") // for Windows
 	default:
-		fmt.Println("Unsupported platform.")
+		log.Println("Unsupported platform.")
 		return
 	}
 
 	// Execute the clear command
 	cmd.Stdout = os.Stdout
 	cmd.Run()
-}
-
-func TokenGenerator() string {
-	b := make([]byte, 4)
-	rand.Read(b)
-	return fmt.Sprintf("%x", b)
 }
 
 func IsPasswordInFormat(s string) bool {
@@ -59,14 +50,4 @@ func IsPasswordInFormat(s string) bool {
 		}
 	}
 	return hasUpper && hasLower && hasNumber && hasSpecial
-}
-
-func LoggingMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Log the incoming request
-		log.Printf("Request: %s %s %s\n", r.Method, r.Host, r.URL.Path)
-
-		// Pass the request to the next handler
-		next.ServeHTTP(w, r)
-	})
 }

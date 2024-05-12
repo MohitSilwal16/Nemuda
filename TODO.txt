@@ -1,42 +1,12 @@
-Status Code Level:
-200 => Good
-400 => You messed up while sending Request
-500 => Server Problem
-
-Different servers for front-end & back-end depends on wish
+CORS
 
 Update DB Migration File => https://www.educba.com/mariadb-export-database/
 
-Middleware for gorilla mux => Done but print response in every controller method
-
-Add RenderRegisterPage , etc. in handler folder
-handler folder => Handle HTTP Request
-service folder => Connects db & handler
-db folder => Connected to db
-
 Mongo DB Connection & db design
-Return error from methods from db.go & display Internal Server Error in request handlers
-Display if there is internal system error => db.go, return errors from methods & if there's some error then display interal server error
 Make statement for every db query
 Robust from Cross Site Scripting
 hx-boost
-Make methods in db.go start with lower case
 Avoid SQL Injection
-Set hx-swap to innerHTML (default value)
 Create user in Maria DB
-Design home page
 Testing (Boringg)
-Microservices
 Refactor code
-
-Solved: ---------------------------------------------------------------------------------------------
-Solve that prob when template of html gets in text format => <!DOCTYPE html>
-
--------------------------------------------------------------------------------------
-clearTimeout(); => clearTimeout at the end of onValidate() in login page for "Welcome to Nemu 2.0"
-
--------------------------------------------------------------------------------------
-To Verify Regex: https://regex101.com/
-Fcuk regex in go use custom validator or validator package for password in go
-
-Search regex in go on YT
