@@ -57,13 +57,16 @@ func main() {
 		handler.Logout(ctx)
 	})
 
+	r.GET("/users/:username", func(ctx *gin.Context) {
+		handler.SearchUser(ctx)
+	})
+
 	go func() {
 		log.Println("Running Server on http://localhost:8080")
 		r.Run("localhost:8080")
 	}()
 
 	// r.HandleFunc("/blog/{tag}", handler.GetBlogsByTags).Methods("GET")
-	// r.HandleFunc("/users/username", handler.SearchUser).Methods("POST")
 
 	var choi string
 

@@ -49,12 +49,16 @@ func main() {
 		handler.Login(ctx)
 	})
 
-	r.DELETE("/login/", func(ctx *gin.Context) {
+	r.DELETE("/login", func(ctx *gin.Context) {
 		handler.Logout(ctx)
 	})
 
 	r.GET("/home", func(ctx *gin.Context) {
 		handler.RenderHomePage(ctx)
+	})
+
+	r.GET("/users", func(ctx *gin.Context) {
+		handler.SearchUserForRegistration(ctx)
 	})
 
 	go func() {

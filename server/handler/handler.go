@@ -206,22 +206,40 @@ func Logout(ctx *gin.Context) {
 }
 
 func SearchUser(ctx *gin.Context) {
+	// 200 => User found (Username is already used)
+	// 201 => User not found (Username is not used yet)
+	// 500 => Internal Server Error
+
 	// Set the Content-Type header to "application/json"
 	ctx.Header("Content-Type", "application/json")
 
-	var user models.User
+	username := ctx.Param("username")
 
-	err := json.NewDecoder(ctx.Request.Body).Decode(&user)
-
-	if err != nil {
-		log.Println(err)
+	if len(username) < 5 {
+		ctx.JSON(201, gin.H{
+			"message": "User not found",
+		})
 		return
 	}
 
-	// if db.SearchUserByName(user.Username) {
-	// 	tmpl := template.Must(template.New("t").Parse("Username is already used"))
-	// 	tmpl.Execute(ctx.Writer, nil)
-	// }
+	usernameFound, err := db.SearchUserByName(username)
+
+	if err != nil {
+		ctx.JSON(500, gin.H{
+			"message": "Internal Server Error",
+		})
+		return
+	}
+
+	if usernameFound {
+		ctx.JSON(200, gin.H{
+			"message": "User found",
+		})
+		return
+	}
+	ctx.JSON(201, gin.H{
+		"message": "User not found",
+	})
 }
 
 // Temp database
