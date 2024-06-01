@@ -24,12 +24,12 @@ func Init_MariaDB() error {
 		return err
 	}
 
-	dbUser := os.Getenv("dbUser")
-	dbPass := os.Getenv("dbPass")
-	dbName := os.Getenv("dbName")
+	dbUser := os.Getenv("sqlDBUser")
+	dbPass := os.Getenv("sqlDBPass")
+	dbName := os.Getenv("sqlDBName")
 
 	if dbUser == "" || dbName == "" || dbPass == "" {
-		panic("Provide database user , pass & database name")
+		return errors.New("DATABASE NAME, USER & PASSWORD NOT SPECIFIED IN .ENV FILE")
 	}
 
 	// On port 3306 MYSQL is running

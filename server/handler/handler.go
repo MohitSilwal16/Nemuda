@@ -31,6 +31,7 @@ func Register(ctx *gin.Context) {
 	err := json.NewDecoder(ctx.Request.Body).Decode(&user)
 
 	if err != nil {
+		log.Println("Error: ", err)
 		ctx.JSON(201, gin.H{
 			"message": "Provided data is not in correct format(JSON).",
 		})
@@ -115,6 +116,7 @@ func Login(ctx *gin.Context) {
 	err := json.NewDecoder(ctx.Request.Body).Decode(&user)
 
 	if err != nil {
+		log.Println("Error: ", err)
 		ctx.JSON(201, gin.H{
 			"message": "Provided data is not in correct format(JSON).",
 		})
@@ -149,6 +151,7 @@ func Login(ctx *gin.Context) {
 			})
 			return
 		}
+		log.Println("Error: ", err)
 		ctx.JSON(500, gin.H{
 			"message": "Internal Server Error",
 		})
@@ -166,6 +169,7 @@ func Login(ctx *gin.Context) {
 	sessionToken, err := db.UpdateTokenInDBAndReturn(user.Username)
 
 	if err != nil {
+		log.Println("Error: ", err)
 		ctx.JSON(500, gin.H{
 			"message": "Internal Server Error",
 		})
@@ -196,6 +200,8 @@ func Logout(ctx *gin.Context) {
 			})
 			return
 		}
+
+		log.Println("Error: ", err)
 		ctx.JSON(500, gin.H{
 			"message": "Internal Server Error",
 		})
@@ -226,6 +232,7 @@ func SearchUser(ctx *gin.Context) {
 	usernameFound, err := db.SearchUserByName(username)
 
 	if err != nil {
+		log.Println("Error: ", err)
 		ctx.JSON(500, gin.H{
 			"message": "Internal Server Error",
 		})
@@ -243,16 +250,6 @@ func SearchUser(ctx *gin.Context) {
 	})
 }
 
-// Temp database
-var fakeBlogDB = []models.Blog{
-	{Username: "Nimesh", Title: "I love Hitler's wife", Tags: []string{"Political"}, Description: "I'm Nimesh Gadhvi, owner of Gadhvi Airlines. I hereby announce that I like Hilter's wife. I don't know why Hilter wanted to ...", Likes: 12, Comments: []models.Comment{{Username: "Nimesh", Description: "Hello"}, {Username: "Nimesh", Description: "Hello"}}},
-	{Username: "Konark", Title: "I love Messi's wife", Tags: []string{"Educational"}, Description: "I'm Nimesh Gadhvi, owner of Gadhvi Airlines. I hereby announce that I like Hilter's wife. I don't know why Hilter wanted to ...", Likes: 50, Comments: []models.Comment{{Username: "Nimesh", Description: "Hello"}}},
-	{Username: "Nimesh", Title: "I love Hitler's wife", Tags: []string{"Political"}, Description: "I'm Nimesh Gadhvi, owner of Gadhvi Airlines. I hereby announce that I like Hilter's wife. I don't know why Hilter wanted to ...", Likes: 30, Comments: []models.Comment{{Username: "Nimesh", Description: "Hello"}, {Username: "Nimesh", Description: "Hello"}, {Username: "Nimesh", Description: "Hello"}}},
-	{Username: "Konark", Title: "I love Messi's wife", Tags: []string{"Educational"}, Description: "I'm Nimesh Gadhvi, owner of Gadhvi Airlines. I hereby announce that I like Hilter's wife. I don't know why Hilter wanted to ...", Likes: 100, Comments: []models.Comment{{Username: "Nimesh", Description: "Hello"}}},
-	{Username: "Nimesh", Title: "I love Hitler's wife", Tags: []string{"Political"}, Description: "I'm Nimesh Gadhvi, owner of Gadhvi Airlines. I hereby announce that I like Hilter's wife. I don't know why Hilter wanted to ...", Likes: 0, Comments: []models.Comment{}},
-	{Username: "Konark", Title: "I love Messi's wife", Tags: []string{"Educational"}, Description: "I'm Nimesh Gadhvi, owner of Gadhvi Airlines. I hereby announce that I like Hilter's wife. I don't know why Hilter wanted to ...", Likes: 1, Comments: []models.Comment{{Username: "Nimesh", Description: "Hello"}}},
-}
-
 func GetBlogsByTags(ctx *gin.Context) {
 	// 200 => Blogs found
 	// 201 => No blog found for the specific tag
@@ -262,28 +259,42 @@ func GetBlogsByTags(ctx *gin.Context) {
 	ctx.Header("Content-Type", "application/json")
 
 	tag := ctx.Param("tag")
-	tag = strings.ToLower(tag)
-	fmt.Println(tag)
+	tag = strings.Title(tag)
 
-	if tag == "all" {
-		ctx.JSON(200, fakeBlogDB)
+	blogs, err := db.GetBlogsByTags(tag)
+
+	if err != nil {
+		log.Println("Error: ", err)
+		ctx.JSON(500, gin.H{
+			"message": "Internal Server Error",
+		})
 		return
 	}
 
-	var filteredBlogs []models.Blog
-
-	for _, val := range fakeBlogDB {
-		for _, t := range val.Tags {
-			if strings.ToLower(t) == tag {
-				filteredBlogs = append(filteredBlogs, val)
-			}
-		}
-	}
-	if filteredBlogs == nil {
+	if blogs == nil {
 		ctx.JSON(201, gin.H{
 			"message": fmt.Sprintf("No Blogs for '%s' tag", tag),
 		})
 		return
 	}
-	ctx.JSON(200, filteredBlogs)
+	ctx.JSON(200, blogs)
+}
+
+func AddBlog(ctx *gin.Context) {
+	// 200 => Blogs added
+	// 500 => Internal Server Error
+
+	// Set the Content-Type header to "application/json"
+	ctx.Header("Content-Type", "application/json")
+
+	var blog models.Blog
+	err := json.NewDecoder(ctx.Request.Body).Decode(&blog)
+
+	if err != nil {
+		log.Println("Error: ", err)
+		ctx.JSON(201, gin.H{
+			"message": "Provided data is not in correct format(JSON).",
+		})
+		return
+	}
 }
