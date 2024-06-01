@@ -7,9 +7,15 @@ type User struct {
 }
 
 type Blog struct {
-	// ID       string `json:"id"`
-	Username    string   `json:"username"`
-	Title       string   `json:"title"`
-	Tags        []string `json:"tags"`
-	Description string   `json:"description"`
+	Username    string    `json:"username"`
+	Title       string    `json:"title"`
+	Tags        []string  `json:"tags"`
+	Description string    `json:"description"`
+	Likes       uint      `json:"likes"`
+	Comments    []Comment `json:"comments"`
+}
+
+type Comment struct {
+	Username    string `json:"username"`
+	Description string `json:"description"`
 }

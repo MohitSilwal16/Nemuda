@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"regexp"
+	"strings"
 	"text/template"
 	"time"
 
@@ -19,7 +20,7 @@ import (
 
 const BASE_URL = "http://localhost:8080/"
 
-func setCookie(w http.ResponseWriter, token string) {
+func setSessionTokenInCookie(w http.ResponseWriter, token string) {
 	cookie := &http.Cookie{
 		Name:  "sessionToken",
 		Value: token,
@@ -29,7 +30,7 @@ func setCookie(w http.ResponseWriter, token string) {
 	http.SetCookie(w, cookie)
 }
 
-func getCookie(r *http.Request) string {
+func getSessionTokenFromCookie(r *http.Request) string {
 	cookie, err := r.Cookie("sessionToken")
 
 	if err == http.ErrNoCookie {
@@ -63,7 +64,7 @@ func RenderInitPage(ctx *gin.Context) {
 	// Set the Content-Type header to "text/html"
 	ctx.Header("Content-Type", "text/html")
 
-	sessionToken := getCookie(ctx.Request)
+	sessionToken := getSessionTokenFromCookie(ctx.Request)
 
 	// if sessionToken != "" && checkDuplicateToken(sessionToken) {
 	if sessionToken != "" {
@@ -310,10 +311,10 @@ func Register(ctx *gin.Context) {
 				return
 			}
 			// Save session token in cookie of user
-			setCookie(ctx.Writer, sessionToken)
+			setSessionTokenInCookie(ctx.Writer, sessionToken)
 
 			// TODO: Fetch blogs from server
-			tmpl := template.Must(template.ParseFiles("./views/home.html"))
+			tmpl := template.Must(template.ParseFiles("./views/home.html", "./views/blog.html"))
 			err = tmpl.Execute(ctx.Writer, nil)
 			if err != nil {
 				log.Println("Error: ", err)
@@ -554,10 +555,10 @@ func Login(ctx *gin.Context) {
 				return
 			}
 			// Save session token in cookie of user
-			setCookie(ctx.Writer, sessionToken)
+			setSessionTokenInCookie(ctx.Writer, sessionToken)
 
 			// TODO: Fetch blogs from server
-			tmpl := template.Must(template.ParseFiles("./views/home.html"))
+			tmpl := template.Must(template.ParseFiles("./views/home.html", "./views/blog.html"))
 			err = tmpl.Execute(ctx.Writer, nil)
 			if err != nil {
 				log.Println("Error: ", err)
@@ -621,7 +622,7 @@ func Logout(ctx *gin.Context) {
 	// Set the Content-Type header to "text/html"
 	ctx.Header("Content-Type", "text/html")
 
-	sessionToken := getCookie(ctx.Request)
+	sessionToken := getSessionTokenFromCookie(ctx.Request)
 
 	ctxTimeout, cancelFunc := context.WithTimeout(context.Background(), 3*time.Second)
 
@@ -771,6 +772,7 @@ func SearchUserForRegistration(ctx *gin.Context) {
 		tmpl.Execute(ctx.Writer, nil)
 		return
 	}
+	defer res.Body.Close()
 
 	if res.StatusCode == 200 {
 		tmpl, err := template.New("t").Parse("Username is already used")
@@ -801,6 +803,138 @@ func SearchUserForRegistration(ctx *gin.Context) {
 		tmpl.Execute(ctx.Writer, nil)
 	} else {
 		tmpl, err := template.New("t").Parse("")
+		if err != nil {
+			log.Println("Error: ", err)
+			log.Println("Description: Back-end Server is sending some other status code")
+			return
+		}
+		tmpl.Execute(ctx.Writer, nil)
+	}
+}
+
+func GetBlogByTags(ctx *gin.Context) {
+	// 200 => Blogs found
+	// 201 => No blog found for the specific tag
+	// 500 => Internal Server Error
+
+	// Set the Content-Type header to "text/html"
+	ctx.Header("Content-Type", "text/html")
+
+	tag := ctx.Param("tag")
+	tag = strings.ToLower(tag)
+
+	ctxTimeout, cancelFunc := context.WithTimeout(context.Background(), 3*time.Second)
+
+	defer cancelFunc()
+
+	URL := BASE_URL + "blogs/" + tag
+
+	requestToBackend_server, err := http.NewRequestWithContext(ctxTimeout, "GET", URL, nil)
+
+	if err != nil {
+		log.Println("Error: ", err)
+		log.Println("Description: Cannot Create GET Request with Context")
+
+		tmpl, err := template.New("t").Parse("")
+		if err != nil {
+			log.Println("Error: ", err)
+			log.Println("Description: Error in tmpl.Execute() in GetBlogByTags")
+			return
+		}
+		tmpl.Execute(ctx.Writer, nil)
+		return
+	}
+
+	client := http.Client{
+		Timeout: 3 * time.Second,
+	}
+
+	res, err := client.Do(requestToBackend_server)
+
+	if err != nil {
+		if ctxTimeout.Err() == context.DeadlineExceeded {
+			log.Println("Error: ", err)
+			log.Println("Description: Back-end server didn't responsed in given time")
+		} else {
+			log.Println("Error: ", err)
+			log.Println("Description: Cannot send GET request(with timeout(context)) to back-end server")
+		}
+
+		tmpl, err := template.New("t").Parse("")
+		if err != nil {
+			log.Println("Error: ", err)
+			log.Println("Description: Error in tmpl.Execute() in SearchUserForRegistration")
+			return
+		}
+		tmpl.Execute(ctx.Writer, nil)
+		return
+	}
+
+	if res.StatusCode == 200 {
+		responseJSONData, err := io.ReadAll(res.Body)
+
+		defer res.Body.Close()
+
+		if err != nil {
+			log.Println("Error: ", err)
+			log.Println("Decription: Cannot read body of response as JSON data")
+
+			tmpl, err := template.New("t").Parse("<script>alert('Internal Server Error');</script>")
+
+			if err != nil {
+				log.Println("Error: ", err)
+				log.Println("Description: Error in tmpl.Execute() in GetBlogByTags()")
+			}
+			tmpl.Execute(ctx.Writer, nil)
+			return
+		}
+
+		var responseBlogsList []model.Blog
+		err = json.Unmarshal(responseJSONData, &responseBlogsList)
+		if err != nil {
+			log.Println("Error: ", err)
+			log.Println("Decription: Cannot read body of response as JSON data")
+
+			tmpl, err := template.New("t").Parse("<script>alert('Internal Server Error');</script>")
+
+			if err != nil {
+				log.Println("Error: ", err)
+				log.Println("Description: Error in tmpl.Execute() in GetBlogByTags()")
+			}
+			tmpl.Execute(ctx.Writer, nil)
+			return
+		}
+
+		tmpl := template.Must(template.ParseFiles("./views/blog.html"))
+		err = tmpl.Execute(ctx.Writer, responseBlogsList)
+		if err != nil {
+			log.Println("Error: ", err)
+			log.Println("Description: Error in tmpl.Execute() in GetBlogByTags")
+			return
+		}
+
+	} else if res.StatusCode == 201 {
+		// TODO: Add Decorative container for "No Blogs for this tag"
+		log.Println("Blogs not found for " + tag + " tag")
+		tmpl, err := template.New("t").Parse("No Blogs for " + tag + " tag")
+		if err != nil {
+			log.Println("Error: ", err)
+			log.Println("Description: Error in tmpl.Execute() in GetBlogByTags")
+			return
+		}
+		tmpl.Execute(ctx.Writer, nil)
+	} else if res.StatusCode == 500 {
+		log.Println("Error: Back-end server has Internal Server Error")
+
+		tmpl, err := template.New("t").Parse("<script>alert('Internal Server Error');</script>")
+		if err != nil {
+			log.Println("Error: ", err)
+			log.Println("Description: Error in tmpl.Execute() in GetBlogByTags")
+			return
+		}
+		tmpl.Execute(ctx.Writer, nil)
+	} else {
+		tmpl, err := template.New("t").Parse("<script>alert('Internal Server Error');</script>")
 		if err != nil {
 			log.Println("Error: ", err)
 			log.Println("Description: Back-end Server is sending some other status code")

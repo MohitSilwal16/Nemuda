@@ -2,9 +2,10 @@ package handler
 
 import (
 	"encoding/json"
-	"html/template"
+	"fmt"
 	"log"
 	"regexp"
+	"strings"
 
 	"github.com/MohitSilwal16/Nemuda/db"
 	"github.com/MohitSilwal16/Nemuda/models"
@@ -244,48 +245,45 @@ func SearchUser(ctx *gin.Context) {
 
 // Temp database
 var fakeBlogDB = []models.Blog{
-	{Username: "Nimesh", Title: "I love Hitler's wife", Tags: []string{"Political"}, Description: " I'm Nimesh Gadhvi, owner of Gadhvi Airlines. I hereby announce that I like Hilter's wife. I don't know why Hilter wanted to ..."},
-	{Username: "Konark", Title: "I love Messi's wife", Tags: []string{"Educational"}, Description: " I'm Nimesh Gadhvi, owner of Gadhvi Airlines. I hereby announce that I like Hilter's wife. I don't know why Hilter wanted to ..."},
-	{Username: "Nimesh", Title: "I love Hitler's wife", Tags: []string{"Political"}, Description: " I'm Nimesh Gadhvi, owner of Gadhvi Airlines. I hereby announce that I like Hilter's wife. I don't know why Hilter wanted to ..."},
-	{Username: "Konark", Title: "I love Messi's wife", Tags: []string{"Educational"}, Description: " I'm Nimesh Gadhvi, owner of Gadhvi Airlines. I hereby announce that I like Hilter's wife. I don't know why Hilter wanted to ..."},
-	{Username: "Nimesh", Title: "I love Hitler's wife", Tags: []string{"Political"}, Description: " I'm Nimesh Gadhvi, owner of Gadhvi Airlines. I hereby announce that I like Hilter's wife. I don't know why Hilter wanted to ..."},
-	{Username: "Konark", Title: "I love Messi's wife", Tags: []string{"Educational"}, Description: " I'm Nimesh Gadhvi, owner of Gadhvi Airlines. I hereby announce that I like Hilter's wife. I don't know why Hilter wanted to ..."},
+	{Username: "Nimesh", Title: "I love Hitler's wife", Tags: []string{"Political"}, Description: "I'm Nimesh Gadhvi, owner of Gadhvi Airlines. I hereby announce that I like Hilter's wife. I don't know why Hilter wanted to ...", Likes: 12, Comments: []models.Comment{{Username: "Nimesh", Description: "Hello"}, {Username: "Nimesh", Description: "Hello"}}},
+	{Username: "Konark", Title: "I love Messi's wife", Tags: []string{"Educational"}, Description: "I'm Nimesh Gadhvi, owner of Gadhvi Airlines. I hereby announce that I like Hilter's wife. I don't know why Hilter wanted to ...", Likes: 50, Comments: []models.Comment{{Username: "Nimesh", Description: "Hello"}}},
+	{Username: "Nimesh", Title: "I love Hitler's wife", Tags: []string{"Political"}, Description: "I'm Nimesh Gadhvi, owner of Gadhvi Airlines. I hereby announce that I like Hilter's wife. I don't know why Hilter wanted to ...", Likes: 30, Comments: []models.Comment{{Username: "Nimesh", Description: "Hello"}, {Username: "Nimesh", Description: "Hello"}, {Username: "Nimesh", Description: "Hello"}}},
+	{Username: "Konark", Title: "I love Messi's wife", Tags: []string{"Educational"}, Description: "I'm Nimesh Gadhvi, owner of Gadhvi Airlines. I hereby announce that I like Hilter's wife. I don't know why Hilter wanted to ...", Likes: 100, Comments: []models.Comment{{Username: "Nimesh", Description: "Hello"}}},
+	{Username: "Nimesh", Title: "I love Hitler's wife", Tags: []string{"Political"}, Description: "I'm Nimesh Gadhvi, owner of Gadhvi Airlines. I hereby announce that I like Hilter's wife. I don't know why Hilter wanted to ...", Likes: 0, Comments: []models.Comment{}},
+	{Username: "Konark", Title: "I love Messi's wife", Tags: []string{"Educational"}, Description: "I'm Nimesh Gadhvi, owner of Gadhvi Airlines. I hereby announce that I like Hilter's wife. I don't know why Hilter wanted to ...", Likes: 1, Comments: []models.Comment{{Username: "Nimesh", Description: "Hello"}}},
 }
 
-// var fakeBlogsDB = map[string][]models.Blog{
-// 	"Blogs": {
-// 		{Username: "Nimesh", Title: "I love Hitler's wife", Tags: []string{"Political"}, Description: " I'm Nimesh Gadhvi, owner of Gadhvi Airlines. I hereby announce that I like Hilter's wife. I don't know why Hilter wanted to ..."},
-// 		{Username: "Konark", Title: "I love Messi's wife", Tags: []string{"Educational"}, Description: " I'm Nimesh Gadhvi, owner of Gadhvi Airlines. I hereby announce that I like Hilter's wife. I don't know why Hilter wanted to ..."},
-// 		{Username: "Nimesh", Title: "I love Hitler's wife", Tags: []string{"Political"}, Description: " I'm Nimesh Gadhvi, owner of Gadhvi Airlines. I hereby announce that I like Hilter's wife. I don't know why Hilter wanted to ..."},
-// 		{Username: "Konark", Title: "I love Messi's wife", Tags: []string{"Educational"}, Description: " I'm Nimesh Gadhvi, owner of Gadhvi Airlines. I hereby announce that I like Hilter's wife. I don't know why Hilter wanted to ..."},
-// 		{Username: "Nimesh", Title: "I love Hitler's wife", Tags: []string{"Political"}, Description: " I'm Nimesh Gadhvi, owner of Gadhvi Airlines. I hereby announce that I like Hilter's wife. I don't know why Hilter wanted to ..."},
-// 		{Username: "Konark", Title: "I love Messi's wife", Tags: []string{"Educational"}, Description: " I'm Nimesh Gadhvi, owner of Gadhvi Airlines. I hereby announce that I like Hilter's wife. I don't know why Hilter wanted to ..."},
-// 	},
-// }
-
 func GetBlogsByTags(ctx *gin.Context) {
+	// 200 => Blogs found
+	// 201 => No blog found for the specific tag
+	// 500 => Internal Server Error
+
 	// Set the Content-Type header to "application/json"
 	ctx.Header("Content-Type", "application/json")
 
 	tag := ctx.Param("tag")
-	log.Println(tag)
+	tag = strings.ToLower(tag)
+	fmt.Println(tag)
 
-	tmpl := template.Must(template.ParseFiles("views/blog.html"))
-	if tag == "All" {
-		tmpl.Execute(ctx.Writer, fakeBlogDB)
+	if tag == "all" {
+		ctx.JSON(200, fakeBlogDB)
 		return
 	}
 
-	var filtredBlogs []models.Blog
+	var filteredBlogs []models.Blog
 
 	for _, val := range fakeBlogDB {
 		for _, t := range val.Tags {
-			if t == tag {
-				filtredBlogs = append(filtredBlogs, val)
+			if strings.ToLower(t) == tag {
+				filteredBlogs = append(filteredBlogs, val)
 			}
 		}
 	}
-	log.Println(filtredBlogs)
-
-	tmpl.Execute(ctx.Writer, filtredBlogs)
+	if filteredBlogs == nil {
+		ctx.JSON(201, gin.H{
+			"message": fmt.Sprintf("No Blogs for '%s' tag", tag),
+		})
+		return
+	}
+	ctx.JSON(200, filteredBlogs)
 }

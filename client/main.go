@@ -26,40 +26,21 @@ func main() {
 	// Serve static files from the "static" directory
 	r.Static("/static", "./static")
 
-	r.GET("/", func(ctx *gin.Context) {
-		handler.DefaultRoute(ctx)
-	})
-	r.GET("/nemuda", func(ctx *gin.Context) {
-		handler.RenderInitPage(ctx)
-	})
+	r.GET("/", handler.DefaultRoute)
+	r.GET("/nemuda", handler.RenderInitPage)
 
-	r.GET("/register", func(ctx *gin.Context) {
-		handler.RenderRegsiterPage(ctx)
-	})
+	r.GET("/register", handler.RenderRegsiterPage)
+	r.POST("/register", handler.Register)
 
-	r.POST("/register", func(ctx *gin.Context) {
-		handler.Register(ctx)
-	})
+	r.GET("/login", handler.RenderLoginPage)
+	r.POST("/login", handler.Login)
+	r.DELETE("/login", handler.Logout)
 
-	r.GET("/login", func(ctx *gin.Context) {
-		handler.RenderLoginPage(ctx)
-	})
+	r.GET("/users", handler.SearchUserForRegistration)
 
-	r.POST("/login", func(ctx *gin.Context) {
-		handler.Login(ctx)
-	})
+	r.GET("/home", handler.RenderHomePage)
 
-	r.DELETE("/login", func(ctx *gin.Context) {
-		handler.Logout(ctx)
-	})
-
-	r.GET("/home", func(ctx *gin.Context) {
-		handler.RenderHomePage(ctx)
-	})
-
-	r.GET("/users", func(ctx *gin.Context) {
-		handler.SearchUserForRegistration(ctx)
-	})
+	r.GET("/blogs/:tag", handler.GetBlogByTags)
 
 	go func() {
 		log.Println("Running Server on http://localhost:4200")

@@ -45,28 +45,20 @@ func main() {
 	// Add Logger and Recovery middleware
 	r.Use(gin.Logger(), gin.Recovery())
 
-	r.POST("/register", func(ctx *gin.Context) {
-		handler.Register(ctx)
-	})
+	r.POST("/register", handler.Register)
 
-	r.POST("/login", func(ctx *gin.Context) {
-		handler.Login(ctx)
-	})
+	r.POST("/login", handler.Login)
 
-	r.DELETE("/login/:sessionToken", func(ctx *gin.Context) {
-		handler.Logout(ctx)
-	})
+	r.DELETE("/login/:sessionToken", handler.Logout)
 
-	r.GET("/users/:username", func(ctx *gin.Context) {
-		handler.SearchUser(ctx)
-	})
+	r.GET("/users/:username", handler.SearchUser)
+
+	r.GET("/blogs/:tag", handler.GetBlogsByTags)
 
 	go func() {
 		log.Println("Running Server on http://localhost:8080")
 		r.Run("localhost:8080")
 	}()
-
-	// r.HandleFunc("/blog/{tag}", handler.GetBlogsByTags).Methods("GET")
 
 	var choi string
 

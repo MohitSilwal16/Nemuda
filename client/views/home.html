@@ -18,14 +18,14 @@
   </header>
   <hr/>
   <div class="relative flex overflow-hidden">
-    <nav class="w-1/6 h-screen pt-6 font-semibold border-r-2" id = "nav-bar">
-      <p class="m-2 cursor-pointer" style="text-decoration: underline;" onclick="toggleNavbarFocus('All')" hx-get="/blog/All" hx-target="#blogs">All</p>
-      <p class="m-2 cursor-pointer" onclick="toggleNavbarFocus('Political')" hx-get="/blog/Political" hx-target="#blogs">Political</p>
-      <p class="m-2 cursor-pointer" onclick="toggleNavbarFocus('Science')" hx-get="/blog/Science" hx-target="#blogs">Science</p>
-      <p class="m-2 cursor-pointer" onclick="toggleNavbarFocus('Technical')" hx-get="/blog/Technical" hx-target="#blogs">Technical</p>
-      <p class="m-2 cursor-pointer" onclick="toggleNavbarFocus('Educational')" hx-get="/blog/Educational" hx-target="#blogs">Educational</p>
-      <p class="m-2 cursor-pointer" onclick="toggleNavbarFocus('Geographical')" hx-get="/blog/Geographical" hx-target="#blogs">Geographical</p>
-      <p class="m-2 cursor-pointer" onclick="toggleNavbarFocus('Other')" hx-get="/blog/Other" hx-target="#blogs">Other</p>
+    <nav class="w-1/6 h-screen pt-6 font-semibold border-r-2" id = "nav-bar" hx-get="/blogs/All" hx-trigger="load" hx-target="#blogs">
+      <p class="m-2 cursor-pointer" style="text-decoration: underline;" onclick="toggleNavbarFocus('All')" hx-get="/blogs/All" hx-target="#blogs">All</p>
+      <p class="m-2 cursor-pointer" onclick="toggleNavbarFocus('Political')" hx-get="/blogs/Political" hx-target="#blogs">Political</p>
+      <p class="m-2 cursor-pointer" onclick="toggleNavbarFocus('Science')" hx-get="/blogs/Science" hx-target="#blogs">Science</p>
+      <p class="m-2 cursor-pointer" onclick="toggleNavbarFocus('Technical')" hx-get="/blogs/Technical" hx-target="#blogs">Technical</p>
+      <p class="m-2 cursor-pointer" onclick="toggleNavbarFocus('Educational')" hx-get="/blogs/Educational" hx-target="#blogs">Educational</p>
+      <p class="m-2 cursor-pointer" onclick="toggleNavbarFocus('Geographical')" hx-get="/blogs/Geographical" hx-target="#blogs">Geographical</p>
+      <p class="m-2 cursor-pointer" onclick="toggleNavbarFocus('Other')" hx-get="/blogs/Other" hx-target="#blogs">Other</p>
     </nav>
     <main class="w-5/6 overflow-y-auto scroll-bar" id="blogs">
      {{ template "blog.html" . }}
