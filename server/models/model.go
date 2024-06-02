@@ -1,7 +1,5 @@
 package models
 
-import "go.mongodb.org/mongo-driver/bson/primitive"
-
 type User struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
@@ -9,17 +7,17 @@ type User struct {
 }
 
 type Blog struct {
-	BlogId      primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
-	Username    string             `json:"username"`
-	Title       string             `json:"title"`
-	Tags        []string           `json:"tags"`
-	Description string             `json:"description"`
-	Likes       uint               `json:"likes"`
-	Comments    []Comment          `json:"comments"`
+	// BlogId      primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
+	Username    string    `json:"username"`
+	Title       string    `json:"title"`
+	Tags        []string  `json:"tags"`
+	Description string    `json:"description"`
+	Likes       uint      `json:"likes"`
+	Comments    []Comment `json:"comments"`
 }
 
 type Comment struct {
-	CommentId   primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
-	Username    string             `json:"username"`
-	Description string             `json:"description"`
+	// CommentId   primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
+	Username    string `json:"username"`
+	Description string `json:"description"`
 }

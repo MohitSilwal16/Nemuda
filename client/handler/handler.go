@@ -821,7 +821,7 @@ func GetBlogByTags(ctx *gin.Context) {
 	ctx.Header("Content-Type", "text/html")
 
 	tag := ctx.Param("tag")
-	tag = strings.ToLower(tag)
+	tag = strings.Title(tag)
 
 	ctxTimeout, cancelFunc := context.WithTimeout(context.Background(), 3*time.Second)
 

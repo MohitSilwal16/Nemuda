@@ -56,7 +56,7 @@ func GetBlogsByTags(tag string) ([]models.Blog, error) {
 	if tag == "All" {
 		filter = bson.M{}
 	} else {
-		filter = bson.M{"Tags": bson.M{"$in": []string{tag}}}
+		filter = bson.M{"tags": bson.M{"$in": []string{tag}}}
 	}
 
 	cursor, err := mongoDBCollection.Find(context.Background(), filter)

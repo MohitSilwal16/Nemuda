@@ -7,7 +7,6 @@ import (
 
 	"github.com/MohitSilwal16/Nemuda/db"
 	"github.com/MohitSilwal16/Nemuda/handler"
-	"github.com/MohitSilwal16/Nemuda/models"
 	"github.com/MohitSilwal16/Nemuda/utils"
 	"github.com/gin-gonic/gin"
 )
@@ -29,11 +28,11 @@ func init() {
 		os.Exit(1)
 	}
 
-	err = db.AddBlog(models.Blog{Username: "Nimesh", Title: "Hello", Tags: []string{"Technical"}, Description: "This a technical blog by Nimesh Gadhvi", Likes: 0, Comments: []models.Comment{}})
+	// err = db.AddBlog(models.Blog{Username: "Nimesh", Title: "Hello", Tags: []string{"Technical"}, Description: "This a technical blog by Nimesh Gadhvi", Likes: 0, Comments: []models.Comment{}})
 
-	if err != nil {
-		log.Panicln(err)
-	}
+	// if err != nil {
+	// 	log.Panicln(err)
+	// }
 }
 
 func main() {
