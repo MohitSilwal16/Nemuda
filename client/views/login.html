@@ -141,12 +141,14 @@
       if (username.value == "") {
         userError.innerHTML = "This field is mandatory";
         username.focus();
+        pass.value = "";
         return false;
       }
 
       if (username.value.length < 5 || username.value.length > 20) {
         userError.innerHTML = "Min 5 letters & Max 20 letters";
         username.focus();
+        pass.value = "";
         return false;
       }
 

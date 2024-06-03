@@ -150,18 +150,21 @@
       if (username.value == "") {
         userError.innerHTML = "This field is mandatory";
         username.focus();
+        pass.value = "";
         return false;
       }
 
       if (username.value.length < 5 || username.value.length > 20) {
         userError.innerHTML = "Min 5 letters & Max 20 letters";
         username.focus();
+        pass.value = "";
         return false;
       }
 
       if (username.value.match(/^[a-zA-Z0-9]+$/) === null) {
         userError.innerHTML = "Username should be alphanumeric";
         username.focus();
+        pass.value = "";
         return false;
       }
 
@@ -169,6 +172,7 @@
       if (userError.innerHTML == "Username is already used") {
         passError.innerHTML = "";
         username.focus();
+        pass.value = "";
         return false;
       }
       userError.innerHTML = "";

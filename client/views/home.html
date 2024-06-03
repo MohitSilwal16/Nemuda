@@ -6,7 +6,7 @@
 >
   <header class="flex font-semibold">
     <div class="w-1/6 py-6 border-r-2 cursor-pointer">Nemu</div>
-    <div class="w-4/6 py-6 text-center" id="title-heading">All</div>
+    <div class="w-4/6 py-6 text-center" id="title-heading">{{ .Tag }}</div>
     <button
       class="m-4 text-2xl font-normal bg-blue-700 rounded-md w-36 hover:bg-blue-800"
       hx-delete="/login"
@@ -18,32 +18,18 @@
   </header>
   <hr/>
   <div class="relative flex overflow-hidden">
-    <nav class="w-1/6 h-screen pt-6 font-semibold border-r-2" id = "nav-bar" hx-get="/blogs/All" hx-trigger="load" hx-target="#blogs">
-      <p class="m-2 cursor-pointer" style="text-decoration: underline;" onclick="toggleNavbarFocus('All')" hx-get="/blogs/All" hx-target="#blogs">All</p>
-      <p class="m-2 cursor-pointer" onclick="toggleNavbarFocus('Political')" hx-get="/blogs/Political" hx-target="#blogs">Political</p>
-      <p class="m-2 cursor-pointer" onclick="toggleNavbarFocus('Science')" hx-get="/blogs/Science" hx-target="#blogs">Science</p>
-      <p class="m-2 cursor-pointer" onclick="toggleNavbarFocus('Technical')" hx-get="/blogs/Technical" hx-target="#blogs">Technical</p>
-      <p class="m-2 cursor-pointer" onclick="toggleNavbarFocus('Educational')" hx-get="/blogs/Educational" hx-target="#blogs">Educational</p>
-      <p class="m-2 cursor-pointer" onclick="toggleNavbarFocus('Geographical')" hx-get="/blogs/Geographical" hx-target="#blogs">Geographical</p>
-      <p class="m-2 cursor-pointer" onclick="toggleNavbarFocus('Other')" hx-get="/blogs/Other" hx-target="#blogs">Other</p>
+    <nav class="w-1/6 h-screen pt-6 font-semibold border-r-2" id="nav-bar">
+      <p class="m-2 cursor-pointer" {{if eq .Tag "All"}}style="text-decoration: underline;"{{end}} onclick="toggleNavbarFocus('All')" hx-get="/blogs/All" hx-target="#home-body" hx-swap="outerHTML">All</p>
+      <p class="m-2 cursor-pointer" {{if eq .Tag "Political"}}style="text-decoration: underline;"{{end}} onclick="toggleNavbarFocus('Political')" hx-get="/blogs/Political" hx-target="#home-body" hx-swap="outerHTML">Political</p>
+      <p class="m-2 cursor-pointer" {{if eq .Tag "Science"}}style="text-decoration: underline;"{{end}} onclick="toggleNavbarFocus('Science')" hx-get="/blogs/Science" hx-target="#home-body" hx-swap="outerHTML">Science</p>
+      <p class="m-2 cursor-pointer" {{if eq .Tag "Technical"}}style="text-decoration: underline;"{{end}} onclick="toggleNavbarFocus('Technical')" hx-get="/blogs/Technical" hx-target="#home-body" hx-swap="outerHTML">Technical</p>
+      <p class="m-2 cursor-pointer" {{if eq .Tag "Educational"}}style="text-decoration: underline;"{{end}} onclick="toggleNavbarFocus('Educational')" hx-get="/blogs/Educational" hx-target="#home-body" hx-swap="outerHTML">Educational</p>
+      <p class="m-2 cursor-pointer" {{if eq .Tag "Geographical"}}style="text-decoration: underline;"{{end}} onclick="toggleNavbarFocus('Geographical')" hx-get="/blogs/Geographical" hx-target="#home-body" hx-swap="outerHTML">Geographical</p>
+      <p class="m-2 cursor-pointer" {{if eq .Tag "Other"}}style="text-decoration: underline;"{{end}} onclick="toggleNavbarFocus('Other')" hx-get="/blogs/Other" hx-target="#home-body" hx-swap="outerHTML">Other</p>
     </nav>
-    <main class="w-5/6 overflow-y-auto scroll-bar" id="blogs">
+        <main class="w-5/6 overflow-y-auto scroll-bar" id="blogs">
      {{ template "blog.html" . }}
     </main>
     <img src="../static/images/add_post.png" class="absolute h-16 cursor-pointer right-10 bottom-10 hover:opacity-70"></img>
   </div>
-  <script>
-    // Toggle underline for tags
-    function toggleNavbarFocus(title){
-      let titles = document.getElementById("nav-bar").children;
-      for (let t of titles){
-        if (t.innerHTML != title){
-          t.removeAttribute("style");
-        } else{
-          t.setAttribute("style","text-decoration:underline");
-          document.getElementById("title-heading").innerHTML = title;
-        }
-      }
-    }
-  </script>
 </div>

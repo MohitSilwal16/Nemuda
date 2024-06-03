@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -19,6 +20,9 @@ import (
 )
 
 const BASE_URL = "http://localhost:8080/"
+
+const INTERNAL_SERVER_ERROR_MESSAGE = "<script>alert('Internal Server Error');</script>"
+const REQUEST_TIMED_OUT_MESSAGE = "<script>alert('Request Timed Out');</script>"
 
 func setSessionTokenInCookie(w http.ResponseWriter, token string) {
 	cookie := &http.Cookie{
@@ -53,6 +57,85 @@ func deleteSessionTokenFromCookie(w http.ResponseWriter) {
 	http.SetCookie(w, cookie)
 }
 
+func fetchBlogsByTag(tag string, sessionToken string) ([]model.Blog, error) {
+	// 200 => Blogs found
+	// 201 => No blog found for the specific tag
+	// 202 => Invalid Session Token
+	// 500 => Internal Server Error
+
+	ctxTimeout, cancelFunc := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancelFunc()
+
+	URL := BASE_URL + "blogs/" + tag + "?sessionToken=" + sessionToken
+	requestToBackend_server, err := http.NewRequestWithContext(ctxTimeout, "GET", URL, nil)
+
+	if err != nil {
+		log.Println("Error: ", err)
+		log.Println("Description: Cannot Create GET Request with Context")
+
+		return nil, err
+	}
+
+	res, err := http.DefaultClient.Do(requestToBackend_server)
+
+	if err != nil {
+		if ctxTimeout.Err() == context.DeadlineExceeded {
+			log.Println("Error: ", err)
+			log.Println("Description: Back-end server didn't responsed in given time")
+
+			return nil, err
+		}
+		log.Println("Error: ", err)
+		log.Println("Description: Cannot send POST request(with timeout(context)) to back-end server")
+
+		return nil, err
+	}
+
+	defer res.Body.Close()
+
+	if res.StatusCode == 200 {
+		responseJSONData, err := io.ReadAll(res.Body)
+
+		defer res.Body.Close()
+
+		if err != nil {
+			log.Println("Error: ", err)
+			log.Println("Decription: Cannot read body of response as JSON data")
+
+			return nil, err
+		}
+
+		var responseBlogsList []model.Blog
+		err = json.Unmarshal(responseJSONData, &responseBlogsList)
+		if err != nil {
+			log.Println("Error: ", err)
+			log.Println("Decription: Cannot read body of response as JSON data")
+
+			return nil, err
+		}
+		return responseBlogsList, nil
+	}
+	if res.StatusCode == 201 {
+		// TODO: Add Decorative container for "No Blogs found for this tag"
+		response := "No Blogs found for " + tag + " tag"
+		log.Println(response)
+
+		return nil, nil
+	}
+	if res.StatusCode == 202 {
+		return nil, errors.New("SESSION TIMED OUT")
+	}
+	if res.StatusCode == 500 {
+		log.Println("Error: Back-end server has Internal Server Error")
+
+	} else {
+		log.Println("Bug: Unexpected Status Code")
+	}
+	return nil, errors.New("INTERNAL SERVER ERROR")
+
+}
+
+// Handlers
 func DefaultRoute(ctx *gin.Context) {
 	// Set the Content-Type header to "text/html"
 	ctx.Header("Content-Type", "text/html")
@@ -66,56 +149,103 @@ func RenderInitPage(ctx *gin.Context) {
 
 	sessionToken := getSessionTokenFromCookie(ctx.Request)
 
-	// if sessionToken != "" && checkDuplicateToken(sessionToken) {
-	if sessionToken != "" {
-		RenderHomePage(ctx)
+	ctxTimeout, cancelFunc := context.WithTimeout(context.Background(), 3*time.Second)
+
+	defer cancelFunc()
+
+	URL := BASE_URL + sessionToken
+
+	requestToBackend_Server, err := http.NewRequestWithContext(ctxTimeout, "GET", URL, nil)
+
+	if err != nil {
+		log.Println("Error: ", err)
+		log.Println("Description: Cannot Create DELETE Request with Context")
+		fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
+		return
+	}
+
+	res, err := http.DefaultClient.Do(requestToBackend_Server)
+
+	if err != nil {
+		if ctxTimeout.Err() == context.DeadlineExceeded {
+			log.Println("Error: ", err)
+			log.Println("Description: Back-end server didn't responsed in given time")
+			fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
+			return
+		}
+		log.Println("Error: ", err)
+		log.Println("Description: Cannot send DELETE request(with timeout(context)) to back-end server")
+		fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
+		return
+	}
+
+	if res.StatusCode == 200 {
+		tag := "All"
+		blogs, err := fetchBlogsByTag(tag, sessionToken)
+
+		if err == nil {
+			RenderHomePage(ctx, blogs, tag)
+		} else if err == context.DeadlineExceeded {
+			RenderHomePage(ctx, nil, "Request Timed Out")
+		} else if err.Error() == "SESSION TIMED OUT" {
+			RenderLoginPage(ctx, "Session Timed Out")
+		} else {
+			fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
+		}
+	} else if res.StatusCode == 500 {
+		fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
 	} else {
-		RenderLoginPage(ctx)
+		RenderLoginPage(ctx, "")
 	}
 }
 
-func RenderRegsiterPage(ctx *gin.Context) {
+func RenderRegsiterPage(ctx *gin.Context, message string) {
 	// Set the Content-Type header to "text/html"
 	ctx.Header("Content-Type", "text/html")
 
 	tmpl := template.Must(template.ParseFiles("./views/register.html"))
-	err := tmpl.Execute(ctx.Writer, nil)
+	err := tmpl.Execute(ctx.Writer, message)
 
 	if err != nil {
 		log.Println("Error: ", err)
 		log.Println("Description: Error in tmpl.Execute() in RengerRegisterPage()")
 
-		fmt.Fprint(ctx.Writer, "<script>Internal Server Error</script>")
+		fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
 	}
 }
 
-func RenderLoginPage(ctx *gin.Context) {
+func RenderLoginPage(ctx *gin.Context, message string) {
 	// Set the Content-Type header to "text/html"
 	ctx.Header("Content-Type", "text/html")
 
 	tmpl := template.Must(template.ParseFiles("./views/login.html"))
-	err := tmpl.Execute(ctx.Writer, nil)
+	err := tmpl.Execute(ctx.Writer, message)
 
 	if err != nil {
 		log.Println("Error: ", err)
 		log.Println("Description: Error in tmpl.Execute() in RenderLoginPage()")
 
-		fmt.Fprint(ctx.Writer, "<script>Internal Server Error</script>")
+		fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
 	}
 }
 
-func RenderHomePage(ctx *gin.Context) {
+func RenderHomePage(ctx *gin.Context, blogs []model.Blog, tag string) {
 	// Set the Content-Type header to "text/html"
 	ctx.Header("Content-Type", "text/html")
 
+	data := map[string]interface{}{
+		"Blogs": blogs,
+		"Tag":   tag,
+	}
+
 	tmpl := template.Must(template.ParseFiles("./views/home.html", "./views/blog.html"))
-	err := tmpl.Execute(ctx.Writer, nil)
+	err := tmpl.Execute(ctx.Writer, data)
 
 	if err != nil {
 		log.Println("Error: ", err)
 		log.Println("Description: Error in tmpl.Execute() in RenderHomePage()")
 
-		fmt.Fprint(ctx.Writer, "<script>Internal Server Error</script>")
+		fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
 	}
 }
 
@@ -144,45 +274,19 @@ func Register(ctx *gin.Context) {
 		log.Println("Description: Client's data is not in JSON format")
 		response := "Data isn't in JSON format"
 
-		tmpl := template.Must(template.ParseFiles("./views/register.html"))
-		err := tmpl.Execute(ctx.Writer, response)
-		if err != nil {
-			log.Println("Error: ", err)
-			log.Println("Description: Error in tmpl.Execute() in Register()")
-		}
+		RenderRegsiterPage(ctx, response)
 		return
 	}
 
 	if user.Username == "" || user.Password == "" {
 		response := "Username or Password is Empty"
-
-		tmpl := template.Must(template.ParseFiles("./views/register.html"))
-		err := tmpl.Execute(ctx.Writer, response)
-		if err != nil {
-			log.Println("Error: ", err)
-			log.Println("Description: Error in tmpl.Execute() in Register()")
-			return
-		}
+		RenderRegsiterPage(ctx, response)
 	} else if !regexp.MustCompile(`^[a-zA-Z0-9]{5,20}$`).MatchString(user.Username) {
 		response := "Username should be alphanumeric b'twin 5-20 chars"
-
-		tmpl := template.Must(template.ParseFiles("./views/register.html"))
-		err := tmpl.Execute(ctx.Writer, response)
-		if err != nil {
-			log.Println("Error: ", err)
-			log.Println("Description: Error in tmpl.Execute() in Register()")
-			return
-		}
+		RenderRegsiterPage(ctx, response)
 	} else if !utils.IsPasswordInFormat(user.Password) {
 		response := "Password: 8+ chars, lower & upper case, digit, symbol"
-
-		tmpl := template.Must(template.ParseFiles("./views/register.html"))
-		err := tmpl.Execute(ctx.Writer, response)
-		if err != nil {
-			log.Println("Error: ", err)
-			log.Println("Description: Error in tmpl.Execute() in Register()")
-			return
-		}
+		RenderRegsiterPage(ctx, response)
 	} else {
 		userJSON, err := json.Marshal(user)
 
@@ -190,13 +294,7 @@ func Register(ctx *gin.Context) {
 			log.Println("Error: ", err)
 			log.Println("Description: Cannot parse Client's data to JSON")
 			response := "Cannot Parse data to JSON"
-
-			tmpl := template.Must(template.ParseFiles("./views/register.html"))
-			err := tmpl.Execute(ctx.Writer, response)
-			if err != nil {
-				log.Println("Error: ", err)
-				log.Println("Description: Error in tmpl.Execute() in Register()")
-			}
+			RenderRegsiterPage(ctx, response)
 			return
 		}
 
@@ -211,37 +309,25 @@ func Register(ctx *gin.Context) {
 		if err != nil {
 			log.Println("Error: ", err)
 			log.Println("Description: Cannot Create POST Request with Context")
-			response := "Internal Server Error"
 
-			tmpl := template.Must(template.ParseFiles("./views/register.html"))
-			err := tmpl.Execute(ctx.Writer, response)
-			if err != nil {
-				log.Println("Error: ", err)
-				log.Println("Description: Error in tmpl.Execute() in Register()")
-			}
+			RenderRegsiterPage(ctx, "Internal Server Error")
 			return
 		}
 		requestToBackend_Server.Header.Set("Content-Type", "application/json")
 
-		client := http.Client{
-			Timeout: 3 * time.Second,
-		}
-
 		// Send request(with timeout) to back-end server
-		res, err := client.Do(requestToBackend_Server)
+		res, err := http.DefaultClient.Do(requestToBackend_Server)
 
 		if err != nil {
 			if ctxTimeout.Err() == context.DeadlineExceeded {
 				log.Println("Error: ", err)
 				log.Println("Description: Back-end server didn't responsed in given time")
-			} else {
-				log.Println("Error: ", err)
-				log.Println("Description: Cannot send POST request(with timeout(context)) to back-end server")
+				RenderRegsiterPage(ctx, "Request Timed Out")
+				return
 			}
-			response := "Internal Server Error"
-
-			tmpl := template.Must(template.ParseFiles("./views/register.html"))
-			tmpl.Execute(ctx.Writer, response)
+			log.Println("Error: ", err)
+			log.Println("Description: Cannot send POST request(with timeout(context)) to back-end server")
+			RenderRegsiterPage(ctx, "Internal Server Error")
 			return
 		}
 
@@ -253,14 +339,8 @@ func Register(ctx *gin.Context) {
 			if err != nil {
 				log.Println("Error: ", err)
 				log.Println("Decription: Cannot read body of response as JSON data")
-				response := "Internal Server Error"
 
-				tmpl := template.Must(template.ParseFiles("./views/register.html"))
-				err := tmpl.Execute(ctx.Writer, response)
-				if err != nil {
-					log.Println("Error: ", err)
-					log.Println("Description: Error in tmpl.Execute() in Register()")
-				}
+				RenderRegsiterPage(ctx, "Internal Server Error")
 				return
 			}
 
@@ -269,76 +349,40 @@ func Register(ctx *gin.Context) {
 			if err != nil {
 				log.Println("Error: ", err)
 				log.Println("Decription: Cannot read body of response")
-				response := "Internal Server Error"
 
-				tmpl := template.Must(template.ParseFiles("./views/register.html"))
-				err := tmpl.Execute(ctx.Writer, response)
-				if err != nil {
-					log.Println("Error: ", err)
-					log.Println("Description: Error in tmpl.Execute() in Register()")
-				}
+				RenderRegsiterPage(ctx, "Internal Server Error")
 				return
 			}
 
 			sessionToken := responseDataStructure["sessionToken"]
-			responseMessage := responseDataStructure["message"]
-
-			if responseMessage != "Registered Successfully" {
-				log.Println("Error: Back-end server didn't send the message of 'Registered Successfully'")
-				log.Println("There might be some problem in back-end server")
-				response := "Internal Server Error"
-
-				tmpl := template.Must(template.ParseFiles("./views/register.html"))
-				err := tmpl.Execute(ctx.Writer, response)
-				if err != nil {
-					log.Println("Error: ", err)
-					log.Println("Description: Error in tmpl.Execute() in Register()")
-				}
-				return
-			}
 
 			// No Session Token is sent from back-end server
 			if sessionToken == "" {
 				log.Println("Error: Session Token not provided by back-end server")
-				response := "Internal Server Error"
-
-				tmpl := template.Must(template.ParseFiles("./views/register.html"))
-				err := tmpl.Execute(ctx.Writer, response)
-				if err != nil {
-					log.Println("Error: ", err)
-					log.Println("Description: Error in tmpl.Execute() in Register()")
-				}
+				RenderRegsiterPage(ctx, "Internal Server Error")
 				return
 			}
 			// Save session token in cookie of user
 			setSessionTokenInCookie(ctx.Writer, sessionToken)
 
-			// TODO: Fetch blogs from server
-			tmpl := template.Must(template.ParseFiles("./views/home.html", "./views/blog.html"))
-			err = tmpl.Execute(ctx.Writer, nil)
-			if err != nil {
-				log.Println("Error: ", err)
-				log.Println("Description: Error in tmpl.Execute() in Register()")
-				return
+			tag := "All"
+			blogs, err := fetchBlogsByTag(tag, sessionToken)
+
+			if err == nil {
+				RenderHomePage(ctx, blogs, tag)
+			} else if err == context.DeadlineExceeded {
+				RenderHomePage(ctx, nil, "Request Timed Out")
+			} else if err.Error() == "SESSION TIMED OUT" {
+				RenderLoginPage(ctx, "Session Timed Out")
+			} else {
+				fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
 			}
 		} else if res.StatusCode == 206 {
-			tmpl := template.Must(template.ParseFiles("./views/register.html"))
-			err := tmpl.Execute(ctx.Writer, "Username is already used")
-			if err != nil {
-				log.Println("Error: ", err)
-				log.Println("Description: Error in tmpl.Execute() in Register()")
-				return
-			}
+			RenderRegsiterPage(ctx, "Username is already used")
 		} else if res.StatusCode == 500 {
 			log.Println("Error: Back-end server has Internal Server Error")
 
-			tmpl := template.Must(template.ParseFiles("./views/register.html"))
-			err := tmpl.Execute(ctx.Writer, "Internal Server Error")
-			if err != nil {
-				log.Println("Error: ", err)
-				log.Println("Description: Error in tmpl.Execute() in Register()")
-				return
-			}
+			RenderRegsiterPage(ctx, "Internal Server Error")
 		} else {
 			// We already filtered data above & checked whether
 			// Username, Password is in correct format & not empty
@@ -347,13 +391,7 @@ func Register(ctx *gin.Context) {
 			log.Println("But still we get response of inconsistent data or unfiltered data")
 			log.Println("Either there's some logic issue in back-end server or issue in filtering data in client server(front-end server)")
 
-			tmpl := template.Must(template.ParseFiles("./views/register.html"))
-			err := tmpl.Execute(ctx.Writer, "Some Problem Occurred")
-			if err != nil {
-				log.Println("Error: ", err)
-				log.Println("Description: Error in tmpl.Execute() in Register()")
-				return
-			}
+			RenderRegsiterPage(ctx, "Internal Server Error")
 		}
 	}
 }
@@ -381,233 +419,131 @@ func Login(ctx *gin.Context) {
 	if err != nil {
 		log.Println("Error: ", err)
 		log.Println("Description: Client's data is not in JSON format")
-		response := "Data isn't in JSON format"
-
-		tmpl := template.Must(template.ParseFiles("./views/login.html"))
-		err := tmpl.Execute(ctx.Writer, response)
-		if err != nil {
-			log.Println("Error: ", err)
-			log.Println("Description: Error in tmpl.Execute() in Login()")
-		}
+		RenderLoginPage(ctx, "User data isn't in format")
 		return
 	}
 
 	if user.Username == "" || user.Password == "" {
 		response := "Username or Password is Empty"
 
-		tmpl := template.Must(template.ParseFiles("./views/login.html"))
-		err := tmpl.Execute(ctx.Writer, response)
-		if err != nil {
-			log.Println("Error: ", err)
-			log.Println("Description: Error in tmpl.Execute() in Login()")
-			return
-		}
+		RenderLoginPage(ctx, response)
+		return
 	} else if !regexp.MustCompile(`^[a-zA-Z0-9]{5,20}$`).MatchString(user.Username) {
 		response := "Username should be alphanumeric b'twin 5-20 chars"
 
-		tmpl := template.Must(template.ParseFiles("./views/login.html"))
-		err := tmpl.Execute(ctx.Writer, response)
-		if err != nil {
-			log.Println("Error: ", err)
-			log.Println("Description: Error in tmpl.Execute() in Login()")
-			return
-		}
+		RenderLoginPage(ctx, response)
+		return
 	} else if !utils.IsPasswordInFormat(user.Password) {
-		// Don't want to give idea to anonymous user idea about password pattern
+		// Don't want to give idea to anonymous user idea about password pattern or format
 		response := "Invalid Credentials"
 
-		tmpl := template.Must(template.ParseFiles("./views/login.html"))
-		err := tmpl.Execute(ctx.Writer, response)
+		RenderLoginPage(ctx, response)
+		return
+	}
+	userJSON, err := json.Marshal(user)
+
+	if err != nil {
+		log.Println("Error: ", err)
+		log.Println("Description: Cannot parse Client's data to JSON")
+		response := "Cannot Parse data to JSON"
+
+		RenderLoginPage(ctx, response)
+		return
+	}
+
+	ctxTimeout, cancelFunction := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancelFunction()
+
+	URL := BASE_URL + "login"
+
+	// Create Request with Timeout
+	requestToBackend_Server, err := http.NewRequestWithContext(ctxTimeout, "POST", URL, bytes.NewBuffer(userJSON))
+
+	if err != nil {
+		log.Println("Error: ", err)
+		log.Println("Description: Cannot Create POST Request with Context")
+		RenderLoginPage(ctx, "Internal Server Error")
+	}
+	requestToBackend_Server.Header.Set("Content-Type", "application/json")
+
+	// Send request(with timeout) to back-end server
+	res, err := http.DefaultClient.Do(requestToBackend_Server)
+
+	if err != nil {
+		if ctxTimeout.Err() == context.DeadlineExceeded {
+			log.Println("Error: ", err)
+			log.Println("Description: Back-end server didn't responsed in given time")
+
+			RenderLoginPage(ctx, "Request Timed Out")
+			return
+		}
+		log.Println("Error: ", err)
+		log.Println("Description: Cannot send POST request(with timeout(context)) to back-end server")
+
+		RenderLoginPage(ctx, "Internal Server Error")
+		return
+	}
+
+	defer res.Body.Close()
+
+	if res.StatusCode == 200 {
+		responseJSONData, err := io.ReadAll(res.Body)
+
 		if err != nil {
 			log.Println("Error: ", err)
-			log.Println("Description: Error in tmpl.Execute() in Login()")
+			log.Println("Decription: Cannot read body of response")
+			RenderLoginPage(ctx, "Internal Server Error")
 			return
 		}
-	} else {
-		userJSON, err := json.Marshal(user)
 
+		var responseDataStructure map[string]string
+		err = json.Unmarshal(responseJSONData, &responseDataStructure)
 		if err != nil {
 			log.Println("Error: ", err)
-			log.Println("Description: Cannot parse Client's data to JSON")
-			response := "Cannot Parse data to JSON"
-
-			tmpl := template.Must(template.ParseFiles("./views/login.html"))
-			err := tmpl.Execute(ctx.Writer, response)
-			if err != nil {
-				log.Println("Error: ", err)
-				log.Println("Description: Error in tmpl.Execute() in Login()")
-			}
+			log.Println("Decription: Cannot read body of response as JSON data")
+			RenderLoginPage(ctx, "Internal Server Error")
 			return
 		}
+		sessionToken := responseDataStructure["sessionToken"]
 
-		ctxTimeout, cancelFunction := context.WithTimeout(context.Background(), 3*time.Second)
-		defer cancelFunction()
+		// No Session Token is sent from back-end server
+		if sessionToken == "" {
+			log.Println("Error: Session Token not provided by back-end server")
 
-		URL := BASE_URL + "login"
-
-		// Create Request with Timeout
-		requestToBackend_Server, err := http.NewRequestWithContext(ctxTimeout, "POST", URL, bytes.NewBuffer(userJSON))
-
-		if err != nil {
-			log.Println("Error: ", err)
-			log.Println("Description: Cannot Create POST Request with Context")
-			response := "Internal Server Error"
-
-			tmpl := template.Must(template.ParseFiles("./views/login.html"))
-			err := tmpl.Execute(ctx.Writer, response)
-			if err != nil {
-				log.Println("Error: ", err)
-				log.Println("Description: Error in tmpl.Execute() in Login()")
-			}
+			RenderLoginPage(ctx, "Session Timed Out")
 			return
 		}
-		requestToBackend_Server.Header.Set("Content-Type", "application/json")
+		// Save session token in cookie of user
+		setSessionTokenInCookie(ctx.Writer, sessionToken)
 
-		client := http.Client{
-			Timeout: 3 * time.Second,
-		}
+		tag := "All"
+		blogs, err := fetchBlogsByTag(tag, sessionToken)
 
-		// Send request(with timeout) to back-end server
-		res, err := client.Do(requestToBackend_Server)
-
-		if err != nil {
-			if ctxTimeout.Err() == context.DeadlineExceeded {
-				log.Println("Error: ", err)
-				log.Println("Description: Back-end server didn't responsed in given time")
-			} else {
-				log.Println("Error: ", err)
-				log.Println("Description: Cannot send POST request(with timeout(context)) to back-end server")
-			}
-			response := "Internal Server Error"
-
-			tmpl := template.Must(template.ParseFiles("./views/login.html"))
-			err := tmpl.Execute(ctx.Writer, response)
-			if err != nil {
-				log.Println("Error: ", err)
-				log.Println("Description: Error in tmpl.Execute() in Login()")
-			}
-			return
-		}
-
-		defer res.Body.Close()
-
-		if res.StatusCode == 200 {
-			responseJSONData, err := io.ReadAll(res.Body)
-
-			if err != nil {
-				log.Println("Error: ", err)
-				log.Println("Decription: Cannot read body of response")
-				response := "Internal Server Error"
-
-				tmpl := template.Must(template.ParseFiles("./views/login.html"))
-				err := tmpl.Execute(ctx.Writer, response)
-				if err != nil {
-					log.Println("Error: ", err)
-					log.Println("Description: Error in tmpl.Execute() in Login()")
-				}
-				return
-			}
-
-			var responseDataStructure map[string]string
-			err = json.Unmarshal(responseJSONData, &responseDataStructure)
-			if err != nil {
-				log.Println("Error: ", err)
-				log.Println("Decription: Cannot read body of response as JSON data")
-				response := "Internal Server Error"
-
-				tmpl := template.Must(template.ParseFiles("./views/login.html"))
-				err := tmpl.Execute(ctx.Writer, response)
-				if err != nil {
-					log.Println("Error: ", err)
-					log.Println("Description: Error in tmpl.Execute() in Login()")
-				}
-				return
-			}
-
-			sessionToken := responseDataStructure["sessionToken"]
-			responseMessage := responseDataStructure["message"]
-
-			if responseMessage != "Login Successful" {
-				log.Println("Error: Back-end server didn't send the message of 'Login Successful'")
-				log.Println("There might be some problem in back-end server")
-				response := "Internal Server Error"
-
-				tmpl := template.Must(template.ParseFiles("./views/login.html"))
-				err := tmpl.Execute(ctx.Writer, response)
-				if err != nil {
-					log.Println("Error: ", err)
-					log.Println("Description: Error in tmpl.Execute() in Login()")
-				}
-				return
-			}
-
-			// No Session Token is sent from back-end server
-			if sessionToken == "" {
-				log.Println("Error: Session Token not provided by back-end server")
-				response := "Internal Server Error"
-
-				tmpl := template.Must(template.ParseFiles("./views/login.html"))
-				err := tmpl.Execute(ctx.Writer, response)
-				if err != nil {
-					log.Println("Error: ", err)
-					log.Println("Description: Error in tmpl.Execute() in Login()")
-				}
-				return
-			}
-			// Save session token in cookie of user
-			setSessionTokenInCookie(ctx.Writer, sessionToken)
-
-			// TODO: Fetch blogs from server
-			tmpl := template.Must(template.ParseFiles("./views/home.html", "./views/blog.html"))
-			err = tmpl.Execute(ctx.Writer, nil)
-			if err != nil {
-				log.Println("Error: ", err)
-				log.Println("Description: Error in tmpl.Execute() in Login()")
-				return
-			}
-
-		} else if res.StatusCode == 205 {
-			tmpl := template.Must(template.ParseFiles("./views/login.html"))
-			err = tmpl.Execute(ctx.Writer, "User doesn't exists")
-			if err != nil {
-				log.Println("Error: ", err)
-				log.Println("Description: Error in tmpl.Execute() in Login()")
-				return
-			}
-		} else if res.StatusCode == 206 {
-			tmpl := template.Must(template.ParseFiles("./views/login.html"))
-			err = tmpl.Execute(ctx.Writer, "Invalid Credentials")
-			if err != nil {
-				log.Println("Error: ", err)
-				log.Println("Description: Error in tmpl.Execute() in Login()")
-				return
-			}
-		} else if res.StatusCode == 500 {
-			log.Println("Error: Back-end server has Internal Server Error")
-
-			tmpl := template.Must(template.ParseFiles("./views/login.html"))
-			err = tmpl.Execute(ctx.Writer, "Internal Server Error")
-			if err != nil {
-				log.Println("Error: ", err)
-				log.Println("Description: Error in tmpl.Execute() in Login()")
-				return
-			}
+		if err == nil {
+			RenderHomePage(ctx, blogs, tag)
+		} else if err == context.DeadlineExceeded {
+			RenderHomePage(ctx, nil, "Request Timed Out")
+		} else if err.Error() == "SESSION TIMED OUT" {
+			RenderLoginPage(ctx, "Session Timed Out")
 		} else {
-			// We already filtered data above & checked whether
-			// Username, Password is in correct format & not empty
-			// Also we ensured that data is in correct format(JSON)
-			log.Println("Error: Client side already filtered data")
-			log.Println("But still we get response of inconsistent data or unfiltered data")
-			log.Println("Either there's some logic issue in back-end server or issue in filtering data in client server(front-end server)")
-
-			tmpl := template.Must(template.ParseFiles("./views/login.html"))
-			err = tmpl.Execute(ctx.Writer, "Some Problem Occurred")
-			if err != nil {
-				log.Println("Error: ", err)
-				log.Println("Description: Error in tmpl.Execute() in Login()")
-				return
-			}
+			fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
 		}
+	} else if res.StatusCode == 205 {
+		RenderLoginPage(ctx, "User doesn't exists")
+	} else if res.StatusCode == 206 {
+		RenderLoginPage(ctx, "Invalid Credentials")
+	} else if res.StatusCode == 500 {
+		log.Println("Error: Back-end server has Internal Server Error")
+		RenderLoginPage(ctx, "Internal Server Error")
+	} else {
+		// We already filtered data above & checked whether
+		// Username, Password is in correct format & not empty
+		// Also we ensured that data is in correct format(JSON)
+		log.Println("Error: Client side already filtered data")
+		log.Println("But still we get response of inconsistent data or unfiltered data")
+		log.Println("Either there's some logic issue in back-end server or issue in filtering data in client server(front-end server)")
+
+		RenderLoginPage(ctx, "Internal Server Error")
 	}
 }
 
@@ -636,41 +572,29 @@ func Logout(ctx *gin.Context) {
 	if err != nil {
 		log.Println("Error: ", err)
 		log.Println("Description: Cannot Create DELETE Request with Context")
-		response := "<script>Internal Server Error</script>"
 
-		tmpl := template.Must(template.ParseFiles("./views/home.html"))
-		err := tmpl.Execute(ctx.Writer, response)
-		if err != nil {
-			log.Println("Error: ", err)
-			log.Println("Description: Error in tmpl.Execute() in Logout()")
-		}
+		RenderLoginPage(ctx, INTERNAL_SERVER_ERROR_MESSAGE)
 		return
 	}
 
-	client := http.Client{
-		Timeout: 3 * time.Second,
-	}
+	requestToBackend_Server.Header.Set("Content-Type", "application/json")
 
 	// Send request(with timeout) to back-end server
-	res, err := client.Do(requestToBackend_Server)
+	res, err := http.DefaultClient.Do(requestToBackend_Server)
 
 	if err != nil {
 		if ctxTimeout.Err() == context.DeadlineExceeded {
 			log.Println("Error: ", err)
 			log.Println("Description: Back-end server didn't responsed in given time")
-		} else {
-			log.Println("Error: ", err)
-			log.Println("Description: Cannot send DELETE request(with timeout(context)) to back-end server")
-		}
-		response := "<script>Internal Server Error</script>"
 
-		tmpl := template.Must(template.ParseFiles("./views/home.html"))
-		err := tmpl.Execute(ctx.Writer, response)
-		if err != nil {
-			log.Println("Error: ", err)
-			log.Println("Description: Error in tmpl.Execute() in Logout()")
+			RenderLoginPage(ctx, "Request Timed Out")
 			return
 		}
+		log.Println("Error: ", err)
+		log.Println("Description: Cannot send POST request(with timeout(context)) to back-end server")
+
+		RenderLoginPage(ctx, "Internal Server Error")
+		return
 	}
 
 	defer res.Body.Close()
@@ -682,23 +606,9 @@ func Logout(ctx *gin.Context) {
 		deleteSessionTokenFromCookie(ctx.Writer)
 
 		// Even if session token is invalid log out user
-		tmpl := template.Must(template.ParseFiles("./views/login.html"))
-		err = tmpl.Execute(ctx.Writer, nil)
-		if err != nil {
-			log.Println("Error: ", err)
-			log.Println("Description: Error in tmpl.Execute() in Logout()")
-			return
-		}
+		RenderLoginPage(ctx, "")
 	} else if res.StatusCode == 500 {
-		response := "<script>Internal Server Error</script>"
-
-		tmpl := template.Must(template.ParseFiles("./views/home.html"))
-		err = tmpl.Execute(ctx.Writer, response)
-		if err != nil {
-			log.Println("Error: ", err)
-			log.Println("Description: Error in tmpl.Execute() in Logout()")
-			return
-		}
+		RenderLoginPage(ctx, "Internal Server Error")
 	}
 }
 
@@ -711,17 +621,9 @@ func SearchUserForRegistration(ctx *gin.Context) {
 	ctx.Header("Content-Type", "text/html")
 
 	username := ctx.Query("username")
-	log.Println("Username: ", username)
 
 	if len(username) < 5 {
-		log.Println("Length of username < 5")
-		tmpl, err := template.New("t").Parse("")
-		if err != nil {
-			log.Println("Error: ", err)
-			log.Println("Description: Error in tmpl.Execute() in SearchUserForRegistration()")
-			return
-		}
-		tmpl.Execute(ctx.Writer, nil)
+		fmt.Fprint(ctx.Writer, "")
 		return
 	}
 
@@ -738,21 +640,11 @@ func SearchUserForRegistration(ctx *gin.Context) {
 		log.Println("Error: ", err)
 		log.Println("Description: Cannot Create GET Request with Context")
 
-		tmpl, err := template.New("t").Parse("")
-		if err != nil {
-			log.Println("Error: ", err)
-			log.Println("Description: Error in tmpl.Execute() in SearchUserForRegistration")
-			return
-		}
-		tmpl.Execute(ctx.Writer, nil)
+		fmt.Fprint(ctx.Writer, "")
 		return
 	}
 
-	client := http.Client{
-		Timeout: time.Second,
-	}
-
-	res, err := client.Do(requestToBackend_Server)
+	res, err := http.DefaultClient.Do(requestToBackend_Server)
 
 	if err != nil {
 		if ctxTimeout.Err() == context.DeadlineExceeded {
@@ -763,58 +655,28 @@ func SearchUserForRegistration(ctx *gin.Context) {
 			log.Println("Description: Cannot send GET request(with timeout(context)) to back-end server")
 		}
 
-		tmpl, err := template.New("t").Parse("")
-		if err != nil {
-			log.Println("Error: ", err)
-			log.Println("Description: Error in tmpl.Execute() in SearchUserForRegistration")
-			return
-		}
-		tmpl.Execute(ctx.Writer, nil)
+		fmt.Fprint(ctx.Writer, "")
 		return
 	}
 	defer res.Body.Close()
 
 	if res.StatusCode == 200 {
-		tmpl, err := template.New("t").Parse("Username is already used")
-		if err != nil {
-			log.Println("Error: ", err)
-			log.Println("Description: Error in tmpl.Execute() in SearchUserForRegistration")
-			return
-		}
-		tmpl.Execute(ctx.Writer, nil)
+		fmt.Fprint(ctx.Writer, "Username is already used")
 	} else if res.StatusCode == 201 {
-		log.Println("User not found")
-		tmpl, err := template.New("t").Parse("")
-		if err != nil {
-			log.Println("Error: ", err)
-			log.Println("Description: Error in tmpl.Execute() in SearchUserForRegistration")
-			return
-		}
-		tmpl.Execute(ctx.Writer, nil)
+		fmt.Fprint(ctx.Writer, "")
 	} else if res.StatusCode == 500 {
 		log.Println("Error: Back-end server has Internal Server Error")
 
-		tmpl, err := template.New("t").Parse("")
-		if err != nil {
-			log.Println("Error: ", err)
-			log.Println("Description: Error in tmpl.Execute() in SearchUserForRegistration")
-			return
-		}
-		tmpl.Execute(ctx.Writer, nil)
+		fmt.Fprint(ctx.Writer, "")
 	} else {
-		tmpl, err := template.New("t").Parse("")
-		if err != nil {
-			log.Println("Error: ", err)
-			log.Println("Description: Back-end Server is sending some other status code")
-			return
-		}
-		tmpl.Execute(ctx.Writer, nil)
+		fmt.Fprint(ctx.Writer, "")
 	}
 }
 
 func GetBlogByTags(ctx *gin.Context) {
 	// 200 => Blogs found
 	// 201 => No blog found for the specific tag
+	// 202 => Invalid Session Token
 	// 500 => Internal Server Error
 
 	// Set the Content-Type header to "text/html"
@@ -823,123 +685,17 @@ func GetBlogByTags(ctx *gin.Context) {
 	tag := ctx.Param("tag")
 	tag = strings.Title(tag)
 
-	ctxTimeout, cancelFunc := context.WithTimeout(context.Background(), 3*time.Second)
+	sessionToken := getSessionTokenFromCookie(ctx.Request)
 
-	defer cancelFunc()
+	blogs, err := fetchBlogsByTag(tag, sessionToken)
 
-	URL := BASE_URL + "blogs/" + tag
-
-	requestToBackend_server, err := http.NewRequestWithContext(ctxTimeout, "GET", URL, nil)
-
-	if err != nil {
-		log.Println("Error: ", err)
-		log.Println("Description: Cannot Create GET Request with Context")
-
-		tmpl, err := template.New("t").Parse("")
-		if err != nil {
-			log.Println("Error: ", err)
-			log.Println("Description: Error in tmpl.Execute() in GetBlogByTags")
-			return
-		}
-		tmpl.Execute(ctx.Writer, nil)
-		return
-	}
-
-	client := http.Client{
-		Timeout: 3 * time.Second,
-	}
-
-	res, err := client.Do(requestToBackend_server)
-
-	if err != nil {
-		if ctxTimeout.Err() == context.DeadlineExceeded {
-			log.Println("Error: ", err)
-			log.Println("Description: Back-end server didn't responsed in given time")
-		} else {
-			log.Println("Error: ", err)
-			log.Println("Description: Cannot send GET request(with timeout(context)) to back-end server")
-		}
-
-		tmpl, err := template.New("t").Parse("")
-		if err != nil {
-			log.Println("Error: ", err)
-			log.Println("Description: Error in tmpl.Execute() in SearchUserForRegistration")
-			return
-		}
-		tmpl.Execute(ctx.Writer, nil)
-		return
-	}
-
-	if res.StatusCode == 200 {
-		responseJSONData, err := io.ReadAll(res.Body)
-
-		defer res.Body.Close()
-
-		if err != nil {
-			log.Println("Error: ", err)
-			log.Println("Decription: Cannot read body of response as JSON data")
-
-			tmpl, err := template.New("t").Parse("<script>alert('Internal Server Error');</script>")
-
-			if err != nil {
-				log.Println("Error: ", err)
-				log.Println("Description: Error in tmpl.Execute() in GetBlogByTags()")
-			}
-			tmpl.Execute(ctx.Writer, nil)
-			return
-		}
-
-		var responseBlogsList []model.Blog
-		err = json.Unmarshal(responseJSONData, &responseBlogsList)
-		if err != nil {
-			log.Println("Error: ", err)
-			log.Println("Decription: Cannot read body of response as JSON data")
-
-			tmpl, err := template.New("t").Parse("<script>alert('Internal Server Error');</script>")
-
-			if err != nil {
-				log.Println("Error: ", err)
-				log.Println("Description: Error in tmpl.Execute() in GetBlogByTags()")
-			}
-			tmpl.Execute(ctx.Writer, nil)
-			return
-		}
-
-		tmpl := template.Must(template.ParseFiles("./views/blog.html"))
-		err = tmpl.Execute(ctx.Writer, responseBlogsList)
-		if err != nil {
-			log.Println("Error: ", err)
-			log.Println("Description: Error in tmpl.Execute() in GetBlogByTags")
-			return
-		}
-
-	} else if res.StatusCode == 201 {
-		// TODO: Add Decorative container for "No Blogs for this tag"
-		log.Println("Blogs not found for " + tag + " tag")
-		tmpl, err := template.New("t").Parse("No Blogs for " + tag + " tag")
-		if err != nil {
-			log.Println("Error: ", err)
-			log.Println("Description: Error in tmpl.Execute() in GetBlogByTags")
-			return
-		}
-		tmpl.Execute(ctx.Writer, nil)
-	} else if res.StatusCode == 500 {
-		log.Println("Error: Back-end server has Internal Server Error")
-
-		tmpl, err := template.New("t").Parse("<script>alert('Internal Server Error');</script>")
-		if err != nil {
-			log.Println("Error: ", err)
-			log.Println("Description: Error in tmpl.Execute() in GetBlogByTags")
-			return
-		}
-		tmpl.Execute(ctx.Writer, nil)
+	if err == nil {
+		RenderHomePage(ctx, blogs, tag)
+	} else if err == context.DeadlineExceeded {
+		RenderHomePage(ctx, nil, "Request Timed Out")
+	} else if err.Error() == "SESSION TIMED OUT" {
+		RenderLoginPage(ctx, "Session Timed Out")
 	} else {
-		tmpl, err := template.New("t").Parse("<script>alert('Internal Server Error');</script>")
-		if err != nil {
-			log.Println("Error: ", err)
-			log.Println("Description: Back-end Server is sending some other status code")
-			return
-		}
-		tmpl.Execute(ctx.Writer, nil)
+		fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
 	}
 }

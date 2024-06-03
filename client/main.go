@@ -29,18 +29,22 @@ func main() {
 	r.GET("/", handler.DefaultRoute)
 	r.GET("/nemuda", handler.RenderInitPage)
 
-	r.GET("/register", handler.RenderRegsiterPage)
+	r.GET("/register", func(ctx *gin.Context) {
+		handler.RenderRegsiterPage(ctx, "")
+	})
 	r.POST("/register", handler.Register)
 
-	r.GET("/login", handler.RenderLoginPage)
+	r.GET("/login", func(ctx *gin.Context) {
+		handler.RenderLoginPage(ctx, "")
+	})
 	r.POST("/login", handler.Login)
 	r.DELETE("/login", handler.Logout)
 
 	r.GET("/users", handler.SearchUserForRegistration)
 
-	r.GET("/home", handler.RenderHomePage)
-
-	r.GET("/blogs/:tag", handler.GetBlogByTags)
+	r.GET("/blogs/:tag", func(ctx *gin.Context) {
+		handler.GetBlogByTags(ctx)
+	})
 
 	go func() {
 		log.Println("Running Server on http://localhost:4200")

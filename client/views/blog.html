@@ -1,4 +1,6 @@
-{{ range .}}
+{{ if not .Blogs}}
+<p>No Blogs found for {{ .Tag }} tag</p>
+{{ end }} {{ range .Blogs }}
 <div
   class="grid grid-flow-col grid-cols-3 mx-32 my-10 overflow-hidden border rounded-lg shadow-xl cursor-pointer hover:border-2 hover:border-white"
 >

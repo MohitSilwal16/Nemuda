@@ -13,6 +13,36 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+func VerifySessionToken(ctx *gin.Context) {
+	// 200 => Session Token is Valid
+	// 201 => Session Token is Invalid
+	// 500 => Internal Server Error
+
+	// Set the Content-Type header to "application/json"
+	ctx.Header("Content-Type", "application/json")
+
+	sessionToken := ctx.Param("sessionToken")
+
+	isTokenValid, err := db.IsSessionTokenDuplicate(sessionToken)
+
+	if err != nil {
+		log.Println("Error: ", err)
+		ctx.JSON(500, gin.H{
+			"message": "Internal Server Error",
+		})
+		return
+	}
+	if isTokenValid {
+		ctx.JSON(200, gin.H{
+			"message": "Session Token is Valid",
+		})
+		return
+	}
+	ctx.JSON(201, gin.H{
+		"message": "Session Token is Invalid",
+	})
+}
+
 func Register(ctx *gin.Context) {
 	// AVOID USING 204 BECAUSE IT DOESN'T SEND ANY CONTENT OR BODY
 
@@ -253,10 +283,36 @@ func SearchUser(ctx *gin.Context) {
 func GetBlogsByTags(ctx *gin.Context) {
 	// 200 => Blogs found
 	// 201 => No blog found for the specific tag
+	// 202 => Invalid Session Token
 	// 500 => Internal Server Error
 
 	// Set the Content-Type header to "application/json"
 	ctx.Header("Content-Type", "application/json")
+
+	sessionToken := ctx.Query("sessionToken")
+
+	if sessionToken == "" {
+		ctx.JSON(202, gin.H{
+			"message": "Invalid Session Token",
+		})
+		return
+	}
+
+	isSessionTokenValid, err := db.IsSessionTokenDuplicate(sessionToken)
+	if err != nil {
+		log.Println("Error: ", err)
+		ctx.JSON(500, gin.H{
+			"message": "Internal Server Error",
+		})
+		return
+	}
+
+	if !isSessionTokenValid {
+		ctx.JSON(202, gin.H{
+			"message": "Invalid Session Token",
+		})
+		return
+	}
 
 	tag := ctx.Param("tag")
 	tag = strings.Title(tag)
@@ -281,14 +337,34 @@ func GetBlogsByTags(ctx *gin.Context) {
 }
 
 func AddBlog(ctx *gin.Context) {
-	// 200 => Blogs added
+	// 200 => Blog added
+	// 201 => Title or description is empty
+	// 202 => Invalid Session Token
 	// 500 => Internal Server Error
 
 	// Set the Content-Type header to "application/json"
 	ctx.Header("Content-Type", "application/json")
 
+	sessionToken := ctx.Query("sessionToken")
+
+	isSessionTokenValid, err := db.IsSessionTokenDuplicate(sessionToken)
+	if err != nil {
+		log.Println("Error: ", err)
+		ctx.JSON(500, gin.H{
+			"message": "Internal Server Error",
+		})
+		return
+	}
+
+	if !isSessionTokenValid {
+		ctx.JSON(203, gin.H{
+			"message": "Invalid Session Token",
+		})
+		return
+	}
+
 	var blog models.Blog
-	err := json.NewDecoder(ctx.Request.Body).Decode(&blog)
+	err = json.NewDecoder(ctx.Request.Body).Decode(&blog)
 
 	if err != nil {
 		log.Println("Error: ", err)
@@ -297,4 +373,12 @@ func AddBlog(ctx *gin.Context) {
 		})
 		return
 	}
+
+	if blog.Title == "" {
+		ctx.JSON(201, gin.H{
+			"message": "Provided data is not in correct format(JSON).",
+		})
+		return
+	}
+	// Incomplete method
 }

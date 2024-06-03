@@ -57,6 +57,8 @@ func main() {
 	// Add Logger and Recovery middleware
 	r.Use(gin.Logger(), gin.Recovery())
 
+	r.GET("/:sessionToken", handler.VerifySessionToken)
+
 	r.POST("/register", handler.Register)
 
 	r.POST("/login", handler.Login)
