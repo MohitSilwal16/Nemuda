@@ -1,11 +1,12 @@
 {{ if not .Blogs}}
-<p>No Blogs found for {{ .Tag }} tag</p>
+<!-- Add decorative container for "No Blogs found for xyz tag" -->
+<p>No Blogs found for {{ .RequestedTag }} tag</p>
 {{ end }} {{ range .Blogs }}
 <div
   class="grid grid-flow-col grid-cols-3 mx-32 my-10 overflow-hidden border rounded-lg shadow-xl cursor-pointer hover:border-2 hover:border-white"
 >
   <img
-    src="../static/images/image.png"
+    src="{{ .ImagePath }}"
     class="transition duration-500 ease-in bg-white h-60 hover:scale-125"
     alt="Image"
   />
@@ -16,8 +17,8 @@
     <span class="font-semibold">Title:</span>
     {{ .Title }}
     <br />
-    <span class="font-semibold">Tags:</span>
-    {{ range .Tags }} {{ . }} {{ end }}
+    <span class="font-semibold">Tag:</span>
+    {{ .Tag }}
     <br />
     <span class="font-semibold">Description:</span>
     {{ .Description }}

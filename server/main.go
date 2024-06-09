@@ -27,12 +27,6 @@ func init() {
 		log.Print(err)
 		os.Exit(1)
 	}
-
-	// err = db.AddBlog(models.Blog{Username: "Nimesh", Title: "Hello", Tags: []string{"Technical"}, Description: "This a technical blog by Nimesh Gadhvi", Likes: 0, Comments: []models.Comment{}})
-
-	// if err != nil {
-	// 	log.Panicln(err)
-	// }
 }
 
 func main() {
@@ -67,7 +61,11 @@ func main() {
 
 	r.GET("/users/:username", handler.SearchUser)
 
-	r.GET("/blogs/:tag", handler.GetBlogsByTags)
+	r.GET("/blogs/:tag", handler.GetBlogsByTag)
+
+	r.GET("/blogs/title/:title", handler.SearchBlogByTitle)
+
+	r.POST("/blogs", handler.PostBlog)
 
 	go func() {
 		log.Println("Running Server on http://localhost:8080")

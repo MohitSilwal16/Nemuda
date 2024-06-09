@@ -98,7 +98,7 @@ func DeleteTokenInDB(sessionToken string) error {
 		return err
 	}
 
-	// Return error is session token is not present in db
+	// Return error if session token is not present in db
 	if !isSessionTokenValid {
 		return errors.New("INVALID SESSION TOKEN")
 	}
@@ -174,4 +174,30 @@ func VerifyIdPass(user models.User) (bool, error) {
 	defer rows.Close()
 
 	return rows.Next(), nil
+}
+
+func GetUsernameBySessionToken(sessionToken string) (string, error) {
+	if sessionToken == "" {
+		return "", errors.New("INVALID SESSION TOKEN")
+	}
+
+	rows, err := sqlDB.Query("SELECT Username FROM Users WHERE Token = ? LIMIT 1;", sessionToken)
+
+	if err != nil {
+		return "", err
+	}
+
+	defer rows.Close()
+
+	var username string
+	if rows.Next() {
+		err = rows.Scan(&username)
+
+		if err != nil {
+			return "", err
+		}
+		return username, nil
+	} else {
+		return "", errors.New("INVALID SESSION TOKEN")
+	}
 }

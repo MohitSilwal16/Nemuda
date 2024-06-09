@@ -13,6 +13,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// Tags' slice
+var tagsList = []string{"Political", "Technical", "Educational", "Geographical", "Programming", "Other"}
+
 func VerifySessionToken(ctx *gin.Context) {
 	// 200 => Session Token is Valid
 	// 201 => Session Token is Invalid
@@ -280,7 +283,7 @@ func SearchUser(ctx *gin.Context) {
 	})
 }
 
-func GetBlogsByTags(ctx *gin.Context) {
+func GetBlogsByTag(ctx *gin.Context) {
 	// 200 => Blogs found
 	// 201 => No blog found for the specific tag
 	// 202 => Invalid Session Token
@@ -317,7 +320,7 @@ func GetBlogsByTags(ctx *gin.Context) {
 	tag := ctx.Param("tag")
 	tag = strings.Title(tag)
 
-	blogs, err := db.GetBlogsByTags(tag)
+	blogs, err := db.GetBlogsByTag(tag)
 
 	if err != nil {
 		log.Println("Error: ", err)
@@ -336,9 +339,9 @@ func GetBlogsByTags(ctx *gin.Context) {
 	ctx.JSON(200, blogs)
 }
 
-func AddBlog(ctx *gin.Context) {
-	// 200 => Blog added
-	// 201 => Title or description is empty
+func SearchBlogByTitle(ctx *gin.Context) {
+	// 200 => Title already found
+	// 201 => Title not used
 	// 202 => Invalid Session Token
 	// 500 => Internal Server Error
 
@@ -346,6 +349,70 @@ func AddBlog(ctx *gin.Context) {
 	ctx.Header("Content-Type", "application/json")
 
 	sessionToken := ctx.Query("sessionToken")
+
+	if sessionToken == "" {
+		ctx.JSON(202, gin.H{
+			"message": "Invalid Session Token",
+		})
+		return
+	}
+
+	isSessionTokenValid, err := db.IsSessionTokenDuplicate(sessionToken)
+	if err != nil {
+		log.Println("Error: ", err)
+		ctx.JSON(500, gin.H{
+			"message": "Internal Server Error",
+		})
+		return
+	}
+
+	if !isSessionTokenValid {
+		ctx.JSON(202, gin.H{
+			"message": "Invalid Session Token",
+		})
+		return
+	}
+
+	title := ctx.Param("title")
+
+	found, err := db.SearchBlogByTitle(title)
+	if err != nil {
+		ctx.JSON(500, gin.H{
+			"message": "Internal Server Error",
+		})
+		return
+	}
+	if found {
+		ctx.JSON(200, gin.H{
+			"message": "Title Already Used",
+		})
+		return
+	}
+	ctx.JSON(201, gin.H{
+		"message": "Title Not Used",
+	})
+}
+
+func PostBlog(ctx *gin.Context) {
+	// AVOID USING 204 BECAUSE IT DOESN'T SEND ANY CONTENT OR BODY
+
+	// 200 => Blog added
+	// 201 => Title, Description, Tag is not in requested format(JSON)
+	// 202 => Title is already used
+	// 203 => Invalid Session Token
+	// 500 => Internal Server Error
+
+	// Set the Content-Type header to "application/json"
+	ctx.Header("Content-Type", "application/json")
+
+	sessionToken := ctx.Query("sessionToken")
+
+	if sessionToken == "" {
+		ctx.JSON(203, gin.H{
+			"message": "Invalid Session Token",
+		})
+		return
+	}
 
 	isSessionTokenValid, err := db.IsSessionTokenDuplicate(sessionToken)
 	if err != nil {
@@ -374,11 +441,57 @@ func AddBlog(ctx *gin.Context) {
 		return
 	}
 
-	if blog.Title == "" {
-		ctx.JSON(201, gin.H{
-			"message": "Provided data is not in correct format(JSON).",
-		})
+	blog.Username, err = db.GetUsernameBySessionToken(sessionToken)
+
+	if err != nil {
+		if err.Error() == "INVALID SESSION TOKEN" {
+			ctx.JSON(203, gin.H{
+				"message": "Invalid Session Token",
+			})
+		} else {
+			ctx.JSON(500, gin.H{
+				"message": "Internal Server Error",
+			})
+		}
 		return
 	}
-	// Incomplete method
+	blog.Tag = strings.Title(blog.Tag)
+
+	if !regexp.MustCompile(`^[a-zA-Z0-9 ,'"&]*$`).MatchString(blog.Title) {
+		response := "Title should be alphanumeric b'twin 5-20 chars"
+		ctx.JSON(201, gin.H{
+			"message": response},
+		)
+	} else if !utils.Contains(tagsList, blog.Tag) {
+		response := "Unknown tag"
+		ctx.JSON(201, gin.H{
+			"message": response},
+		)
+	} else if len(blog.Description) < 4 || len(blog.Description) > 50 {
+		response := "Desc: Min 4 letters & Max 50 letters"
+		ctx.JSON(201, gin.H{
+			"message": response},
+		)
+	} else {
+		err = db.AddBlog(blog)
+
+		if err != nil {
+			log.Println("Error:", err)
+			if err.Error() == "TITLE IS ALREADY USED" {
+				ctx.JSON(202, gin.H{
+					"message": "Title is already used",
+				})
+				return
+			} else if err.Error() == "result.InsertedID is empty" {
+				log.Println("Description: result.InsertedID is empty")
+			}
+			ctx.JSON(500, gin.H{
+				"message": "Internal Server Error",
+			})
+			return
+		}
+		ctx.JSON(200, gin.H{
+			"message": "Blog Added",
+		})
+	}
 }

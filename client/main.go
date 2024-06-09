@@ -42,9 +42,12 @@ func main() {
 
 	r.GET("/users", handler.SearchUserForRegistration)
 
-	r.GET("/blogs/:tag", func(ctx *gin.Context) {
-		handler.GetBlogByTags(ctx)
+	r.GET("/blogs/:tag", handler.GetBlogByTag)
+	r.GET("/blogs", func(ctx *gin.Context) {
+		handler.RenderPostBlogPage(ctx, "")
 	})
+	r.POST("/blogs", handler.PostBlog)
+	r.GET("/blogs/title", handler.SearcBlogTitle_BeforePosting)
 
 	go func() {
 		log.Println("Running Server on http://localhost:4200")

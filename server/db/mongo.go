@@ -51,12 +51,12 @@ func Init_Mongo() error {
 	return nil
 }
 
-func GetBlogsByTags(tag string) ([]models.Blog, error) {
+func GetBlogsByTag(tag string) ([]models.Blog, error) {
 	var filter primitive.M
 	if tag == "All" {
 		filter = bson.M{}
 	} else {
-		filter = bson.M{"tags": bson.M{"$in": []string{tag}}}
+		filter = bson.M{"tag": tag}
 	}
 
 	cursor, err := mongoDBCollection.Find(context.Background(), filter)
@@ -79,7 +79,34 @@ func GetBlogsByTags(tag string) ([]models.Blog, error) {
 	return blogs, nil
 }
 
+func SearchBlogByTitle(title string) (bool, error) {
+	filter := bson.M{"title": title}
+
+	result := mongoDBCollection.FindOne(context.Background(), filter)
+
+	var blog models.Blog
+	err := result.Decode(&blog)
+
+	if err == nil {
+		return true, nil
+	}
+
+	if err.Error() == mongo.ErrNoDocuments.Error() {
+		return false, nil
+	} else {
+		return false, err
+	}
+}
+
 func AddBlog(blog models.Blog) error {
+	blogTitleFound, err := SearchBlogByTitle(blog.Title)
+	if err != nil {
+		return err
+	}
+	if blogTitleFound {
+		return errors.New("TITLE IS ALREADY USED")
+	}
+
 	result, err := mongoDBCollection.InsertOne(context.Background(), blog)
 
 	if err != nil {
