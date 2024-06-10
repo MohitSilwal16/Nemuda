@@ -5,7 +5,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/Nemuda/client/handler"
+	"github.com/Nemuda/client/controller"
+	"github.com/Nemuda/client/model"
 	"github.com/Nemuda/client/utils"
 	"github.com/gin-gonic/gin"
 )
@@ -26,34 +27,42 @@ func main() {
 	// Serve static files from the "static" directory
 	r.Static("/static", "./static")
 
-	r.GET("/", handler.DefaultRoute)
-	r.GET("/nemuda", handler.RenderInitPage)
+	r.GET("/", controller.DefaultRoute)
+	r.GET("/nemuda", controller.RenderInitPage)
 
 	r.GET("/register", func(ctx *gin.Context) {
-		handler.RenderRegsiterPage(ctx, "")
+		controller.RenderRegsiterPage(ctx, "")
 	})
-	r.POST("/register", handler.Register)
+	r.POST("/register", controller.Register)
 
 	r.GET("/login", func(ctx *gin.Context) {
-		handler.RenderLoginPage(ctx, "")
+		controller.RenderLoginPage(ctx, "")
 	})
-	r.POST("/login", handler.Login)
-	r.DELETE("/login", handler.Logout)
+	r.POST("/login", controller.Login)
+	r.DELETE("/login", controller.Logout)
 
-	r.GET("/users", handler.SearchUserForRegistration)
+	r.GET("/users", controller.SearchUserForRegistration)
 
-	r.GET("/blogs/:tag", handler.GetBlogsByTag)
+	r.GET("/blogs/:tag", controller.GetBlogsByTag)
 	r.GET("/post_blog", func(ctx *gin.Context) {
-		handler.RenderPostBlogPage(ctx, "")
+		controller.RenderPostBlogPage(ctx, "")
 	})
-	r.POST("/blogs", handler.PostBlog)
-	r.GET("/blogs/title", handler.SearcBlogTitle_BeforePosting)
-	r.GET("/blogs/title/:title", handler.GetBlogByTitle)
 
-	r.POST("/blogs/like/:title", handler.LikeBlog)
-	r.DELETE("/blogs/like/:title", handler.DislikeBlog)
+	r.GET("/update_blog/:title", func(ctx *gin.Context) {
+		controller.RenderUpdateBlogPage(ctx, model.Blog{}, "")
+	})
 
-	r.GET("/blogs/comment/:title", handler.AddComment)
+	r.POST("/blogs", controller.PostBlog)
+	r.PUT("/blogs/:title", controller.UpdateBlog)
+	r.DELETE("/blogs/:title", controller.DeleteBlog)
+
+	r.GET("/blogs/search_title/:method", controller.SearcBlogTitle_BeforePosting)
+	r.GET("/blogs/title/:title", controller.GetBlogByTitle)
+
+	r.POST("/blogs/like/:title", controller.LikeBlog)
+	r.DELETE("/blogs/like/:title", controller.DislikeBlog)
+
+	r.GET("/blogs/comment/:title", controller.AddComment)
 
 	go func() {
 		log.Println("Running Server on http://localhost:4200")

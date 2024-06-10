@@ -1,0 +1,155 @@
+<!doctype html>
+<div
+  class="grid w-screen h-screen grid-rows-4 text-5xl font-semibold text-white bg-no-repeat bg-cover lg:text-2xl bg-register-login"
+  id="post-blog-body"
+>
+  <title>Nemuda</title>
+  <script src="./static/js/htmx.min.js"></script>
+  <link rel="stylesheet" href="./static/css/output.css" />
+  <h1 class="font-bold text-center text-7xl lg:text-5xl mt-60 lg:mt-36">
+    Post Blog
+  </h1>
+  <form
+    class="container w-full row-span-3 p-10 m-10 mx-auto bg-transparent border shadow-2xl lg:w-1/4 rounded-xl backdrop-blur-md"
+    hx-post="/blogs"
+    hx-target="#post-blog-body"
+    hx-swap="outerHTML"
+    hx-trigger="submit[onValidate()]"
+    enctype="multipart/form-data"
+    hx-push-url="/"
+  >
+    <label for="title">Title:</label>
+    <input
+      class="shadow-lg rounded-md pl-2.5 py-1 w-full lg:h-10 h-16 outline-0"
+      type="text"
+      name="title"
+      id="title"
+      hx-get="/blogs/search_title/post"
+      hx-target="#titleError"
+      hx-trigger="input delay:1s"
+      hx-swap="innerHTML"
+      placeholder="Enter Title"
+      autofocus
+      autocomplete="off"
+    />
+    <p id="titleError" class="text-3xl text-red-600 lg:text-lg"></p>
+    <div class="h-8 lg:h-4"></div>
+    <label for="description">Description:</label>
+    <textarea
+      class="shadow-lg rounded-md pl-2.5 py-1 w-full lg:h-20 h-32 outline-0"
+      name="description"
+      id="description"
+      placeholder="Enter Description ..."
+    ></textarea>
+    <p id="descError" class="text-3xl text-red-600 lg:text-lg"></p>
+    <div class="h-20 lg:h-4"></div>
+    <label for="tag">Tag:</label>
+    <select class="py-1 pl-2 rounded-lg" id="tag" name="tag">
+      {{ range .TagsList }}
+      <option>{{ . }}</option>
+      {{ end }}
+    </select>
+    <div class="h-8 lg:h-4"></div>
+    <label for="image">Image:</label>
+    <input
+      class="text-xl shadow-lg rounded-md pl-2.5 py-1 w-full lg:h-10 h-16 outline-0"
+      type="file"
+      name="image"
+      id="image"
+    />
+    <p id="imageError" class="text-3xl text-red-600 lg:text-lg"></p>
+    <div class="h-8 lg:h-4"></div>
+    <!-- Display Server's Response -->
+    <div id="output" class="flex justify-center text-red-600">
+      {{ .Message }}
+    </div>
+    <input
+      class="w-full h-24 py-2 mt-5 border-2 rounded-full shadow-lg cursor-pointer lg:h-14 opacity-80 hover:opacity-100"
+      type="submit"
+      value="Post"
+      id="postButton"
+    />
+    <br />
+  </form>
+
+  <script>
+    function onValidate() {
+      document.getElementById("output").innerHTML = "";
+      let title = document.getElementById("title");
+      let description = document.getElementById("description");
+      let tag = document.getElementById("tag");
+
+      let titleError = document.getElementById("titleError");
+      title.value = title.value.trim();
+
+      if (title.value == "") {
+        titleError.innerHTML = "This field is mandatory";
+        title.focus();
+        return false;
+      }
+
+      if (title.value.length < 4 || title.value.length > 25) {
+        titleError.innerHTML = "Min 4 letters & Max 25 letters";
+        title.focus();
+        return false;
+      }
+
+      if (title.value.match(/^[a-zA-Z0-9 &,'"]*$/) === null) {
+        titleError.innerHTML = "Title should be alphanumeric";
+        title.focus();
+        return false;
+      }
+
+      if (titleError.innerHTML == "Title is already used") {
+        title.focus();
+        return false;
+      }
+
+      titleError.innerHTML = "";
+      let descError = document.getElementById("descError");
+      description.value = description.value.trim();
+
+      if (description.value == "") {
+        descError.innerHTML = "This field is mandatory";
+        description.focus();
+        return false;
+      }
+
+      if (description.value.length < 4 || description.value.length > 50) {
+        descError.innerHTML = "Min 4 letters & Max 50 letters";
+        description.focus();
+        return false;
+      }
+
+      descError.innerHTML = "";
+
+      let image = document.getElementById("image").files[0];
+      let imageError = document.getElementById("imageError");
+
+      if (!image) {
+        imageError.innerHTML = "Select an image";
+        return false;
+      }
+
+      const maxSize = 2 * 1024 * 1024; // 2 MB
+      if (image.size > maxSize) {
+        imageError.innerHTML = "File size exceeds 2MB";
+        return false;
+      }
+
+      const validImageTypes = ["image/jpeg", "image/png", "image/jpg"];
+      if (!validImageTypes.includes(image.type)) {
+        imageError.innerHTML = "Invalid file type, upload an image";
+        return false;
+      }
+      imageError.innerHTML = "";
+
+      let postButton = document.getElementById("postButton");
+      postButton.value = "Posting ...";
+      postButton.setAttribute("disabled", "true");
+      postButton.classList.remove("cursor-pointer");
+      postButton.classList.add("cursor-not-allowed");
+      return true;
+    }
+  </script>
+</div>

@@ -25,6 +25,21 @@
       {{ .Blog.Description }}
     </div>
   </div>
+  {{if .IsEditableDeletable }}
+  <button hx-get="/update_blog/{{ .Blog.Title }}" hx-target="#view-blog-page" hx-swap="outerHTML">
+    Update Blog
+  </button>
+  <br>
+  <button
+    hx-delete="/blogs/{{ .Blog.Title }}"
+    hx-target="#view-blog-page"
+    hx-swap="outerHTML"
+    hx-push-url="/"
+  >
+    Delete Blog
+  </button>
+  <br>
+  {{ end }}
   Likes: {{ .Blog.Likes }} <br />
   Users who liked: {{ range .Blog.LikedUsername }} <br />
   Liked Username: {{ . }}
@@ -33,8 +48,9 @@
   <br />
   Comments: <br />
   {{ range .Blog.Comments }}
-  <p class="font-semibold">Username: {{ .Username }}</p>
-  Description: {{ .Description }}
+  <span class="font-semibold">{{ .Username }}:</span>
+  {{ .Description }}
+  <br />
   <br />
   {{ end }}
 

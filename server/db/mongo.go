@@ -253,3 +253,99 @@ func AddComment(title string, comment models.Comment) error {
 
 	return nil
 }
+
+func IsBlogUpdatable_Deletable(title string, username string) (bool, error) {
+	doesBlogExists, err := SearchBlogByTitle(title)
+
+	if err != nil {
+		return false, err
+	}
+
+	if !doesBlogExists {
+		return false, errors.New("BLOG NOT FOUND")
+	}
+
+	filter := bson.M{
+		"title":    title,
+		"username": username,
+	}
+
+	var blog models.Blog
+	err = mongoDBCollection.FindOne(context.Background(), filter).Decode(&blog)
+
+	if err != nil {
+		if err.Error() == mongo.ErrNoDocuments.Error() {
+			return false, nil
+		}
+		return false, err
+	}
+
+	return true, nil
+}
+
+func UpdateBlog(title string, username string, newTitle string, newDescription string, newImagePath string, newTag string) error {
+	doesBlogExists, err := SearchBlogByTitle(title)
+
+	if err != nil {
+		return err
+	}
+
+	if !doesBlogExists {
+		return errors.New("BLOG NOT FOUND")
+	}
+
+	filter := bson.M{
+		"username": username,
+		"title":    title,
+	}
+
+	updated := bson.M{
+		"$set": bson.M{
+			"title":       newTitle,
+			"description": newDescription,
+			"imagepath":   newImagePath,
+			"tag":         newTag,
+		},
+	}
+
+	result, err := mongoDBCollection.UpdateOne(context.Background(), filter, updated)
+
+	if err != nil {
+		return err
+	}
+
+	if result.ModifiedCount == 0 {
+		return errors.New("USER CANNOT UPDATE THIS BLOG")
+	}
+
+	return nil
+}
+
+func DeleteBlog(title string, username string) error {
+	doesBlogExists, err := SearchBlogByTitle(title)
+
+	if err != nil {
+		return err
+	}
+
+	if !doesBlogExists {
+		return errors.New("BLOG NOT FOUND")
+	}
+
+	filter := bson.M{
+		"username": username,
+		"title":    title,
+	}
+
+	result, err := mongoDBCollection.DeleteOne(context.Background(), filter)
+
+	if err != nil {
+		return err
+	}
+
+	if result.DeletedCount == 0 {
+		return errors.New("USER CANNOT DELETE THIS BLOG")
+	}
+
+	return nil
+}

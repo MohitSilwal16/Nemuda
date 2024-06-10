@@ -73,6 +73,8 @@ func Register(ctx *gin.Context) {
 
 	if err != nil {
 		log.Println("Error: ", err)
+		log.Println("Description: Cannot read JSON data in user object")
+
 		ctx.JSON(201, gin.H{
 			"message": "Provided data is not in correct format(JSON).",
 		})
@@ -158,6 +160,8 @@ func Login(ctx *gin.Context) {
 
 	if err != nil {
 		log.Println("Error: ", err)
+		log.Println("Description: Cannot read JSON data in user object")
+
 		ctx.JSON(201, gin.H{
 			"message": "Provided data is not in correct format(JSON).",
 		})
@@ -461,7 +465,6 @@ func PostBlog(ctx *gin.Context) {
 		}
 		return
 	}
-	blog.Tag = strings.Title(blog.Tag)
 
 	if !regexp.MustCompile(`^[a-zA-Z0-9 ,'"&]*$`).MatchString(blog.Title) {
 		response := "Title should be alphanumeric b'twin 5-20 chars"
@@ -635,6 +638,12 @@ func LikeBlog(ctx *gin.Context) {
 	}
 
 	title := ctx.Param("title")
+	if title == "" {
+		ctx.JSON(201, gin.H{
+			"message": "Title is Empty",
+		})
+		return
+	}
 
 	username, err := db.GetUsernameBySessionToken(sessionToken)
 
@@ -716,6 +725,12 @@ func DislikeBlog(ctx *gin.Context) {
 	}
 
 	title := ctx.Param("title")
+	if title == "" {
+		ctx.JSON(201, gin.H{
+			"message": "Title is Empty",
+		})
+		return
+	}
 
 	username, err := db.GetUsernameBySessionToken(sessionToken)
 
@@ -863,5 +878,325 @@ func AddComment(ctx *gin.Context) {
 	}
 	ctx.JSON(200, gin.H{
 		"message": "Comment Added",
+	})
+}
+
+func UpdateBlog(ctx *gin.Context) {
+	// AVOID USING 204 BECAUSE IT DOESN'T SEND ANY CONTENT OR BODY
+
+	// 200 => Blog Updated
+	// 201 => Data is not in correct format
+	// 202 => User cannot update this blog
+	// 203 => Blog not found
+	// 205 => Invalid Session Token
+	// 206 => Blog Title is already used
+	// 500 => Internal Server Error
+
+	// Set the Content-Type header to "application/json"
+	ctx.Header("Content-Type", "application/json")
+
+	sessionToken := ctx.Query("sessionToken")
+
+	if sessionToken == "" {
+		ctx.JSON(205, gin.H{
+			"message": "Invalid Session Token",
+		})
+		return
+	}
+
+	isSessionTokenValid, err := db.IsSessionTokenDuplicate(sessionToken)
+	if err != nil {
+		log.Println("Error: ", err)
+		ctx.JSON(500, gin.H{
+			"message": "Internal Server Error",
+		})
+		return
+	}
+
+	if !isSessionTokenValid {
+		ctx.JSON(205, gin.H{
+			"message": "Invalid Session Token",
+		})
+		return
+	}
+
+	title := ctx.Query("title")
+
+	if title == "" {
+		ctx.JSON(201, gin.H{
+			"message": "Title is Empty",
+		})
+		return
+	}
+
+	username, err := db.GetUsernameBySessionToken(sessionToken)
+
+	if err != nil {
+		log.Println("Error: ", err)
+		log.Println("Description: Error while fetching username from session token")
+
+		if err.Error() == "INVALID SESSION TOKEN" {
+			ctx.JSON(205, gin.H{
+				"message": "Invalid Session Token",
+			})
+		} else {
+			ctx.JSON(500, gin.H{
+				"message": "Internal Server Error",
+			})
+		}
+		return
+	}
+	var blog models.Blog
+	err = json.NewDecoder(ctx.Request.Body).Decode(&blog)
+
+	if err != nil {
+		log.Println("Error: ", err)
+		log.Println("Description: Cannot read JSON data in blog object")
+
+		ctx.JSON(201, gin.H{
+			"message": "Provided data is not in correct format(JSON).",
+		})
+		return
+	}
+
+	if !regexp.MustCompile(`^[a-zA-Z0-9 ,'"&]*$`).MatchString(blog.Title) {
+		response := "Title should be alphanumeric b'twin 5-20 chars"
+		ctx.JSON(201, gin.H{
+			"message": response},
+		)
+	} else if !utils.Contains(tagsList, blog.Tag) {
+		response := "Unknown tag"
+		ctx.JSON(201, gin.H{
+			"message": response},
+		)
+	} else if len(blog.Description) < 4 || len(blog.Description) > 50 {
+		response := "Desc: Min 4 letters & Max 50 letters"
+		ctx.JSON(201, gin.H{
+			"message": response},
+		)
+	} else {
+		doesBlogExists, err := db.SearchBlogByTitle(blog.Title)
+
+		if err != nil {
+			log.Println("Error: ", err)
+			log.Println("Description: Cannot search blog by title")
+
+			ctx.JSON(500, gin.H{
+				"message": "Internal Server Error",
+			})
+			return
+		}
+		if doesBlogExists {
+			ctx.JSON(206, gin.H{
+				"message": "Blog Title is already used",
+			})
+			return
+		}
+
+		err = db.UpdateBlog(title, username, blog.Title, blog.Description, blog.ImagePath, blog.Tag)
+
+		if err != nil {
+			if err.Error() == "USER CANNOT UPDATE THIS BLOG" {
+				ctx.JSON(202, gin.H{
+					"message": "User cannot update this blog",
+				})
+			} else if err.Error() == "BLOG NOT FOUND" {
+				ctx.JSON(203, gin.H{
+					"message": "Blog Not Found",
+				})
+			} else {
+				log.Println("Error: ", err)
+				log.Println("Description: Cannot Update Blog")
+				ctx.JSON(500, gin.H{
+					"message": "Internal Server Error",
+				})
+			}
+			return
+		}
+		ctx.JSON(200, gin.H{
+			"message": "Blog Updated",
+		})
+	}
+}
+
+func DeleteBlog(ctx *gin.Context) {
+	// AVOID USING 204 BECAUSE IT DOESN'T SEND ANY CONTENT OR BODY
+
+	// 200 => Blog Deleted
+	// 201 => Data is not in correct format
+	// 202 => User cannot delete this blog
+	// 203 => Blog not found
+	// 205 => Invalid Session Token
+	// 500 => Internal Server Error
+
+	// Set the Content-Type header to "application/json"
+	ctx.Header("Content-Type", "application/json")
+
+	sessionToken := ctx.Query("sessionToken")
+
+	if sessionToken == "" {
+		ctx.JSON(205, gin.H{
+			"message": "Invalid Session Token",
+		})
+		return
+	}
+
+	isSessionTokenValid, err := db.IsSessionTokenDuplicate(sessionToken)
+	if err != nil {
+		log.Println("Error: ", err)
+		ctx.JSON(500, gin.H{
+			"message": "Internal Server Error",
+		})
+		return
+	}
+
+	if !isSessionTokenValid {
+		ctx.JSON(205, gin.H{
+			"message": "Invalid Session Token",
+		})
+		return
+	}
+
+	title := ctx.Query("title")
+
+	if title == "" {
+		ctx.JSON(201, gin.H{
+			"message": "Title is Empty",
+		})
+		return
+	}
+
+	username, err := db.GetUsernameBySessionToken(sessionToken)
+
+	if err != nil {
+		log.Println("Error: ", err)
+		log.Println("Description: Error while fetching username from session token")
+
+		if err.Error() == "INVALID SESSION TOKEN" {
+			ctx.JSON(205, gin.H{
+				"message": "Invalid Session Token",
+			})
+		} else {
+			ctx.JSON(500, gin.H{
+				"message": "Internal Server Error",
+			})
+		}
+		return
+	}
+
+	err = db.DeleteBlog(title, username)
+
+	if err != nil {
+		if err.Error() == "USER CANNOT DELETE THIS BLOG" {
+			ctx.JSON(202, gin.H{
+				"message": "User cannot delete this blog",
+			})
+		} else if err.Error() == "BLOG NOT FOUND" {
+			ctx.JSON(203, gin.H{
+				"message": "Blog Not Found",
+			})
+		} else {
+			log.Println("Error: ", err)
+			log.Println("Description: Cannot Delete Blog")
+
+			ctx.JSON(500, gin.H{
+				"message": "Internal Server Error",
+			})
+		}
+		return
+	}
+	ctx.JSON(200, gin.H{
+		"message": "Blog Deleted",
+	})
+}
+
+func CanUserUpdate_DeleteBlog(ctx *gin.Context) {
+	// 200 => User can update/delete blog
+	// 201 => User cannot update/delete blog
+	// 202 => Blog not found
+	// 203 => Invalid Session Token
+	// 500 => Internal Server Error
+
+	// Set the Content-Type header to "application/json"
+	ctx.Header("Content-Type", "application/json")
+
+	sessionToken := ctx.Query("sessionToken")
+
+	if sessionToken == "" {
+		ctx.JSON(203, gin.H{
+			"message": "Invalid Session Token",
+		})
+		return
+	}
+
+	isSessionTokenValid, err := db.IsSessionTokenDuplicate(sessionToken)
+	if err != nil {
+		log.Println("Error: ", err)
+		ctx.JSON(500, gin.H{
+			"message": "Internal Server Error",
+		})
+		return
+	}
+
+	if !isSessionTokenValid {
+		ctx.JSON(203, gin.H{
+			"message": "Invalid Session Token",
+		})
+		return
+	}
+
+	title := ctx.Query("title")
+
+	if title == "" {
+		ctx.JSON(201, gin.H{
+			"message": "Title is Empty",
+		})
+		return
+	}
+
+	username, err := db.GetUsernameBySessionToken(sessionToken)
+
+	if err != nil {
+		log.Println("Error: ", err)
+		log.Println("Description: Error while fetching username from session token")
+
+		if err.Error() == "INVALID SESSION TOKEN" {
+			ctx.JSON(203, gin.H{
+				"message": "Invalid Session Token",
+			})
+		} else {
+			ctx.JSON(500, gin.H{
+				"message": "Internal Server Error",
+			})
+		}
+		return
+	}
+
+	isUpdatble_Deletable, err := db.IsBlogUpdatable_Deletable(title, username)
+
+	if err != nil {
+		log.Println("Error: ", err)
+		log.Println("Description: Cannot like blog")
+
+		if err.Error() == "BLOG NOT FOUND" {
+			ctx.JSON(201, gin.H{
+				"message": "Blog Not Found",
+			})
+		} else {
+			ctx.JSON(500, gin.H{
+				"message": "Internal Server Error",
+			})
+		}
+		return
+	}
+
+	if isUpdatble_Deletable {
+		ctx.JSON(200, gin.H{
+			"message": "User can update or delete blog",
+		})
+		return
+	}
+	ctx.JSON(201, gin.H{
+		"message": "User cannot update or delete blog",
 	})
 }

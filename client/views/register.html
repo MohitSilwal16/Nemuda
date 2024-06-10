@@ -20,6 +20,7 @@
     hx-trigger="submit[onValidate()]"
     hx-target="#register-body"
     hx-swap="outerHTML"
+    hx-push-url="/"
   >
     <h1
       class="flex justify-center mb-20 text-6xl font-semibold lg:mb-10 lg:text-4xl"
@@ -85,6 +86,7 @@
       hx-get="/login"
       hx-target="#register-body"
       hx-swap="outerHTML"
+      hx-push-url="/login"
       >Have an Account ?</a
     >
   </form>

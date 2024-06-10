@@ -20,6 +20,7 @@
     hx-trigger="submit[onValidate()]"
     hx-target="#login-body"
     hx-swap="outerHTML"
+    hx-push-url="/"
   >
     <h1
       class="flex justify-center mb-20 text-6xl font-semibold lg:mb-10 lg:text-4xl"
@@ -81,6 +82,7 @@
       hx-get="/register"
       hx-target="#login-body"
       hx-swap="outerHTML"
+      hx-push-url="/register"
       >New to Nemuda ?</a
     >
   </form>
