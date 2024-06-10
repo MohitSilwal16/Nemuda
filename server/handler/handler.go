@@ -760,3 +760,108 @@ func DislikeBlog(ctx *gin.Context) {
 		"message": "Blog Disliked",
 	})
 }
+
+func AddComment(ctx *gin.Context) {
+	// 200 => Comment Added
+	// 201 => Comment Description or Title is Empty
+	// 202 => Blog not found
+	// 203 => Invalid Session Token
+	// 500 => Internal Server Error
+
+	// Set the Content-Type header to "application/json"
+	ctx.Header("Content-Type", "application/json")
+
+	sessionToken := ctx.Query("sessionToken")
+
+	if sessionToken == "" {
+		ctx.JSON(202, gin.H{
+			"message": "Invalid Session Token",
+		})
+		return
+	}
+
+	isSessionTokenValid, err := db.IsSessionTokenDuplicate(sessionToken)
+	if err != nil {
+		log.Println("Error: ", err)
+		ctx.JSON(500, gin.H{
+			"message": "Internal Server Error",
+		})
+		return
+	}
+
+	if !isSessionTokenValid {
+		ctx.JSON(202, gin.H{
+			"message": "Invalid Session Token",
+		})
+		return
+	}
+
+	title := ctx.Query("title")
+
+	if title == "" {
+		ctx.JSON(201, gin.H{
+			"message": "Title is Empty",
+		})
+		return
+	}
+
+	username, err := db.GetUsernameBySessionToken(sessionToken)
+
+	if err != nil {
+		log.Println("Error: ", err)
+		log.Println("Description: Error while fetching username from session token")
+
+		if err.Error() == "INVALID SESSION TOKEN" {
+			ctx.JSON(202, gin.H{
+				"message": "Invalid Session Token",
+			})
+		} else {
+			ctx.JSON(500, gin.H{
+				"message": "Internal Server Error",
+			})
+		}
+		return
+	}
+
+	commentDescription := ctx.Param("comment")
+
+	if commentDescription == "" {
+		ctx.JSON(201, gin.H{
+			"message": "Comment Description is Empty",
+		})
+		return
+	}
+
+	if len(commentDescription) < 5 || len(commentDescription) > 50 {
+		ctx.JSON(201, gin.H{
+			"message": "Comment: Min 5 & Max 50 letters",
+		})
+		return
+	}
+
+	comment := models.Comment{
+		Username:    username,
+		Description: commentDescription,
+	}
+
+	err = db.AddComment(title, comment)
+
+	if err != nil {
+		if err.Error() == "BLOG NOT FOUND" {
+			ctx.JSON(202, gin.H{
+				"message": "Blog not found",
+			})
+		} else {
+			log.Println("Error :", err)
+			log.Println("Description: Cannot add comment")
+
+			ctx.JSON(500, gin.H{
+				"message": "Internal Server Error",
+			})
+		}
+		return
+	}
+	ctx.JSON(200, gin.H{
+		"message": "Comment Added",
+	})
+}

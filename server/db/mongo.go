@@ -229,3 +229,27 @@ func DislikeBlog(title string, username string) error {
 
 	return nil
 }
+
+func AddComment(title string, comment models.Comment) error {
+	filter := bson.M{
+		"title": title,
+	}
+
+	update := bson.M{
+		"$push": bson.M{
+			"comments": comment,
+		},
+	}
+
+	result, err := mongoDBCollection.UpdateOne(context.Background(), filter, update)
+
+	if err != nil {
+		return err
+	}
+
+	if result.MatchedCount == 0 {
+		return errors.New("BLOG NOT FOUND")
+	}
+
+	return nil
+}

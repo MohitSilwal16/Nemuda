@@ -61,15 +61,16 @@ func main() {
 
 	r.GET("/users/:username", handler.SearchUser)
 
-	r.GET("/blogs/:tag", handler.GetBlogsByTag)
-
 	r.GET("/blogs/title/:title", handler.SearchBlogByTitle)
+
+	r.GET("/blogs/:tag", handler.GetBlogsByTag)
+	r.POST("/blogs", handler.PostBlog)
 
 	r.POST("/blogs/like/:title", handler.LikeBlog)
 	r.GET("/blogs/like/:title", handler.IsBlogLikedByUser)
 	r.DELETE("/blogs/like/:title", handler.DislikeBlog)
 
-	r.POST("/blogs", handler.PostBlog)
+	r.GET("/blogs/comment/:comment", handler.AddComment)
 
 	go func() {
 		log.Println("Running Server on http://localhost:8080")

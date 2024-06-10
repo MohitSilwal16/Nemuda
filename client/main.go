@@ -53,6 +53,8 @@ func main() {
 	r.POST("/blogs/like/:title", handler.LikeBlog)
 	r.DELETE("/blogs/like/:title", handler.DislikeBlog)
 
+	r.GET("/blogs/comment/:title", handler.AddComment)
+
 	go func() {
 		log.Println("Running Server on http://localhost:4200")
 		r.Run("localhost:4200")

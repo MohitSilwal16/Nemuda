@@ -9,6 +9,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strings"
 	"text/template"
@@ -23,6 +24,7 @@ const BASE_URL = "http://localhost:8080/"
 
 const INTERNAL_SERVER_ERROR_MESSAGE = "<script>alert('Internal Server Error');</script>"
 const REQUEST_TIMED_OUT_MESSAGE = "<script>alert('Request Timed Out');</script>"
+const BLOG_NOT_FOUND_MESSAGE = "<script>alert('Blog Not Found');</script>"
 
 // Tags' slice
 var tagsList = []string{"Political", "Technical", "Educational", "Geographical", "Programming", "Other"}
@@ -72,7 +74,7 @@ func isBlogLiked(ctx *gin.Context, title string, sessionToken string) (bool, err
 	ctx.Header("Content-Type", "text/html")
 
 	if len(title) < 5 {
-		fmt.Fprint(ctx.Writer, "<script>alert('Blog Not Found');</script>")
+		fmt.Fprint(ctx.Writer, BLOG_NOT_FOUND_MESSAGE)
 		return false, errors.New("LENGHT OF TITLE IS < 5")
 	}
 
@@ -80,10 +82,10 @@ func isBlogLiked(ctx *gin.Context, title string, sessionToken string) (bool, err
 
 	defer cancelFunc()
 
-	URL := BASE_URL + "blogs/like/" + title + "?sessionToken=" + sessionToken
+	serviceURL := BASE_URL + "blogs/like/" + title + "?sessionToken=" + sessionToken
 
 	// Create Request with Timeout
-	requestToBackend_Server, err := http.NewRequestWithContext(ctxTimeout, "GET", URL, nil)
+	requestToBackend_Server, err := http.NewRequestWithContext(ctxTimeout, "GET", serviceURL, nil)
 
 	if err != nil {
 		log.Println("Error: ", err)
@@ -115,8 +117,7 @@ func isBlogLiked(ctx *gin.Context, title string, sessionToken string) (bool, err
 	} else if res.StatusCode == 201 {
 		return false, nil
 	} else if res.StatusCode == 202 {
-		response := "<script>alert('Blog Not Found');</script>"
-		fmt.Fprint(ctx.Writer, response)
+		fmt.Fprint(ctx.Writer, BLOG_NOT_FOUND_MESSAGE)
 		return false, errors.New("BLOG NOT FOUND")
 	} else if res.StatusCode == 203 {
 		RenderLoginPage(ctx, "Session Timed Out")
@@ -140,8 +141,8 @@ func fetchBlogsByTag(ctx *gin.Context, tag string, sessionToken string) {
 	ctxTimeout, cancelFunc := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancelFunc()
 
-	URL := BASE_URL + "blogs/" + tag + "?sessionToken=" + sessionToken
-	requestToBackend_server, err := http.NewRequestWithContext(ctxTimeout, "GET", URL, nil)
+	serviceURL := BASE_URL + "blogs/" + tag + "?sessionToken=" + sessionToken
+	requestToBackend_server, err := http.NewRequestWithContext(ctxTimeout, "GET", serviceURL, nil)
 
 	if err != nil {
 		log.Println("Error: ", err)
@@ -207,7 +208,7 @@ func fetchBlogsByTag(ctx *gin.Context, tag string, sessionToken string) {
 	}
 }
 
-func getBlogsByTitle(ctx *gin.Context, title string) {
+func getBlogByTitle(ctx *gin.Context, title string, message string) {
 	// 200 => Blog found
 	// 201 => Blog not found
 	// 202 => Invalid Session Token
@@ -222,10 +223,10 @@ func getBlogsByTitle(ctx *gin.Context, title string) {
 
 	sessionToken := getSessionTokenFromCookie(ctx.Request)
 
-	URL := BASE_URL + "blogs/title/" + title + "?sessionToken=" + sessionToken
+	serviceURL := BASE_URL + "blogs/title/" + title + "?sessionToken=" + sessionToken
 
 	// Create Request with Timeout
-	requestToBackend_Server, err := http.NewRequestWithContext(ctxTimeout, "GET", URL, nil)
+	requestToBackend_Server, err := http.NewRequestWithContext(ctxTimeout, "GET", serviceURL, nil)
 
 	if err != nil {
 		log.Println("Error: ", err)
@@ -273,10 +274,10 @@ func getBlogsByTitle(ctx *gin.Context, title string) {
 			fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
 			return
 		}
-		RenderGetBlogPage(ctx, blog)
+		RenderGetBlogPage(ctx, blog, message)
 	} else if res.StatusCode == 201 {
 		log.Println("Error: Blog not found")
-		fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
+		fmt.Fprint(ctx.Writer, BLOG_NOT_FOUND_MESSAGE)
 	} else if res.StatusCode == 202 {
 		RenderLoginPage(ctx, "Session Timed Out")
 	} else if res.StatusCode == 500 {
@@ -308,9 +309,9 @@ func RenderInitPage(ctx *gin.Context) {
 
 	defer cancelFunc()
 
-	URL := BASE_URL + sessionToken
+	serviceURL := BASE_URL + sessionToken
 
-	requestToBackend_Server, err := http.NewRequestWithContext(ctxTimeout, "GET", URL, nil)
+	requestToBackend_Server, err := http.NewRequestWithContext(ctxTimeout, "GET", serviceURL, nil)
 
 	if err != nil {
 		log.Println("Error: ", err)
@@ -410,7 +411,7 @@ func RenderPostBlogPage(ctx *gin.Context, message string) {
 	temp.Execute(ctx.Writer, data)
 }
 
-func RenderGetBlogPage(ctx *gin.Context, blog model.Blog) {
+func RenderGetBlogPage(ctx *gin.Context, blog model.Blog, message string) {
 	temp, err := template.ParseFiles("./views/view_blog.html")
 	if err != nil {
 		log.Println("Error: ", err)
@@ -432,6 +433,7 @@ func RenderGetBlogPage(ctx *gin.Context, blog model.Blog) {
 	data := map[string]interface{}{
 		"Blog":        blog,
 		"IsBlogLiked": isBlogLiked,
+		"Message":     message,
 	}
 
 	temp.Execute(ctx.Writer, data)
@@ -490,10 +492,10 @@ func Register(ctx *gin.Context) {
 		ctxTimeout, cancelFunction := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancelFunction()
 
-		URL := BASE_URL + "register"
+		serviceURL := BASE_URL + "register"
 
 		// Create Request with Timeout
-		requestToBackend_Server, err := http.NewRequestWithContext(ctxTimeout, "POST", URL, bytes.NewBuffer(userJSON))
+		requestToBackend_Server, err := http.NewRequestWithContext(ctxTimeout, "POST", serviceURL, bytes.NewBuffer(userJSON))
 
 		if err != nil {
 			log.Println("Error: ", err)
@@ -627,10 +629,10 @@ func Login(ctx *gin.Context) {
 	ctxTimeout, cancelFunction := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancelFunction()
 
-	URL := BASE_URL + "login"
+	serviceURL := BASE_URL + "login"
 
 	// Create Request with Timeout
-	requestToBackend_Server, err := http.NewRequestWithContext(ctxTimeout, "POST", URL, bytes.NewBuffer(userJSON))
+	requestToBackend_Server, err := http.NewRequestWithContext(ctxTimeout, "POST", serviceURL, bytes.NewBuffer(userJSON))
 
 	if err != nil {
 		log.Println("Error: ", err)
@@ -721,10 +723,10 @@ func Logout(ctx *gin.Context) {
 
 	defer cancelFunc()
 
-	URL := BASE_URL + "login/" + sessionToken
+	serviceURL := BASE_URL + "login/" + sessionToken
 
 	// Create Request with Timeout
-	requestToBackend_Server, err := http.NewRequestWithContext(ctxTimeout, "DELETE", URL, nil)
+	requestToBackend_Server, err := http.NewRequestWithContext(ctxTimeout, "DELETE", serviceURL, nil)
 
 	if err != nil {
 		log.Println("Error: ", err)
@@ -792,10 +794,10 @@ func SearchUserForRegistration(ctx *gin.Context) {
 
 	defer cancelFunc()
 
-	URL := BASE_URL + "users/" + username
+	serviceURL := BASE_URL + "users/" + username
 
 	// Create Request with Timeout
-	requestToBackend_Server, err := http.NewRequestWithContext(ctxTimeout, "GET", URL, nil)
+	requestToBackend_Server, err := http.NewRequestWithContext(ctxTimeout, "GET", serviceURL, nil)
 
 	if err != nil {
 		log.Println("Error: ", err)
@@ -875,10 +877,10 @@ func SearcBlogTitle_BeforePosting(ctx *gin.Context) {
 
 	sessionToken := getSessionTokenFromCookie(ctx.Request)
 
-	URL := BASE_URL + "blogs/title/" + title + "?sessionToken=" + sessionToken
+	serviceURL := BASE_URL + "blogs/title/" + title + "?sessionToken=" + sessionToken
 
 	// Create Request with Timeout
-	requestToBackend_Server, err := http.NewRequestWithContext(ctxTimeout, "GET", URL, nil)
+	requestToBackend_Server, err := http.NewRequestWithContext(ctxTimeout, "GET", serviceURL, nil)
 
 	if err != nil {
 		log.Println("Error: ", err)
@@ -937,7 +939,7 @@ func GetBlogByTitle(ctx *gin.Context) {
 		return
 	}
 
-	getBlogsByTitle(ctx, title)
+	getBlogByTitle(ctx, title, "")
 }
 
 func PostBlog(ctx *gin.Context) {
@@ -993,6 +995,8 @@ func PostBlog(ctx *gin.Context) {
 
 		blog.ImagePath = "./static/images/blogs/" + blog.Title + ".png"
 
+		blog.Comments = []model.Comment{}
+
 		blogJSON, err := json.Marshal(&blog)
 
 		if err != nil {
@@ -1007,10 +1011,10 @@ func PostBlog(ctx *gin.Context) {
 		defer cancelFunction()
 
 		sessionToken := getSessionTokenFromCookie(ctx.Request)
-		URL := BASE_URL + "blogs?sessionToken=" + sessionToken
+		serviceURL := BASE_URL + "blogs?sessionToken=" + sessionToken
 
 		// Create Request with Timeout
-		requestToBackend_Server, err := http.NewRequestWithContext(ctxTimeout, "POST", URL, bytes.NewBuffer(blogJSON))
+		requestToBackend_Server, err := http.NewRequestWithContext(ctxTimeout, "POST", serviceURL, bytes.NewBuffer(blogJSON))
 
 		if err != nil {
 			log.Println("Error: ", err)
@@ -1093,10 +1097,10 @@ func LikeBlog(ctx *gin.Context) {
 
 	sessionToken := getSessionTokenFromCookie(ctx.Request)
 
-	URL := BASE_URL + "blogs/like/" + title + "?sessionToken=" + sessionToken
+	serviceURL := BASE_URL + "blogs/like/" + title + "?sessionToken=" + sessionToken
 
 	// Create Request with Timeout
-	requestToBackend_Server, err := http.NewRequestWithContext(ctxTimeout, "POST", URL, nil)
+	requestToBackend_Server, err := http.NewRequestWithContext(ctxTimeout, "POST", serviceURL, nil)
 
 	if err != nil {
 		log.Println("Error: ", err)
@@ -1123,10 +1127,9 @@ func LikeBlog(ctx *gin.Context) {
 	defer res.Body.Close()
 
 	if res.StatusCode == 200 || res.StatusCode == 201 {
-		getBlogsByTitle(ctx, title)
+		getBlogByTitle(ctx, title, "")
 	} else if res.StatusCode == 202 {
-		response := "<script>alert('Blog Not Found');</script>"
-		fmt.Fprint(ctx.Writer, response)
+		fmt.Fprint(ctx.Writer, BLOG_NOT_FOUND_MESSAGE)
 	} else if res.StatusCode == 203 {
 		RenderLoginPage(ctx, "Session Timed Out")
 	} else if res.StatusCode == 500 {
@@ -1160,10 +1163,10 @@ func DislikeBlog(ctx *gin.Context) {
 
 	sessionToken := getSessionTokenFromCookie(ctx.Request)
 
-	URL := BASE_URL + "blogs/like/" + title + "?sessionToken=" + sessionToken
+	serviceURL := BASE_URL + "blogs/like/" + title + "?sessionToken=" + sessionToken
 
 	// Create Request with Timeout
-	requestToBackend_Server, err := http.NewRequestWithContext(ctxTimeout, "DELETE", URL, nil)
+	requestToBackend_Server, err := http.NewRequestWithContext(ctxTimeout, "DELETE", serviceURL, nil)
 
 	if err != nil {
 		log.Println("Error: ", err)
@@ -1190,10 +1193,89 @@ func DislikeBlog(ctx *gin.Context) {
 	defer res.Body.Close()
 
 	if res.StatusCode == 200 || res.StatusCode == 201 {
-		getBlogsByTitle(ctx, title)
+		getBlogByTitle(ctx, title, "")
 	} else if res.StatusCode == 202 {
-		response := "<script>alert('Blog Not Found');</script>"
-		fmt.Fprint(ctx.Writer, response)
+		fmt.Fprint(ctx.Writer, BLOG_NOT_FOUND_MESSAGE)
+	} else if res.StatusCode == 203 {
+		RenderLoginPage(ctx, "Session Timed Out")
+	} else if res.StatusCode == 500 {
+		fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
+	} else {
+		log.Println("Bug: Unexpected Status Code ", res.StatusCode)
+		fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
+	}
+}
+
+func AddComment(ctx *gin.Context) {
+	// 200 => Comment Added
+	// 201 => Comment Description or Title is Empty
+	// 202 => Blog not found
+	// 203 => Invalid Session Token
+	// 500 => Internal Server Error
+
+	// Set the Content-Type header to "text/html"
+	ctx.Header("Content-Type", "text/html")
+
+	title := ctx.Param("title")
+
+	if len(title) < 5 {
+		fmt.Fprint(ctx.Writer, BLOG_NOT_FOUND_MESSAGE)
+		return
+	}
+
+	ctxTimeout, cancelFunc := context.WithTimeout(context.Background(), 3*time.Second)
+
+	defer cancelFunc()
+
+	sessionToken := getSessionTokenFromCookie(ctx.Request)
+
+	commentDescription := ctx.Query("comment")
+
+	if commentDescription == "" {
+		getBlogByTitle(ctx, title, "Comment or Title is Empty")
+		return
+	}
+
+	if len(commentDescription) < 5 || len(commentDescription) > 50 {
+		getBlogByTitle(ctx, title, "Comment: Min 5 & Max 50 letters")
+		return
+	}
+
+	serviceURL := BASE_URL + "blogs/comment/" + commentDescription + "?sessionToken=" + sessionToken + "&title=" + title
+
+	serviceURL = url.QueryEscape(serviceURL)
+
+	// Create Request with Timeout
+	requestToBackend_Server, err := http.NewRequestWithContext(ctxTimeout, "GET", serviceURL, nil)
+
+	if err != nil {
+		log.Println("Error: ", err)
+		log.Println("Description: Cannot Create GET Request with Context")
+
+		fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
+		return
+	}
+
+	res, err := http.DefaultClient.Do(requestToBackend_Server)
+
+	if err != nil {
+		if ctxTimeout.Err() == context.DeadlineExceeded {
+			log.Println("Error: ", err)
+			log.Println("Description: Back-end server didn't responsed in given time")
+			fmt.Fprint(ctx.Writer, REQUEST_TIMED_OUT_MESSAGE)
+		} else {
+			log.Println("Error: ", err)
+			log.Println("Description: Cannot send GET request(with timeout(context)) to back-end server")
+			fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
+		}
+		return
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode == 200 {
+		getBlogByTitle(ctx, title, "")
+	} else if res.StatusCode == 202 {
+		fmt.Fprint(ctx.Writer, BLOG_NOT_FOUND_MESSAGE)
 	} else if res.StatusCode == 203 {
 		RenderLoginPage(ctx, "Session Timed Out")
 	} else if res.StatusCode == 500 {
