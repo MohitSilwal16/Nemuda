@@ -1,10 +1,18 @@
+<!doctype html>
 {{ if not .Blogs}}
 <!-- Add decorative container for "No Blogs found for xyz tag" -->
 <p>No Blogs found for {{ .RequestedTag }} tag</p>
 {{ end }} {{ range .Blogs }}
 <div
   class="grid grid-flow-col grid-cols-3 mx-32 my-10 overflow-hidden border rounded-lg shadow-xl cursor-pointer hover:border-2 hover:border-white"
+  hx-get="/blogs/title/{{ .Title }}"
+  hx-target="#home-body"
+  hx-swap="outerHTML"
+  hx-push-url="true"
 >
+  <title>Nemuda</title>
+  <script src="./static/js/htmx.min.js"></script>
+  <link rel="stylesheet" href="./static/css/output.css" />
   <img
     src="{{ .ImagePath }}"
     class="transition duration-500 ease-in bg-white h-60 hover:scale-125"

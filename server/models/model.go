@@ -7,18 +7,17 @@ type User struct {
 }
 
 type Blog struct {
-	// BlogId      primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
-	Username    string    `json:"username"`
-	Title       string    `json:"title"`
-	Tag         string    `json:"tag"`
-	Description string    `json:"description"`
-	Likes       uint      `json:"likes"`
-	Comments    []Comment `json:"comments"`
-	ImagePath   string    `json:"imagepath"`
+	Username      string    `json:"username"`
+	Title         string    `json:"title"`
+	Tag           string    `json:"tag"`
+	Description   string    `json:"description"`
+	Likes         uint      `json:"likes"`
+	LikedUsername []string  `json:"likedUsername"`
+	Comments      []Comment `json:"comments"`
+	ImagePath     string    `json:"imagepath"`
 }
 
 type Comment struct {
-	// CommentId   primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
 	Username    string `json:"username"`
 	Description string `json:"description"`
 }

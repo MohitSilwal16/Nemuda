@@ -1,0 +1,73 @@
+<!doctype html>
+<div id="view-blog-page">
+  <div
+    class="grid grid-flow-col grid-cols-3 mx-32 my-10 overflow-hidden border rounded-lg shadow-xl cursor-pointer hover:border-2 hover:border-white"
+  >
+    <title>Nemuda</title>
+    <script src="../../../static/js/htmx.min.js"></script>
+    <link rel="stylesheet" href="../../../static/css/output.css" />
+    <img
+      src="../../{{ .Blog.ImagePath }}"
+      class="transition duration-500 ease-in bg-white h-60 hover:scale-125"
+      alt="Image"
+    />
+    <div class="col-span-2 px-8 py-6">
+      <span class="font-semibold">Username:</span>
+      {{ .Blog.Username }}
+      <br />
+      <span class="font-semibold">Title:</span>
+      {{ .Blog.Title }}
+      <br />
+      <span class="font-semibold">Tag:</span>
+      {{ .Blog.Tag }}
+      <br />
+      <span class="font-semibold">Description:</span>
+      {{ .Blog.Description }}
+    </div>
+  </div>
+  Likes: {{ .Blog.Likes }} <br />
+  Users who liked: {{ range .Blog.LikedUsername }} <br />
+  Liked Username: {{ . }}
+  <br />
+  {{ end }}
+  <br />
+  Comments: <br />
+  {{ range .Blog.Comments }}
+  <p class="font-semibold">Username: {{ .Username }}</p>
+  Description: {{ .Description }}
+  <br />
+  {{ end }}
+
+  <p>Add Comment</p>
+  <form hx-post="/">
+    <input
+      type="text"
+      name="comment"
+      id="comment"
+      placeholder="Comment Something ..."
+    />
+    <br />
+    <input type="submit" value="Comment" />
+  </form>
+
+  <button
+    id="like-button"
+    {{
+    if
+    eq
+    .IsBlogLiked
+    false
+    }}
+    hx-post="/blogs/like/{{ .Blog.Title }}"
+    {{
+    else
+    }}
+    hx-delete="/blogs/like/{{ .Blog.Title }}"
+    {{
+    end
+    }}
+    hx-target="#view-blog-page"
+  >
+    {{ if eq .IsBlogLiked false }} Like {{ else }} Dislike {{ end }}
+  </button>
+</div>

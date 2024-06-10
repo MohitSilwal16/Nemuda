@@ -7,13 +7,14 @@ type User struct {
 }
 
 type Blog struct {
-	Username    string    `json:"username"`
-	Title       string    `json:"title"`
-	Tag         string    `json:"tag"`
-	Description string    `json:"description"`
-	Likes       uint      `json:"likes"`
-	Comments    []Comment `json:"comments"`
-	ImagePath   string    `json:"imagepath"`
+	Username      string    `json:"username"`
+	Title         string    `json:"title"`
+	Tag           string    `json:"tag"`
+	Description   string    `json:"description"`
+	Likes         uint      `json:"likes"`
+	LikedUsername []string  `json:"likedUsername"`
+	Comments      []Comment `json:"comments"`
+	ImagePath     string    `json:"imagepath"`
 }
 
 type Comment struct {

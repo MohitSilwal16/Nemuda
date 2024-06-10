@@ -65,6 +65,10 @@ func main() {
 
 	r.GET("/blogs/title/:title", handler.SearchBlogByTitle)
 
+	r.POST("/blogs/like/:title", handler.LikeBlog)
+	r.GET("/blogs/like/:title", handler.IsBlogLikedByUser)
+	r.DELETE("/blogs/like/:title", handler.DislikeBlog)
+
 	r.POST("/blogs", handler.PostBlog)
 
 	go func() {

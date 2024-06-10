@@ -11,6 +11,7 @@ import (
 	"github.com/MohitSilwal16/Nemuda/models"
 	"github.com/MohitSilwal16/Nemuda/utils"
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // Tags' slice
@@ -25,6 +26,13 @@ func VerifySessionToken(ctx *gin.Context) {
 	ctx.Header("Content-Type", "application/json")
 
 	sessionToken := ctx.Param("sessionToken")
+
+	if sessionToken == "" {
+		ctx.JSON(200, gin.H{
+			"message": "Session Token is Valid",
+		})
+		return
+	}
 
 	isTokenValid, err := db.IsSessionTokenDuplicate(sessionToken)
 
@@ -340,8 +348,8 @@ func GetBlogsByTag(ctx *gin.Context) {
 }
 
 func SearchBlogByTitle(ctx *gin.Context) {
-	// 200 => Title already found
-	// 201 => Title not used
+	// 200 => Blog found
+	// 201 => Blog not found
 	// 202 => Invalid Session Token
 	// 500 => Internal Server Error
 
@@ -375,22 +383,20 @@ func SearchBlogByTitle(ctx *gin.Context) {
 
 	title := ctx.Param("title")
 
-	found, err := db.SearchBlogByTitle(title)
+	blog, err := db.GetBlogByTitle(title)
 	if err != nil {
+		if err.Error() == mongo.ErrNoDocuments.Error() {
+			ctx.JSON(201, gin.H{
+				"message": "Blog not found",
+			})
+			return
+		}
 		ctx.JSON(500, gin.H{
 			"message": "Internal Server Error",
 		})
 		return
 	}
-	if found {
-		ctx.JSON(200, gin.H{
-			"message": "Title Already Used",
-		})
-		return
-	}
-	ctx.JSON(201, gin.H{
-		"message": "Title Not Used",
-	})
+	ctx.JSON(200, blog)
 }
 
 func PostBlog(ctx *gin.Context) {
@@ -494,4 +500,263 @@ func PostBlog(ctx *gin.Context) {
 			"message": "Blog Added",
 		})
 	}
+}
+
+func IsBlogLikedByUser(ctx *gin.Context) {
+	// 200 => Blog liked
+	// 201 => Blog not liked
+	// 202 => Blog not found
+	// 203 => Invalid Session Token
+	// 500 => Internal Server Error
+
+	// Set the Content-Type header to "application/json"
+	ctx.Header("Content-Type", "application/json")
+
+	sessionToken := ctx.Query("sessionToken")
+
+	if sessionToken == "" {
+		ctx.JSON(203, gin.H{
+			"message": "Invalid Session Token",
+		})
+		return
+	}
+
+	isSessionTokenValid, err := db.IsSessionTokenDuplicate(sessionToken)
+	if err != nil {
+		log.Println("Error: ", err)
+		ctx.JSON(500, gin.H{
+			"message": "Internal Server Error",
+		})
+		return
+	}
+
+	if !isSessionTokenValid {
+		ctx.JSON(203, gin.H{
+			"message": "Invalid Session Token",
+		})
+		return
+	}
+
+	title := ctx.Param("title")
+
+	username, err := db.GetUsernameBySessionToken(sessionToken)
+
+	if err != nil {
+		log.Println("Error: ", err)
+		log.Println("Description: Error while fetching username from session token")
+
+		if err.Error() == "INVALID SESSION TOKEN" {
+			ctx.JSON(203, gin.H{
+				"message": "Invalid Session Token",
+			})
+		} else {
+			ctx.JSON(500, gin.H{
+				"message": "Internal Server Error",
+			})
+		}
+		return
+	}
+
+	doesBlogExists, err := db.SearchBlogByTitle(title)
+
+	if err != nil {
+		log.Println("Error: ", err)
+		log.Println("Description: Cannot search blog by title")
+
+		ctx.JSON(500, gin.H{
+			"message": "Internal Server Error",
+		})
+		return
+	}
+
+	if !doesBlogExists {
+		ctx.JSON(202, gin.H{
+			"message": "Blog Not Found",
+		})
+		return
+	}
+
+	isBlogLiked, err := db.IsBlogLikedByUser(title, username)
+
+	if err != nil {
+		log.Println("Error: ", err)
+		log.Println("Description: Cannot like blog")
+
+		ctx.JSON(500, gin.H{
+			"message": "Internal Server Error",
+		})
+		return
+	}
+
+	if isBlogLiked {
+		ctx.JSON(200, gin.H{
+			"message": "Blog Liked",
+		})
+		return
+	}
+	ctx.JSON(201, gin.H{
+		"message": "Blog Not Liked",
+	})
+}
+
+func LikeBlog(ctx *gin.Context) {
+	// 200 => Blog liked
+	// 201 => Blog already liked
+	// 202 => Blog not found
+	// 203 => Invalid Session Token
+	// 500 => Internal Server Error
+
+	// Set the Content-Type header to "application/json"
+	ctx.Header("Content-Type", "application/json")
+
+	sessionToken := ctx.Query("sessionToken")
+
+	if sessionToken == "" {
+		ctx.JSON(203, gin.H{
+			"message": "Invalid Session Token",
+		})
+		return
+	}
+
+	isSessionTokenValid, err := db.IsSessionTokenDuplicate(sessionToken)
+	if err != nil {
+		log.Println("Error: ", err)
+		ctx.JSON(500, gin.H{
+			"message": "Internal Server Error",
+		})
+		return
+	}
+
+	if !isSessionTokenValid {
+		ctx.JSON(203, gin.H{
+			"message": "Invalid Session Token",
+		})
+		return
+	}
+
+	title := ctx.Param("title")
+
+	username, err := db.GetUsernameBySessionToken(sessionToken)
+
+	if err != nil {
+		log.Println("Error: ", err)
+		log.Println("Description: Error while fetching username from session token")
+
+		if err.Error() == "INVALID SESSION TOKEN" {
+			ctx.JSON(203, gin.H{
+				"message": "Invalid Session Token",
+			})
+		} else {
+			ctx.JSON(500, gin.H{
+				"message": "Internal Server Error",
+			})
+		}
+		return
+	}
+
+	err = db.LikeBlog(title, username)
+
+	if err != nil {
+		log.Println("Error: ", err)
+		log.Println("Description: Cannot like blog")
+
+		if err.Error() == "BLOG NOT FOUND" {
+			ctx.JSON(201, gin.H{
+				"message": "Blog Not Found",
+			})
+		} else if err.Error() == "BLOG ALREADY LIKED" {
+			ctx.JSON(202, gin.H{
+				"message": "Blog Already Liked",
+			})
+		} else {
+			ctx.JSON(500, gin.H{
+				"message": "Internal Server Error",
+			})
+		}
+		return
+	}
+	ctx.JSON(200, gin.H{
+		"message": "Blog Liked",
+	})
+}
+
+func DislikeBlog(ctx *gin.Context) {
+	// 200 => Blog disliked
+	// 201 => Blog already disliked
+	// 202 => Blog not found
+	// 203 => Invalid Session Token
+	// 500 => Internal Server Error
+
+	// Set the Content-Type header to "application/json"
+	ctx.Header("Content-Type", "application/json")
+
+	sessionToken := ctx.Query("sessionToken")
+
+	if sessionToken == "" {
+		ctx.JSON(203, gin.H{
+			"message": "Invalid Session Token",
+		})
+		return
+	}
+
+	isSessionTokenValid, err := db.IsSessionTokenDuplicate(sessionToken)
+	if err != nil {
+		log.Println("Error: ", err)
+		ctx.JSON(500, gin.H{
+			"message": "Internal Server Error",
+		})
+		return
+	}
+
+	if !isSessionTokenValid {
+		ctx.JSON(203, gin.H{
+			"message": "Invalid Session Token",
+		})
+		return
+	}
+
+	title := ctx.Param("title")
+
+	username, err := db.GetUsernameBySessionToken(sessionToken)
+
+	if err != nil {
+		log.Println("Error: ", err)
+		log.Println("Description: Error while fetching username from session token")
+
+		if err.Error() == "INVALID SESSION TOKEN" {
+			ctx.JSON(203, gin.H{
+				"message": "Invalid Session Token",
+			})
+		} else {
+			ctx.JSON(500, gin.H{
+				"message": "Internal Server Error",
+			})
+		}
+		return
+	}
+
+	err = db.DislikeBlog(title, username)
+
+	if err != nil {
+		log.Println("Error: ", err)
+		log.Println("Description: Cannot like blog")
+
+		if err.Error() == "BLOG NOT FOUND" {
+			ctx.JSON(201, gin.H{
+				"message": "Blog Not Found",
+			})
+		} else if err.Error() == "BLOG ALREADY DISLIKED" {
+			ctx.JSON(202, gin.H{
+				"message": "Blog Already Disliked",
+			})
+		} else {
+			ctx.JSON(500, gin.H{
+				"message": "Internal Server Error",
+			})
+		}
+		return
+	}
+	ctx.JSON(200, gin.H{
+		"message": "Blog Disliked",
+	})
 }

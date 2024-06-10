@@ -79,6 +79,21 @@ func GetBlogsByTag(tag string) ([]models.Blog, error) {
 	return blogs, nil
 }
 
+func GetBlogByTitle(title string) (models.Blog, error) {
+	filter := bson.M{"title": title}
+
+	result := mongoDBCollection.FindOne(context.Background(), filter)
+
+	var blog models.Blog
+	err := result.Decode(&blog)
+
+	if err != nil {
+		return blog, err
+	}
+
+	return blog, nil
+}
+
 func SearchBlogByTitle(title string) (bool, error) {
 	filter := bson.M{"title": title}
 
@@ -93,9 +108,8 @@ func SearchBlogByTitle(title string) (bool, error) {
 
 	if err.Error() == mongo.ErrNoDocuments.Error() {
 		return false, nil
-	} else {
-		return false, err
 	}
+	return false, err
 }
 
 func AddBlog(blog models.Blog) error {
@@ -115,5 +129,103 @@ func AddBlog(blog models.Blog) error {
 	if result.InsertedID == "" {
 		return errors.New("result.InsertedID is empty")
 	}
+	return nil
+}
+
+func IsBlogLikedByUser(title string, username string) (bool, error) {
+	filter := bson.M{
+		"title":         title,
+		"likedUsername": bson.M{"$in": []string{username}},
+	}
+
+	var blog models.Blog
+	err := mongoDBCollection.FindOne(context.Background(), filter).Decode(&blog)
+
+	if err == nil {
+		return true, nil
+	}
+	if err.Error() == mongo.ErrNoDocuments.Error() {
+		return false, nil
+	}
+	return false, err
+}
+
+func LikeBlog(title string, username string) error {
+	doesBlogExists, err := SearchBlogByTitle(title)
+
+	if err != nil {
+		return err
+	}
+
+	if !doesBlogExists {
+		return errors.New("BLOG NOT FOUND")
+	}
+
+	isBlogAlreadyLiked, err := IsBlogLikedByUser(title, username)
+
+	if err != nil {
+		return err
+	}
+
+	if isBlogAlreadyLiked {
+		return errors.New("BLOG ALREADY LIKED")
+	}
+
+	filter := bson.M{"title": title}
+	update := bson.M{
+		"$inc":      bson.M{"likes": 1},
+		"$addToSet": bson.M{"likedUsername": username},
+	}
+
+	result, err := mongoDBCollection.UpdateOne(context.Background(), filter, update)
+
+	if err != nil {
+		return err
+	}
+
+	if result.MatchedCount == 0 {
+		return errors.New("BLOG NOT FOUND")
+	}
+
+	return nil
+}
+
+func DislikeBlog(title string, username string) error {
+	doesBlogExists, err := SearchBlogByTitle(title)
+
+	if err != nil {
+		return err
+	}
+
+	if !doesBlogExists {
+		return errors.New("BLOG NOT FOUND")
+	}
+
+	isBlogAlreadyLiked, err := IsBlogLikedByUser(title, username)
+
+	if err != nil {
+		return err
+	}
+
+	if !isBlogAlreadyLiked {
+		return errors.New("BLOG ALREADY DISLIKED")
+	}
+
+	filter := bson.M{"title": title}
+	update := bson.M{
+		"$inc":  bson.M{"likes": -1},
+		"$pull": bson.M{"likedUsername": username},
+	}
+
+	result, err := mongoDBCollection.UpdateOne(context.Background(), filter, update)
+
+	if err != nil {
+		return err
+	}
+
+	if result.MatchedCount == 0 {
+		return errors.New("BLOG NOT FOUND")
+	}
+
 	return nil
 }

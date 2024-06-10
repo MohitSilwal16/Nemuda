@@ -1,9 +1,12 @@
 <!doctype html>
 <div
-  id="home-body"
-  style="background-color: #d7f2f6;"
-  class="flex flex-col h-screen px-10 pb-2 overflow-hidden text-2xl text-white"
+id="home-body"
+style="background-color: #d7f2f6;"
+class="flex flex-col h-screen px-10 pb-2 overflow-hidden text-2xl text-white"
 >
+<title>Nemuda</title>
+<script src="../static/js/htmx.min.js"></script>
+<link rel="stylesheet" href="../static/css/output.css" />
   <header class="flex font-semibold">
     <div class="w-1/6 py-6 border-r-2 cursor-pointer">Nemu</div>
     <div class="w-4/6 py-6 text-center" id="title-heading">{{ .RequestedTag }}</div>
@@ -27,6 +30,6 @@
         <main class="w-5/6 overflow-y-auto scroll-bar" id="blogs">
      {{ template "blog.html" . }}
     </main>
-    <img src="../static/images/add_post.png" class="absolute h-16 cursor-pointer right-10 bottom-10 hover:opacity-70" hx-get="/blogs" hx-target="#home-body" hx-swap="outerHTML"></img>
+    <img src="../static/images/add_post.png" class="absolute h-16 cursor-pointer right-10 bottom-10 hover:opacity-70" hx-get="/post_blog"  hx-target="#home-body" hx-swap="outerHTML" hx-push-url="true"></img>
   </div>
 </div>

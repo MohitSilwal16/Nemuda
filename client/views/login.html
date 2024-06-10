@@ -1,8 +1,14 @@
 <!doctype html>
+
 <div
   class="grid w-screen h-screen grid-rows-4 text-5xl font-semibold text-white bg-no-repeat bg-cover lg:text-2xl bg-register-login"
   id="login-body"
 >
+  <title>Nemuda</title>
+  <script src="./static/js/htmx.min.js"></script>
+  <!-- Extension to send data in JSON Format using hx-ext="json-enc" -->
+  <script src="./static/js/json-enc.js"></script>
+  <link rel="stylesheet" href="./static/css/output.css" />
   <h1
     id="login-page-heading"
     class="font-bold text-center text-7xl lg:text-5xl mt-60 lg:mt-36"
@@ -33,7 +39,7 @@
       />
       <img
         class="h-8 absolute lg:right-3 lg:top-1 right-3 top-2.5 cursor-text"
-        src="../static/images/profile.png"
+        src="./static/images/profile.png"
         alt=""
         draggable="false"
         onclick="document.getElementById('username').focus()"
@@ -52,7 +58,7 @@
       />
       <img
         class="h-8 absolute lg:right-3 lg:top-1 right-3 top-2.5 cursor-pointer"
-        src="../static/images/eye.png"
+        src="./static/images/eye.png"
         alt=""
         draggable="false"
         onclick="document.getElementById('pass').getAttribute('type') == 'password' ? document.getElementById('pass').setAttribute('type','text') : document.getElementById('pass').setAttribute('type','password')"
@@ -196,7 +202,7 @@
 
       let loginButton = document.getElementById("loginButton");
       loginButton.value = "Logging in ...";
-      loginButton.setAttribute("disabled","true");
+      loginButton.setAttribute("disabled", "true");
       loginButton.classList.remove("cursor-pointer");
       loginButton.classList.add("cursor-not-allowed");
       return true;
