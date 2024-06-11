@@ -435,3 +435,62 @@ func fetchBlogByTitleAndReturn(ctx *gin.Context, title string) (model.Blog, erro
 		return b, errors.New("UNEXPECTED STATUS CODE")
 	}
 }
+
+func isSessionTokenValid(ctx *gin.Context) (bool, error) {
+	// 200 => Session Token is Valid
+	// 201 => Session Token is Invalid
+	// 500 => Internal Server Error
+
+	// Set the Content-Type header to "text/html"
+	ctx.Header("Content-Type", "text/html")
+
+	sessionToken := getSessionTokenFromCookie(ctx.Request)
+
+	if sessionToken == "" {
+		return false, nil
+	}
+
+	ctxTimeout, cancelFunc := context.WithTimeout(context.Background(), 3*time.Second)
+
+	defer cancelFunc()
+
+	serviceURL := BASE_URL + sessionToken
+
+	requestToBackend_Server, err := http.NewRequestWithContext(ctxTimeout, "GET", serviceURL, nil)
+
+	if err != nil {
+		log.Println("Error: ", err)
+		log.Println("Description: Cannot Create DELETE Request with Context")
+		fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
+		return false, err
+	}
+
+	res, err := http.DefaultClient.Do(requestToBackend_Server)
+
+	if err != nil {
+		if ctxTimeout.Err() == context.DeadlineExceeded {
+			log.Println("Error: ", err)
+			log.Println("Description: Back-end server didn't responsed in given time")
+			fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
+			return false, err
+		}
+		log.Println("Error: ", err)
+		log.Println("Description: Cannot send DELETE request(with timeout(context)) to back-end server")
+		fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
+		return false, err
+	}
+
+	if res.StatusCode == 200 {
+		return true, nil
+	} else if res.StatusCode == 201 {
+		return false, nil
+	} else if res.StatusCode == 500 {
+		fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
+		return false, errors.New("INTERNAL SERVER ERROR")
+	} else {
+		log.Println("Bug: Unexpected Status Code ", res.StatusCode)
+
+		fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
+		return false, errors.New("INTERNAL SERVER ERROR")
+	}
+}

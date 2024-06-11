@@ -28,7 +28,7 @@ const BLOG_NOT_FOUND_MESSAGE = "<script>alert('Blog Not Found');</script>"
 // Tags' slice
 var tagsList = []string{"Political", "Technical", "Educational", "Geographical", "Programming", "Other"}
 
-// Services
+// Services & Handlers
 func Register(ctx *gin.Context) {
 	// AVOID USING 204 BECAUSE IT DOESN'T SEND ANY CONTENT OR BODY
 
