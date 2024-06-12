@@ -8,15 +8,12 @@
   hx-get="/blogs/title/{{ .Title }}"
   hx-target="#home-body"
   hx-swap="outerHTML"
-  hx-push-url="true"
 >
-  <title>Nemuda</title>
-  <script src="./static/js/htmx.min.js"></script>
-  <link rel="stylesheet" href="./static/css/output.css" />
   <img
     src="{{ .ImagePath }}"
     class="transition duration-500 ease-in bg-white h-60 hover:scale-110"
     alt="Image"
+    loading="lazy"
   />
   <div class="col-span-2 px-8 py-6">
     <span class="font-semibold">Username:</span>
@@ -33,3 +30,9 @@
   </div>
 </div>
 {{ end }}
+<div
+  hx-get="/blogs/{{ $.RequestedTag }}?offset={{ $.Offset }}"
+  hx-trigger="intersect once"
+  hx-target="#blogs"
+  hx-swap="beforeend"
+></div>

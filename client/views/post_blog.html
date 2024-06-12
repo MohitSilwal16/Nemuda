@@ -1,7 +1,7 @@
 <!doctype html>
 <div
   class="grid w-screen h-screen grid-rows-4 text-5xl font-semibold text-white bg-no-repeat bg-cover lg:text-2xl bg-register-login"
-  id="post-blog-body"
+  id="post-blog-page"
 >
   <title>Nemuda</title>
   <script src="./static/js/htmx.min.js"></script>
@@ -12,7 +12,7 @@
   <form
     class="container w-full row-span-3 p-10 m-10 mx-auto bg-transparent border shadow-2xl lg:w-1/4 rounded-xl backdrop-blur-md"
     hx-post="/blogs"
-    hx-target="#post-blog-body"
+    hx-target="#post-blog-page"
     hx-swap="outerHTML"
     hx-trigger="submit[onValidate()]"
     enctype="multipart/form-data"
@@ -69,6 +69,16 @@
       value="Post"
       id="postButton"
     />
+    <br />
+    <button
+      class="w-full h-24 py-2 mt-5 border-2 rounded-full shadow-lg cursor-pointer lg:h-14 opacity-80 hover:opacity-100"
+      type="button"
+      hx-get="/blogs/All?offset=0"
+      hx-target="#post-blog-page"
+      hx-swap="outerHTML"
+    >
+      Cancel
+    </button>
     <br />
   </form>
 

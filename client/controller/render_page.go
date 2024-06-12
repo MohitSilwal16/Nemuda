@@ -29,12 +29,11 @@ func RenderInitPage(ctx *gin.Context) {
 		return
 	}
 
-	sessionToken := getSessionTokenFromCookie(ctx.Request)
-
 	if isSessionTokenValid {
-		fetchBlogsByTag(ctx, "All", sessionToken)
+		sessionToken := getSessionTokenFromCookie(ctx.Request)
+		fetchBlogsByTag(ctx, "All", "0", sessionToken)
 	} else {
-		RenderLoginPage(ctx, "Session Timed Out")
+		RenderLoginPage(ctx, "")
 	}
 }
 
@@ -68,7 +67,7 @@ func RenderLoginPage(ctx *gin.Context, message string) {
 	}
 }
 
-func RenderHomePage(ctx *gin.Context, blogs []model.Blog, tag string) {
+func RenderHomePage(ctx *gin.Context, blogs []model.Blog, tag string, offset string) {
 	// Set the Content-Type header to "text/html"
 	ctx.Header("Content-Type", "text/html")
 
@@ -76,6 +75,7 @@ func RenderHomePage(ctx *gin.Context, blogs []model.Blog, tag string) {
 		"Blogs":        blogs,
 		"RequestedTag": tag,
 		"TagsList":     tagsList,
+		"Offset":       offset,
 	}
 
 	tmpl := template.Must(template.ParseFiles("./views/home.html", "./views/blog.html"))

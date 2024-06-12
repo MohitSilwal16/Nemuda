@@ -22,14 +22,14 @@ class="flex flex-col h-screen px-10 pb-2 overflow-hidden text-2xl text-white"
   <hr/>
   <div class="relative flex overflow-hidden">
     <nav class="w-1/6 h-screen pt-6 font-semibold border-r-2" id="nav-bar">
-      <p class="m-2 cursor-pointer" {{if eq .RequestedTag "All"}}style="text-decoration: underline;"{{end}} onclick="toggleNavbarFocus('All')" hx-get="/blogs/All" hx-target="#home-body" hx-swap="outerHTML">All</p>
+      <p class="m-2 cursor-pointer" {{if eq .RequestedTag "All"}}style="text-decoration: underline;"{{end}} hx-get="/blogs/All?offset=0" hx-target="#home-body" hx-swap="outerHTML">All</p>
       {{ range .TagsList }}
-      <p class="m-2 cursor-pointer" {{if eq $.RequestedTag . }}style="text-decoration: underline;"{{end}} onclick="toggleNavbarFocus('{{ . }}')" hx-get="/blogs/{{ . }}" hx-target="#home-body" hx-swap="outerHTML">{{ . }}</p>
+      <p class="m-2 cursor-pointer" {{if eq $.RequestedTag . }}style="text-decoration: underline;"{{end}} hx-get="/blogs/{{ . }}?offset=0" hx-target="#home-body" hx-swap="outerHTML">{{ . }}</p>
       {{ end }}
     </nav>
         <main class="w-5/6 overflow-y-auto scroll-bar" id="blogs">
      {{ template "blog.html" . }}
     </main>
-    <img src="../static/images/add_post.png" class="absolute h-16 cursor-pointer right-10 bottom-10 hover:opacity-70" hx-get="/post_blog"  hx-target="#home-body" hx-swap="outerHTML" hx-push-url="true"></img>
+    <img src="../static/images/add_post.png" class="absolute h-16 cursor-pointer right-10 bottom-10 hover:opacity-70" hx-get="/post_blog"  hx-target="#home-body" hx-swap="outerHTML"></img>
   </div>
 </div>

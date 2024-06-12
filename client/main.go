@@ -43,7 +43,8 @@ func main() {
 
 	r.GET("/users", controller.SearchUserForRegistration)
 
-	r.GET("/blogs/:tag", controller.GetBlogsByTag)
+	r.GET("/blogs/:tag", controller.GetMoreBlogsByTagWithOffset)
+
 	r.GET("/post_blog", func(ctx *gin.Context) {
 		controller.RenderPostBlogPage(ctx, "")
 	})

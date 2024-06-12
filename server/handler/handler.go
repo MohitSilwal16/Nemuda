@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/MohitSilwal16/Nemuda/db"
@@ -16,6 +17,8 @@ import (
 
 // Tags' slice
 var tagsList = []string{"Political", "Technical", "Educational", "Geographical", "Programming", "Other"}
+
+var BLOG_LIMIT = 1
 
 func VerifySessionToken(ctx *gin.Context) {
 	// 200 => Session Token is Valid
@@ -293,62 +296,6 @@ func SearchUser(ctx *gin.Context) {
 	ctx.JSON(201, gin.H{
 		"message": "User not found",
 	})
-}
-
-func GetBlogsByTag(ctx *gin.Context) {
-	// 200 => Blogs found
-	// 201 => No blog found for the specific tag
-	// 202 => Invalid Session Token
-	// 500 => Internal Server Error
-
-	// Set the Content-Type header to "application/json"
-	ctx.Header("Content-Type", "application/json")
-
-	sessionToken := ctx.Query("sessionToken")
-
-	if sessionToken == "" {
-		ctx.JSON(202, gin.H{
-			"message": "Invalid Session Token",
-		})
-		return
-	}
-
-	isSessionTokenValid, err := db.IsSessionTokenDuplicate(sessionToken)
-	if err != nil {
-		log.Println("Error: ", err)
-		ctx.JSON(500, gin.H{
-			"message": "Internal Server Error",
-		})
-		return
-	}
-
-	if !isSessionTokenValid {
-		ctx.JSON(202, gin.H{
-			"message": "Invalid Session Token",
-		})
-		return
-	}
-
-	tag := ctx.Param("tag")
-	tag = strings.Title(tag)
-
-	blogs, err := db.GetBlogsByTag(tag)
-
-	if err != nil {
-		log.Println("Error: ", err)
-		ctx.JSON(500, gin.H{
-			"message": "Internal Server Error",
-		})
-		return
-	}
-
-	if blogs == nil {
-		ctx.JSON(201, gin.H{
-			"message": fmt.Sprintf("No Blogs for '%s' tag", tag),
-		})
-		return
-	}
-	ctx.JSON(200, blogs)
 }
 
 func SearchBlogByTitle(ctx *gin.Context) {
@@ -1198,5 +1145,94 @@ func CanUserUpdate_DeleteBlog(ctx *gin.Context) {
 	}
 	ctx.JSON(201, gin.H{
 		"message": "User cannot update or delete blog",
+	})
+}
+
+func GetBlogsByTag(ctx *gin.Context) {
+	// AVOID USING 204 BECAUSE IT DOESN'T SEND ANY CONTENT OR BODY
+
+	// 200 => Blogs found
+	// 201 => No blog found for the specific tag
+	// 202 => Invalid Session Token
+	// 203 => No more blogs available
+	// 205 => Invalid Offset
+	// 500 => Internal Server Error
+
+	// Set the Content-Type header to "application/json"
+	ctx.Header("Content-Type", "application/json")
+
+	sessionToken := ctx.Query("sessionToken")
+
+	if sessionToken == "" {
+		ctx.JSON(202, gin.H{
+			"message": "Invalid Session Token",
+		})
+		return
+	}
+
+	isSessionTokenValid, err := db.IsSessionTokenDuplicate(sessionToken)
+	if err != nil {
+		log.Println("Error: ", err)
+		ctx.JSON(500, gin.H{
+			"message": "Internal Server Error",
+		})
+		return
+	}
+
+	if !isSessionTokenValid {
+		ctx.JSON(202, gin.H{
+			"message": "Invalid Session Token",
+		})
+		return
+	}
+
+	tag := ctx.Param("tag")
+	tag = strings.Title(tag)
+
+	offsetString := ctx.Query("offset")
+
+	offsetInt, err := strconv.Atoi(offsetString)
+
+	if err != nil {
+		ctx.JSON(205, gin.H{
+			"message": "Offset shouldn't be negative integer",
+		})
+		return
+	}
+
+	if offsetInt < 0 {
+		ctx.JSON(205, gin.H{
+			"message": "Offset shouldn't be negative integer",
+		})
+		return
+	}
+
+	blogs, err := db.GetBlogsByTagWithOffset(tag, offsetInt, BLOG_LIMIT)
+
+	if err != nil {
+		log.Println("Error: ", err)
+		log.Println("Description: Cannot fetch blogs from db with offset")
+		ctx.JSON(500, gin.H{
+			"message": "Internal Server Error",
+		})
+		return
+	}
+
+	if len(blogs) == 0 {
+		ctx.JSON(203, gin.H{
+			"message": fmt.Sprintf("No more blogs for %s available", tag),
+		})
+		return
+	}
+	if len(blogs) < BLOG_LIMIT {
+		ctx.JSON(200, gin.H{
+			"blogs":      blogs,
+			"nextOffset": "-1",
+		})
+		return
+	}
+	ctx.JSON(200, gin.H{
+		"blogs":      blogs,
+		"nextOffset": strconv.Itoa(offsetInt + BLOG_LIMIT),
 	})
 }

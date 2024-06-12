@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -118,16 +119,40 @@ func isBlogLiked(ctx *gin.Context, title string, sessionToken string) (bool, err
 	}
 }
 
-func fetchBlogsByTag(ctx *gin.Context, tag string, sessionToken string) {
+func fetchBlogsByTag(ctx *gin.Context, tag string, offset string, sessionToken string) {
 	// 200 => Blogs found
 	// 201 => No blog found for the specific tag
 	// 202 => Invalid Session Token
+	// 203 => No more blogs available
+	// 205 => Invalid Offset
 	// 500 => Internal Server Error
+
+	offsetInt, err := strconv.Atoi(offset)
+
+	if err != nil {
+		log.Println("Error: ", err)
+		log.Println("Description: Cannot convert offset value into integer")
+
+		fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
+		return
+	}
+
+	if offsetInt < 0 {
+		log.Println("Error: Offset must be non-negative integer")
+
+		fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
+		return
+	}
+
+	if sessionToken == "" {
+		RenderLoginPage(ctx, "Session Timed Out")
+	}
 
 	ctxTimeout, cancelFunc := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancelFunc()
 
-	serviceURL := BASE_URL + "blogs/" + tag + "?sessionToken=" + sessionToken
+	serviceURL := BASE_URL + "blogs/" + tag + "?sessionToken=" + sessionToken + "&offset=" + offset
+
 	requestToBackend_server, err := http.NewRequestWithContext(ctxTimeout, "GET", serviceURL, nil)
 
 	if err != nil {
@@ -135,6 +160,7 @@ func fetchBlogsByTag(ctx *gin.Context, tag string, sessionToken string) {
 		log.Println("Description: Cannot Create GET Request with Context")
 
 		fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
+		return
 	}
 
 	res, err := http.DefaultClient.Do(requestToBackend_server)
@@ -151,6 +177,7 @@ func fetchBlogsByTag(ctx *gin.Context, tag string, sessionToken string) {
 		log.Println("Description: Cannot send POST request(with timeout(context)) to back-end server")
 
 		fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
+		return
 	}
 
 	defer res.Body.Close()
@@ -158,34 +185,43 @@ func fetchBlogsByTag(ctx *gin.Context, tag string, sessionToken string) {
 	if res.StatusCode == 200 {
 		responseJSONData, err := io.ReadAll(res.Body)
 
+		if err != nil {
+			log.Println("Error: ", err)
+			log.Println("Decription: Cannot read body of response as JSON data")
+
+			fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
+			return
+		}
+
 		defer res.Body.Close()
 
+		var responseDataStructure struct {
+			Blogs      []model.Blog `json:"blogs"`
+			NextOffset string       `json:"nextOffset"`
+		}
+
+		err = json.Unmarshal(responseJSONData, &responseDataStructure)
 		if err != nil {
 			log.Println("Error: ", err)
 			log.Println("Decription: Cannot read body of response as JSON data")
 
 			fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
+			return
 		}
 
-		var responseBlogsList []model.Blog
-		err = json.Unmarshal(responseJSONData, &responseBlogsList)
-		if err != nil {
-			log.Println("Error: ", err)
-			log.Println("Decription: Cannot read body of response as JSON data")
-
-			fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
-		}
-		RenderHomePage(ctx, responseBlogsList, tag)
+		RenderHomePage(ctx, responseDataStructure.Blogs, tag, responseDataStructure.NextOffset)
 	} else if res.StatusCode == 201 {
 		response := "No Blogs found for " + tag + " tag"
 		log.Println(response)
 
-		RenderHomePage(ctx, nil, tag)
-
+		RenderHomePage(ctx, nil, tag, "-1")
 	} else if res.StatusCode == 202 {
 		RenderLoginPage(ctx, "Session Timed Out")
+	} else if res.StatusCode == 203 {
+		RenderHomePage(ctx, nil, tag, "-1")
 	} else if res.StatusCode == 500 {
 		log.Println("Error: Back-end server has Internal Server Error")
+
 		fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
 	} else {
 		log.Println("Bug: Unexpected Status Code ", res.StatusCode)

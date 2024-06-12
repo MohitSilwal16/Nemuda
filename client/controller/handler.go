@@ -11,7 +11,9 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
+	"text/template"
 	"time"
 
 	"github.com/Nemuda/client/model"
@@ -128,7 +130,7 @@ func Register(ctx *gin.Context) {
 			err = json.Unmarshal(responseJSONData, &responseDataStructure)
 			if err != nil {
 				log.Println("Error: ", err)
-				log.Println("Decription: Cannot read body of response")
+				log.Println("Description: Cannot read body of response")
 
 				RenderRegsiterPage(ctx, "Internal Server Error")
 				return
@@ -145,7 +147,7 @@ func Register(ctx *gin.Context) {
 			// Save session token in cookie of user
 			setSessionTokenInCookie(ctx.Writer, sessionToken)
 
-			fetchBlogsByTag(ctx, "All", sessionToken)
+			fetchBlogsByTag(ctx, "All", "0", sessionToken)
 		} else if res.StatusCode == 206 {
 			RenderRegsiterPage(ctx, "Username is already used")
 		} else if res.StatusCode == 500 {
@@ -280,7 +282,7 @@ func Login(ctx *gin.Context) {
 		// Save session token in cookie of user
 		setSessionTokenInCookie(ctx.Writer, sessionToken)
 
-		fetchBlogsByTag(ctx, "All", sessionToken)
+		fetchBlogsByTag(ctx, "All", "0", sessionToken)
 	} else if res.StatusCode == 205 {
 		RenderLoginPage(ctx, "User doesn't exists")
 	} else if res.StatusCode == 206 {
@@ -425,23 +427,6 @@ func SearchUserForRegistration(ctx *gin.Context) {
 
 		fmt.Fprint(ctx.Writer, "")
 	}
-}
-
-func GetBlogsByTag(ctx *gin.Context) {
-	// 200 => Blogs found
-	// 201 => No blog found for the specific tag
-	// 202 => Invalid Session Token
-	// 500 => Internal Server Error
-
-	// Set the Content-Type header to "text/html"
-	ctx.Header("Content-Type", "text/html")
-
-	tag := ctx.Param("tag")
-	tag = strings.Title(tag)
-
-	sessionToken := getSessionTokenFromCookie(ctx.Request)
-
-	fetchBlogsByTag(ctx, tag, sessionToken)
 }
 
 func SearcBlogTitle_BeforePosting(ctx *gin.Context) {
@@ -641,8 +626,6 @@ func PostBlog(ctx *gin.Context) {
 		defer res.Body.Close()
 
 		if res.StatusCode == 200 {
-			sessionToken := getSessionTokenFromCookie(ctx.Request)
-
 			err = ctx.SaveUploadedFile(image, blog.ImagePath)
 
 			if err != nil {
@@ -652,7 +635,8 @@ func PostBlog(ctx *gin.Context) {
 				fmt.Fprint(ctx.Writer, "Image of blog cannot be saved")
 			}
 
-			fetchBlogsByTag(ctx, "All", sessionToken)
+			sessionToken := getSessionTokenFromCookie(ctx.Request)
+			fetchBlogsByTag(ctx, "All", "0", sessionToken)
 		} else if res.StatusCode == 201 {
 			RenderPostBlogPage(ctx, "Title, Description, Tag is not in format")
 		} else if res.StatusCode == 202 {
@@ -989,8 +973,6 @@ func UpdateBlog(ctx *gin.Context) {
 		defer res.Body.Close()
 
 		if res.StatusCode == 200 {
-			sessionToken := getSessionTokenFromCookie(ctx.Request)
-
 			err = ctx.SaveUploadedFile(image, blog.ImagePath)
 
 			if err != nil {
@@ -1011,7 +993,8 @@ func UpdateBlog(ctx *gin.Context) {
 				// No need to return
 			}
 
-			fetchBlogsByTag(ctx, "All", sessionToken)
+			sessionToken := getSessionTokenFromCookie(ctx.Request)
+			fetchBlogsByTag(ctx, "All", "0", sessionToken)
 		} else if res.StatusCode == 201 {
 			RenderUpdateBlogPage(ctx, blog, "Title, Description, Tag is not in format")
 		} else if res.StatusCode == 202 {
@@ -1090,8 +1073,6 @@ func DeleteBlog(ctx *gin.Context) {
 	defer res.Body.Close()
 
 	if res.StatusCode == 200 {
-		sessionToken := getSessionTokenFromCookie(ctx.Request)
-
 		oldImagePath := "./static/images/blogs/" + title + ".png"
 
 		err = os.Remove(oldImagePath)
@@ -1104,7 +1085,8 @@ func DeleteBlog(ctx *gin.Context) {
 			// No need to return
 		}
 
-		fetchBlogsByTag(ctx, "All", sessionToken)
+		sessionToken := getSessionTokenFromCookie(ctx.Request)
+		fetchBlogsByTag(ctx, "All", "0", sessionToken)
 	} else if res.StatusCode == 201 {
 		getBlogByTitle(ctx, title, "")
 		fmt.Fprint(ctx.Writer, "Data not in format")
@@ -1112,7 +1094,8 @@ func DeleteBlog(ctx *gin.Context) {
 		getBlogByTitle(ctx, title, "")
 		fmt.Fprint(ctx.Writer, "Cannot delete this blog")
 	} else if res.StatusCode == 203 {
-		fetchBlogsByTag(ctx, "All", sessionToken)
+		sessionToken := getSessionTokenFromCookie(ctx.Request)
+		fetchBlogsByTag(ctx, "All", "0", sessionToken)
 		fmt.Fprint(ctx.Writer, BLOG_NOT_FOUND_MESSAGE)
 	} else if res.StatusCode == 205 {
 		getBlogByTitle(ctx, title, "")
@@ -1126,6 +1109,139 @@ func DeleteBlog(ctx *gin.Context) {
 		log.Println("Bug: Unexpected Status Code ", res.StatusCode)
 
 		getBlogByTitle(ctx, title, "")
+		fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
+	}
+}
+
+func GetMoreBlogsByTagWithOffset(ctx *gin.Context) {
+	// 200 => Blogs found
+	// 201 => No blog found for the specific tag
+	// 202 => Invalid Session Token
+	// 203 => No more blogs available
+	// 205 => Invalid Offset
+	// 500 => Internal Server Error
+
+	// Set the Content-Type header to "text/html"
+	ctx.Header("Content-Type", "text/html")
+
+	tag := ctx.Param("tag")
+	tag = strings.Title(tag)
+
+	sessionToken := getSessionTokenFromCookie(ctx.Request)
+
+	offset := ctx.Query("offset")
+
+	offsetInt, err := strconv.Atoi(offset)
+
+	if err != nil {
+		fmt.Fprint(ctx.Writer, "<script>alert('Offset must be non negative integer');</script>")
+		return
+	}
+
+	if offset == "0" {
+		fetchBlogsByTag(ctx, tag, "0", sessionToken)
+		return
+	}
+
+	if offsetInt == -1 {
+		ctx.Status(http.StatusNoContent)
+		return
+	}
+
+	ctxTimeout, cancelFunc := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancelFunc()
+
+	serviceURL := BASE_URL + "blogs/" + tag + "?sessionToken=" + sessionToken + "&offset=" + offset
+
+	requestToBackend_server, err := http.NewRequestWithContext(ctxTimeout, "GET", serviceURL, nil)
+
+	if err != nil {
+		log.Println("Error: ", err)
+		log.Println("Description: Cannot Create GET Request with Context")
+
+		fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
+		return
+	}
+
+	res, err := http.DefaultClient.Do(requestToBackend_server)
+
+	if err != nil {
+		if ctxTimeout.Err() == context.DeadlineExceeded {
+			log.Println("Error: ", err)
+			log.Println("Description: Back-end server didn't responsed in given time")
+
+			fmt.Fprint(ctx.Writer, REQUEST_TIMED_OUT_MESSAGE)
+			return
+		}
+		log.Println("Error: ", err)
+		log.Println("Description: Cannot send POST request(with timeout(context)) to back-end server")
+
+		fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
+		return
+	}
+
+	defer res.Body.Close()
+
+	if res.StatusCode == 200 {
+		responseJSONData, err := io.ReadAll(res.Body)
+
+		if err != nil {
+			log.Println("Error: ", err)
+			log.Println("Decription: Cannot read body of response as JSON data")
+
+			fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
+			return
+		}
+
+		defer res.Body.Close()
+
+		var responseDataStructure struct {
+			Blogs      []model.Blog `json:"blogs"`
+			NextOffset string       `json:"nextOffset"`
+		}
+
+		err = json.Unmarshal(responseJSONData, &responseDataStructure)
+		if err != nil {
+			log.Println("Error: ", err)
+			log.Println("Decription: Cannot read body of response as JSON data")
+
+			fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
+			return
+		}
+
+		data := map[string]interface{}{
+			"Blogs":        responseDataStructure.Blogs,
+			"RequestedTag": tag,
+			"TagsList":     tagsList,
+			"Offset":       responseDataStructure.NextOffset,
+		}
+
+		tmpl := template.Must(template.ParseFiles("./views/blog.html"))
+		err = tmpl.Execute(ctx.Writer, data)
+
+		if err != nil {
+			log.Println("Error: ", err)
+			log.Println("Description: Error in tmpl.Execute() in RenderHomePage()")
+
+			fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
+		}
+	} else if res.StatusCode == 201 {
+		response := "No Blogs found for " + tag + " tag"
+		log.Println(response)
+
+		RenderHomePage(ctx, nil, tag, "-1")
+	} else if res.StatusCode == 202 {
+		response := "<script>alert('Session Timed Out');location.href='http://localhost:4200/login';</script>"
+		fmt.Fprint(ctx.Writer, response)
+	} else if res.StatusCode == 500 {
+		log.Println("Error: Back-end server has Internal Server Error")
+
+		fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
+	} else if res.StatusCode == 203 {
+		ctx.Status(http.StatusNoContent)
+	} else {
+		log.Println("Bug: Unexpected Status Code ", res.StatusCode)
+
 		fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
 	}
 }

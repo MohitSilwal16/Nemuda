@@ -349,3 +349,35 @@ func DeleteBlog(title string, username string) error {
 
 	return nil
 }
+
+func GetBlogsByTagWithOffset(tag string, offset int, limit int) ([]models.Blog, error) {
+	var filter primitive.M
+	if tag == "All" {
+		filter = bson.M{}
+	} else {
+		filter = bson.M{"tag": tag}
+	}
+
+	opts := options.Find().SetLimit(int64(limit)).SetSkip(int64(offset))
+
+	cursor, err := mongoDBCollection.Find(context.Background(), filter, opts)
+
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(context.Background())
+
+	var blogs []models.Blog
+
+	defer cursor.Close(context.Background())
+
+	for cursor.Next(context.Background()) {
+		var blog models.Blog
+
+		if err = cursor.Decode(&blog); err != nil {
+			return nil, err
+		}
+		blogs = append(blogs, blog)
+	}
+	return blogs, nil
+}
