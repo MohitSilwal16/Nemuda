@@ -3,9 +3,6 @@
   class="grid w-screen h-screen text-5xl font-semibold text-white bg-no-repeat bg-cover grid-rows-7 lg:text-2xl bg-register-login"
   id="update-blog-page"
 >
-  <title>Nemuda</title>
-  <script src="../../static/js/htmx.min.js"></script>
-  <link rel="stylesheet" href="../../static/css/output.css" />
   <h1 class="mt-40 font-bold text-center text-7xl lg:text-5xl lg:mt-28">
     Update Blog
   </h1>
@@ -48,7 +45,7 @@
     <p id="descError" class="text-3xl text-red-600 lg:text-lg"></p>
     <div class="h-20 lg:h-4"></div>
     <label for="tag">Tag:</label>
-    <select class="py-1 pl-2 rounded-lg" id="tag" name="tag">
+    <select class="py-1 pl-2 bg-blue-500 rounded-lg" id="tag" name="tag">
       {{ range .TagsList }}
       <option {{ if eq . $.Blog.Tag}} selected {{ end }}>{{ . }}</option>
       {{ end }}

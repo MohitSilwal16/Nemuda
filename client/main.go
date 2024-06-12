@@ -65,6 +65,8 @@ func main() {
 
 	r.GET("/blogs/comment/:title", controller.AddComment)
 
+	r.NoRoute(controller.RenderPageNotFound)
+
 	go func() {
 		log.Println("Running Server on http://localhost:4200")
 		r.Run("localhost:4200")

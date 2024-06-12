@@ -1,7 +1,11 @@
 <!doctype html>
 {{ if not .Blogs}}
-<!-- Add decorative container for "No Blogs found for xyz tag" -->
-<p>No Blogs found for {{ .RequestedTag }} tag</p>
+<div class="p-8 text-center shadow-lg bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl">
+  <p class="text-3xl text-white">
+      No Blogs found for <span class="font-bold">{{ .RequestedTag }}</span> tag 😢
+  </p>
+</div>
+
 {{ end }} {{ range .Blogs }}
 <div
   class="grid grid-flow-col grid-cols-3 mx-32 my-10 overflow-hidden border rounded-lg shadow-xl cursor-pointer hover:border-2 hover:border-white"

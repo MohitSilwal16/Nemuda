@@ -1,32 +1,40 @@
 <!doctype html>
-<div id="view-blog-page">
+<div
+  id="view-blog-page"
+  class="h-screen pb-10 overflow-y-auto text-2xl text-white px-44 scroll-bar"
+>
   <div
-    class="grid grid-flow-col grid-cols-3 mx-32 my-10 overflow-hidden border rounded-lg shadow-xl cursor-pointer hover:border-2 hover:border-white"
+    class="grid grid-flow-col grid-cols-7 my-10 overflow-hidden border rounded-lg shadow-xl cursor-pointer backdrop-blur-md"
   >
-    <title>Nemuda</title>
-    <script src="../../../static/js/htmx.min.js"></script>
-    <link rel="stylesheet" href="../../../static/css/output.css" />
     <img
       src="../../{{ .Blog.ImagePath }}"
-      class="transition duration-500 ease-in bg-white h-60 hover:scale-125"
+      class="col-span-2 bg-white h-72"
       alt="Image"
     />
-    <div class="col-span-2 px-8 py-6">
-      <span class="font-semibold">Username:</span>
-      {{ .Blog.Username }}
-      <br />
-      <span class="font-semibold">Title:</span>
-      {{ .Blog.Title }}
-      <br />
-      <span class="font-semibold">Tag:</span>
-      {{ .Blog.Tag }}
-      <br />
-      <span class="font-semibold">Description:</span>
-      {{ .Blog.Description }}
+    <div class="col-span-5 px-8 py-6">
+      <div class="mt-1 mb-4">
+        <span class="font-semibold">Username:</span>
+        {{ .Blog.Username }}
+      </div>
+      <div class="mb-4">
+        <span class="font-semibold">Title:</span>
+        {{ .Blog.Title }}
+      </div>
+      <div class="mb-4">
+        <span class="font-semibold">Tag:</span>
+        {{ .Blog.Tag }}
+      </div>
+      <div class="mb-4">
+        <span class="font-semibold">Description:</span>
+        {{ .Blog.Description }}
+      </div>
+      <span class="font-semibold">Likes:</span>
+      {{ .Blog.Likes }}
     </div>
   </div>
+
   <button
-    class="w-full h-24 py-2 mt-5 border-2 rounded-full shadow-lg cursor-pointer lg:h-14 opacity-80 hover:opacity-100"
+    class="w-32 h-24 py-2 mr-16 border-2 rounded-full shadow-lg cursor-pointer backdrop-blur-md lg:h-14 opacity-80 hover:opacity-100"
     type="button"
     hx-get="/blogs/All?offset=0"
     hx-target="#view-blog-page"
@@ -34,55 +42,9 @@
   >
     Home
   </button>
-  {{if .IsEditableDeletable }}
-  <button
-    hx-get="/update_blog/{{ .Blog.Title }}"
-    hx-target="#view-blog-page"
-    hx-swap="outerHTML"
-  >
-    Update Blog
-  </button>
-  <br />
-  <button
-    hx-delete="/blogs/{{ .Blog.Title }}"
-    hx-target="#view-blog-page"
-    hx-swap="outerHTML"
-    hx-push-url="/"
-  >
-    Delete Blog
-  </button>
-  <br />
-  {{ end }} Likes: {{ .Blog.Likes }} <br />
-  Users who liked: {{ range .Blog.LikedUsername }} <br />
-  Liked Username: {{ . }}
-  <br />
-  {{ end }}
-  <br />
-  Comments: <br />
-  {{ range .Blog.Comments }}
-  <span class="font-semibold">{{ .Username }}:</span>
-  {{ .Description }}
-  <br />
-  <br />
-  {{ end }}
-
-  <p>Add Comment</p>
-  <form
-    hx-get="/blogs/comment/{{ .Blog.Title }}"
-    hx-target="#view-blog-page"
-    hx-swap="outerHTML"
-  >
-    <input
-      type="text"
-      name="comment"
-      id="comment"
-      placeholder="Comment Something ..."
-    />
-    <br />
-    <input type="submit" value="Comment" />
-  </form>
 
   <button
+    class="h-24 py-2 mt-5 mr-16 border-2 rounded-full shadow-lg cursor-pointer backdrop-blur-md w-44 lg:h-14 opacity-80 hover:opacity-100"
     id="like-button"
     {{
     if
@@ -101,4 +63,116 @@
   >
     {{ if eq .IsBlogLiked false }} Like {{ else }} Dislike {{ end }}
   </button>
+
+  {{if .IsEditableDeletable }}
+  <button
+    class="h-24 py-2 mt-5 mr-16 border-2 rounded-full shadow-lg cursor-pointer backdrop-blur-md w-60 lg:h-14 opacity-80 hover:opacity-100"
+    hx-get="/update_blog/{{ .Blog.Title }}"
+    hx-target="#view-blog-page"
+    hx-swap="outerHTML"
+  >
+    Update Blog
+  </button>
+  <button
+    class="h-24 py-2 mt-5 border-2 rounded-full shadow-lg cursor-pointer backdrop-blur-md w-60 lg:h-14 opacity-80 hover:opacity-100"
+    hx-delete="/blogs/{{ .Blog.Title }}"
+    hx-target="#view-blog-page"
+    hx-swap="outerHTML"
+    hx-push-url="/"
+  >
+    Delete Blog
+  </button>
+  {{ end }}
+  <br />
+  <br />
+
+  <div class="flex mt-16 justify-evenly">
+    <form
+      class="p-10 border border-white backdrop-blur-md rounded-xl"
+      hx-get="/blogs/comment/{{ .Blog.Title }}"
+      hx-trigger="submit[onValidate()]"
+      hx-target="#view-blog-page"
+      hx-swap="outerHTML"
+    >
+      <h1 class="flex justify-center mb-2 font-semibold">Add Comment</h1>
+      <textarea
+        class="shadow-lg rounded-md pl-2.5 py-1 w-full lg:h-20 h-32 outline-0"
+        name="comment"
+        id="comment"
+        placeholder="Comment Something ..."
+      ></textarea>
+      <p id="commentError" class="text-3xl text-red-600 lg:text-lg"></p>
+      <div class="h-20 lg:h-4"></div>
+      <!-- Display Server's Response -->
+      <div id="output" class="flex justify-center text-red-600">
+        {{ .Message }}
+      </div>
+      <input
+        id="commentButton"
+        class="flex justify-center w-64 h-24 py-2 mt-5 border-2 rounded-full shadow-lg cursor-pointer lg:h-14 opacity-80 hover:opacity-100"
+        type="submit"
+        value="Comment"
+      />
+    </form>
+
+    <div
+      class="overflow-y-auto border border-white w-96 backdrop-blur-md rounded-xl h-80 scroll-bar"
+    >
+      <h1 class="sticky top-0 p-4 bg-blue-500">Comments</h1>
+      {{ if not .Blog.Comments}}
+      <div class="flex justify-center mt-10">No Comments</div>
+      {{ end }}
+      <div class="m-4">
+        {{ range .Blog.Comments }}
+        <div class="p-2 border border-white rounded-lg">
+          <span class="font-semibold">{{ .Username }}:</span>
+          {{ .Description }}
+        </div>
+        <br />
+        {{ end }}
+      </div>
+    </div>
+
+    <div
+      class="w-64 overflow-y-auto border border-white backdrop-blur-md rounded-xl h-80 scroll-bar"
+    >
+      <h1 class="sticky top-0 p-4 bg-blue-500">Liked Users</h1>
+      {{ if not .Blog.LikedUsername}}
+      <div class="flex justify-center mt-10">No Liked Users</div>
+      {{ end }}
+      <div class="m-4">
+        {{ range .Blog.LikedUsername}} {{ . }} <br />
+        {{ end }}
+      </div>
+    </div>
+  </div>
+  <script>
+    function onValidate() {
+      let comment = document.getElementById("comment");
+      let commentError = document.getElementById("commentError");
+
+      comment.value = comment.value.trim();
+
+      if (comment.value == "") {
+        commentError.innerHTML = "This field is mandatory";
+        comment.focus();
+        return false;
+      }
+
+      if (comment.value.length < 5 || comment.value.length > 50) {
+        commentError.innerHTML = "Min 5 & Max 50 letters";
+        comment.focus();
+        return false;
+      }
+      commentError.innerHTML = "";
+
+      let commentButton = document.getElementById("commentButton");
+      commentButton.value = "Commenting ...";
+      commentButton.setAttribute("disabled", "true");
+      commentButton.classList.remove("cursor-pointer");
+      commentButton.classList.add("cursor-not-allowed");
+
+      return true;
+    }
+  </script>
 </div>

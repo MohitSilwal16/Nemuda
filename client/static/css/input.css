@@ -2,16 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  font-family: "Courier New", Courier, monospace;
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;700&display=swap');
+
+* {
+  letter-spacing: 2px;
+  font-family: "Roboto Slab", Courier, monospace;
 }
 
 input[type="text"],
-input[type="password"] {
+input[type="password"],
+textarea {
   @apply text-black;
 }
 
-#home-body {
+#home-body,
+#view-blog-page {
   background-image: url("/static/images/background-home.jpg");
   /* background-color: #ffffff;
   background-image: linear-gradient(315deg, #000000 0%, #5899e2 74%); */

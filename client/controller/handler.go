@@ -8,7 +8,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
 	"regexp"
 	"strconv"
@@ -822,7 +821,7 @@ func AddComment(ctx *gin.Context) {
 
 	serviceURL := BASE_URL + "blogs/comment/" + commentDescription + "?sessionToken=" + sessionToken + "&title=" + title
 
-	serviceURL = url.QueryEscape(serviceURL)
+	serviceURL = strings.Replace(serviceURL, " ", "%20", -1)
 
 	// Create Request with Timeout
 	requestToBackend_Server, err := http.NewRequestWithContext(ctxTimeout, "GET", serviceURL, nil)

@@ -4,11 +4,6 @@
   class="grid w-screen h-screen grid-rows-4 text-5xl font-semibold text-white bg-no-repeat bg-cover lg:text-2xl bg-register-login"
   id="login-body"
 >
-  <title>Nemuda</title>
-  <script src="./static/js/htmx.min.js"></script>
-  <!-- Extension to send data in JSON Format using hx-ext="json-enc" -->
-  <script src="./static/js/json-enc.js"></script>
-  <link rel="stylesheet" href="./static/css/output.css" />
   <h1
     id="login-page-heading"
     class="font-bold text-center text-7xl lg:text-5xl mt-60 lg:mt-36"
@@ -82,7 +77,6 @@
       hx-get="/register"
       hx-target="#login-body"
       hx-swap="outerHTML"
-      hx-push-url="/register"
       >New to Nemuda ?</a
     >
   </form>

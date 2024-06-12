@@ -192,3 +192,18 @@ func RenderGetBlogPage(ctx *gin.Context, blog model.Blog, message string) {
 
 	temp.Execute(ctx.Writer, data)
 }
+
+func RenderPageNotFound(ctx *gin.Context) {
+	// Set the Content-Type header to "text/html"
+	ctx.Header("Content-Type", "text/html")
+
+	tmpl := template.Must(template.ParseFiles("./views/page_not_found.html"))
+	err := tmpl.Execute(ctx.Writer, nil)
+
+	if err != nil {
+		log.Println("Error: ", err)
+		log.Println("Description: Error in tmpl.Execute() in RengerRegisterPage()")
+
+		fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
+	}
+}
