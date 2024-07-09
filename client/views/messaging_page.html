@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<div
+  class="flex items-center justify-center mt-5 text-2xl font-semibold bg-blue-400 rounded-lg h-14"
+  id="title"
+>
+  {{ .Receiver }}
+</div>
+
+<!-- Messages -->
+<div
+  id="messages"
+  class="p-10 mt-3 overflow-y-auto border border-white rounded-lg h-9/10 scroll-bar"
+>
+  {{ if eq .Receiver "Nemu Chat" }}
+  <p class="text-3xl text-center text-white">Welcome to Nemu Chat</p>
+  {{ else if not .Messages }}
+  <div class="p-8 text-center shadow-lg rounded-xl" id="noMsgBox">
+    <p class="text-3xl text-white">
+      No Messages with
+      <span class="font-bold">{{ $.Receiver }}</span>
+    </p>
+  </div>
+  {{ end }} {{ range .Messages }} {{ if eq .Sender $.Receiver }}
+  <p class="text-white">
+    {{ .Sender }}: {{ .MessageContent }} "{{ .DateTime }}" {{ .Status }}
+  </p>
+  {{ else }}
+  <p class="text-right text-white">
+    {{ .Sender }}: {{ .MessageContent }} "{{ .DateTime }}" {{ .Status }}
+  </p>
+  {{ end }} {{ end }}
+</div>

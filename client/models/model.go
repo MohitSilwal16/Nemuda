@@ -1,4 +1,4 @@
-package model
+package models
 
 type User struct {
 	Username string `json:"username"`
@@ -20,4 +20,12 @@ type Blog struct {
 type Comment struct {
 	Username    string `json:"username"`
 	Description string `json:"description"`
+}
+
+type Message struct {
+	Sender         string `json:"sender"`
+	Receiver       string `json:"receiver"`
+	MessageContent string `json:"messageContent"`
+	Status         string `json:"status"` // Send, Delivered, Read
+	DateTime       string `json:"dateTime"`
 }

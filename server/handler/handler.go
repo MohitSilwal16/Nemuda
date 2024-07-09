@@ -8,9 +8,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/MohitSilwal16/Nemuda/db"
-	"github.com/MohitSilwal16/Nemuda/models"
-	"github.com/MohitSilwal16/Nemuda/utils"
+	"github.com/MohitSilwal16/Nemuda/server/db"
+	"github.com/MohitSilwal16/Nemuda/server/models"
+	"github.com/MohitSilwal16/Nemuda/server/utils"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -18,7 +18,7 @@ import (
 // Tags' slice
 var tagsList = []string{"Political", "Technical", "Educational", "Geographical", "Programming", "Other"}
 
-var BLOG_LIMIT = 1
+const BLOG_LIMIT = 1
 
 func VerifySessionToken(ctx *gin.Context) {
 	// 200 => Session Token is Valid
@@ -37,7 +37,7 @@ func VerifySessionToken(ctx *gin.Context) {
 		return
 	}
 
-	isTokenValid, err := db.IsSessionTokenDuplicate(sessionToken)
+	isTokenValid, err := db.IsSessionTokenValid(sessionToken)
 
 	if err != nil {
 		log.Println("Error: ", err)
@@ -103,7 +103,7 @@ func Register(ctx *gin.Context) {
 		// Checking whether the generated session token is already used or not
 		// If so then generate another session token & keep this loop until we find a unique session token
 		for {
-			isSessionTokenDuplicate, err := db.IsSessionTokenDuplicate(sessionToken)
+			isSessionTokenDuplicate, err := db.IsSessionTokenValid(sessionToken)
 			if err != nil {
 				log.Println("Error: ", err)
 				ctx.JSON(500, gin.H{
@@ -277,7 +277,7 @@ func SearchUser(ctx *gin.Context) {
 		return
 	}
 
-	usernameFound, err := db.SearchUserByName(username)
+	usernameFound, err := db.DoesUserExists(username)
 
 	if err != nil {
 		log.Println("Error: ", err)
@@ -316,7 +316,7 @@ func SearchBlogByTitle(ctx *gin.Context) {
 		return
 	}
 
-	isSessionTokenValid, err := db.IsSessionTokenDuplicate(sessionToken)
+	isSessionTokenValid, err := db.IsSessionTokenValid(sessionToken)
 	if err != nil {
 		log.Println("Error: ", err)
 		ctx.JSON(500, gin.H{
@@ -371,7 +371,7 @@ func PostBlog(ctx *gin.Context) {
 		return
 	}
 
-	isSessionTokenValid, err := db.IsSessionTokenDuplicate(sessionToken)
+	isSessionTokenValid, err := db.IsSessionTokenValid(sessionToken)
 	if err != nil {
 		log.Println("Error: ", err)
 		ctx.JSON(500, gin.H{
@@ -471,7 +471,7 @@ func IsBlogLikedByUser(ctx *gin.Context) {
 		return
 	}
 
-	isSessionTokenValid, err := db.IsSessionTokenDuplicate(sessionToken)
+	isSessionTokenValid, err := db.IsSessionTokenValid(sessionToken)
 	if err != nil {
 		log.Println("Error: ", err)
 		ctx.JSON(500, gin.H{
@@ -568,7 +568,7 @@ func LikeBlog(ctx *gin.Context) {
 		return
 	}
 
-	isSessionTokenValid, err := db.IsSessionTokenDuplicate(sessionToken)
+	isSessionTokenValid, err := db.IsSessionTokenValid(sessionToken)
 	if err != nil {
 		log.Println("Error: ", err)
 		ctx.JSON(500, gin.H{
@@ -655,7 +655,7 @@ func DislikeBlog(ctx *gin.Context) {
 		return
 	}
 
-	isSessionTokenValid, err := db.IsSessionTokenDuplicate(sessionToken)
+	isSessionTokenValid, err := db.IsSessionTokenValid(sessionToken)
 	if err != nil {
 		log.Println("Error: ", err)
 		ctx.JSON(500, gin.H{
@@ -742,7 +742,7 @@ func AddComment(ctx *gin.Context) {
 		return
 	}
 
-	isSessionTokenValid, err := db.IsSessionTokenDuplicate(sessionToken)
+	isSessionTokenValid, err := db.IsSessionTokenValid(sessionToken)
 	if err != nil {
 		log.Println("Error: ", err)
 		ctx.JSON(500, gin.H{
@@ -851,7 +851,7 @@ func UpdateBlog(ctx *gin.Context) {
 		return
 	}
 
-	isSessionTokenValid, err := db.IsSessionTokenDuplicate(sessionToken)
+	isSessionTokenValid, err := db.IsSessionTokenValid(sessionToken)
 	if err != nil {
 		log.Println("Error: ", err)
 		ctx.JSON(500, gin.H{
@@ -988,7 +988,7 @@ func DeleteBlog(ctx *gin.Context) {
 		return
 	}
 
-	isSessionTokenValid, err := db.IsSessionTokenDuplicate(sessionToken)
+	isSessionTokenValid, err := db.IsSessionTokenValid(sessionToken)
 	if err != nil {
 		log.Println("Error: ", err)
 		ctx.JSON(500, gin.H{
@@ -1076,7 +1076,7 @@ func CanUserUpdate_DeleteBlog(ctx *gin.Context) {
 		return
 	}
 
-	isSessionTokenValid, err := db.IsSessionTokenDuplicate(sessionToken)
+	isSessionTokenValid, err := db.IsSessionTokenValid(sessionToken)
 	if err != nil {
 		log.Println("Error: ", err)
 		ctx.JSON(500, gin.H{
@@ -1170,7 +1170,7 @@ func GetBlogsByTag(ctx *gin.Context) {
 		return
 	}
 
-	isSessionTokenValid, err := db.IsSessionTokenDuplicate(sessionToken)
+	isSessionTokenValid, err := db.IsSessionTokenValid(sessionToken)
 	if err != nil {
 		log.Println("Error: ", err)
 		ctx.JSON(500, gin.H{
@@ -1235,4 +1235,263 @@ func GetBlogsByTag(ctx *gin.Context) {
 		"blogs":      blogs,
 		"nextOffset": strconv.Itoa(offsetInt + BLOG_LIMIT),
 	})
+}
+
+func GetUsernameBySessionToken(ctx *gin.Context) {
+	// 200 => Username found
+	// 201 => Invalid Session Token
+	// 202 => Invalid Session Token
+	// 500 => Internal Server Error
+
+	// Set the Content-Type header to "application/json"
+	ctx.Header("Content-Type", "application/json")
+
+	sessionToken := ctx.Param("sessionToken")
+
+	if sessionToken == "" {
+		ctx.JSON(201, gin.H{
+			"message": "Invalid Session Token",
+		})
+		return
+	}
+
+	username, err := db.GetUsernameBySessionToken(sessionToken)
+
+	if err != nil {
+		log.Println("Error: ", err)
+		log.Println("Description: Error while fetching username from session token")
+
+		if err.Error() == "INVALID SESSION TOKEN" {
+			ctx.JSON(201, gin.H{
+				"message": "Invalid Session Token",
+			})
+		} else {
+			ctx.JSON(500, gin.H{
+				"message": "Internal Server Error",
+			})
+		}
+		return
+	}
+	ctx.JSON(200, gin.H{
+		"username": username,
+	})
+}
+
+func GetMessages(ctx *gin.Context) {
+	// 200 => Messages returned
+	// 201 => No messages
+	// 202 => Invalid Session Token
+	// 203 => Invalid Receiver
+	// 500 => Internal Server Error
+
+	// Set the Content-Type header to "application/json"
+	ctx.Header("Content-Type", "application/json")
+
+	sessionToken := ctx.Query("sessionToken")
+
+	if sessionToken == "" {
+		ctx.JSON(202, gin.H{
+			"message": "Invalid Session Token",
+		})
+		return
+	}
+
+	receiver := ctx.Param("user")
+
+	sender, err := db.GetUsernameBySessionToken(sessionToken)
+
+	if err != nil {
+		log.Println("Error: ", err)
+		log.Println("Description: Error while fetching username from session token")
+
+		if err.Error() == "INVALID SESSION TOKEN" {
+			ctx.JSON(202, gin.H{
+				"message": "Invalid Session Token",
+			})
+		} else {
+			ctx.JSON(500, gin.H{
+				"message": "Internal Server Error",
+			})
+		}
+		return
+	}
+
+	isReceiverValid, err := db.DoesUserExists(receiver)
+
+	if err != nil {
+		ctx.JSON(500, gin.H{
+			"message": "Internal Server Error",
+		})
+		return
+	}
+
+	if !isReceiverValid {
+		ctx.JSON(203, gin.H{
+			"message": "Invalid Receiver",
+		})
+		return
+	}
+
+	messages, err := db.GetMessages(sender, receiver)
+
+	if err != nil {
+		log.Println("Error: ", err)
+		log.Println("Description: Error while fetching messages")
+
+		ctx.JSON(500, gin.H{
+			"message": "Internal Server Error",
+		})
+		return
+	}
+
+	if messages == nil {
+		ctx.JSON(201, gin.H{
+			"message": "No messages with " + receiver,
+		})
+		return
+	}
+
+	ctx.JSON(200, messages)
+}
+
+func AddMessage(ctx *gin.Context) {
+	// 200 => Messages added
+	// 201 => Message data isn't in proper format(JSON)
+	// 202 => Invalid Session Token
+	// 203 => Invalid Receiver
+	// 500 => Internal Server Error
+
+	// Set the Content-Type header to "application/json"
+	ctx.Header("Content-Type", "application/json")
+
+	sessionToken := ctx.Query("sessionToken")
+
+	if sessionToken == "" {
+		ctx.JSON(202, gin.H{
+			"message": "Invalid Session Token",
+		})
+		return
+	}
+
+	isSessionTokenValid, err := db.IsSessionTokenValid(sessionToken)
+
+	if err != nil {
+		log.Println("Error:", err)
+		log.Println("Description: Cannot validate session token")
+		ctx.JSON(500, gin.H{
+			"message": "Internal Server Error",
+		})
+		return
+	}
+
+	if !isSessionTokenValid {
+		ctx.JSON(202, gin.H{
+			"message": "Invalid Session Token",
+		})
+		return
+	}
+
+	var message models.Message
+	err = json.NewDecoder(ctx.Request.Body).Decode(&message)
+
+	if err != nil {
+		log.Println("Error: ", err)
+		log.Println("Description: Cannot read json data")
+
+		ctx.JSON(201, gin.H{
+			"message": "Provided data is not in correct format(JSON).",
+		})
+		return
+	}
+
+	doesReceiverExists, err := db.DoesUserExists(message.Receiver)
+
+	if err != nil {
+		ctx.JSON(500, gin.H{
+			"message": "Internal Server Error",
+		})
+		return
+	}
+
+	if !doesReceiverExists {
+		ctx.JSON(203, gin.H{
+			"message": "Invalid Receiver",
+		})
+		return
+	}
+
+	err = db.AddMessage(message)
+
+	if err != nil {
+		log.Println("Error:", err)
+		log.Println("Description: Cannot validate session token")
+
+		ctx.JSON(500, gin.H{
+			"message": "Internal Server Error",
+		})
+		return
+	}
+
+	ctx.JSON(200, gin.H{
+		"message": "Message Added",
+	})
+}
+
+func SearchUsersByPattern(ctx *gin.Context) {
+	// 200 => Users found
+	// 201 => No users found
+	// 202 => Invalid Session Token
+	// 500 => Internal Server Error
+
+	// Set the Content-Type header to "application/json"
+	ctx.Header("Content-Type", "application/json")
+
+	sessionToken := ctx.Query("sessionToken")
+
+	if sessionToken == "" {
+		ctx.JSON(202, gin.H{
+			"message": "Invalid Session Token",
+		})
+		return
+	}
+
+	isSessionTokenValid, err := db.IsSessionTokenValid(sessionToken)
+
+	if err != nil {
+		log.Println("Error:", err)
+		log.Println("Description: Cannot validate session token")
+		ctx.JSON(500, gin.H{
+			"message": "Internal Server Error",
+		})
+		return
+	}
+
+	if !isSessionTokenValid {
+		ctx.JSON(202, gin.H{
+			"message": "Invalid Session Token",
+		})
+		return
+	}
+
+	searchString := ctx.Query("searchString")
+
+	users, err := db.SearchUsersByPattern(searchString)
+
+	if err != nil {
+		log.Println("Error:", err)
+		log.Println("Description: Cannot Search Users with some pattern")
+
+		ctx.JSON(500, gin.H{
+			"message": "Internal Server Error",
+		})
+		return
+	}
+
+	if users == nil {
+		ctx.JSON(201, gin.H{
+			"message": "No users found",
+		})
+		return
+	}
+	ctx.JSON(200, users)
 }

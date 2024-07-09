@@ -1,7 +1,7 @@
 <!doctype html>
 <div
   id="view-blog-page"
-  class="h-screen pb-10 overflow-y-auto text-2xl text-white px-44 scroll-bar"
+  class="h-screen px-10 pb-10 overflow-y-auto text-2xl text-white lg:px-44 scroll-bar bg-gradient-image"
 >
   <div
     class="grid grid-flow-col grid-cols-7 my-10 overflow-hidden border rounded-lg shadow-xl cursor-pointer backdrop-blur-md"
@@ -34,7 +34,7 @@
   </div>
 
   <button
-    class="w-32 h-24 py-2 mr-16 border-2 rounded-full shadow-lg cursor-pointer backdrop-blur-md lg:h-14 opacity-80 hover:opacity-100"
+    class="h-24 py-2 mr-16 border-2 rounded-full shadow-lg cursor-pointer w-44 backdrop-blur-md lg:h-14 opacity-80 hover:opacity-100"
     type="button"
     hx-get="/blogs/All?offset=0"
     hx-target="#view-blog-page"
@@ -86,33 +86,36 @@
   <br />
   <br />
 
-  <div class="flex mt-16 justify-evenly">
+  <div class="flex flex-col mt-16 justify-evenly lg:flex-row">
     <form
-      class="p-10 border border-white backdrop-blur-md rounded-xl"
+      class="w-64 border border-white lg:w-96 backdrop-blur-md rounded-xl"
       hx-get="/blogs/comment/{{ .Blog.Title }}"
       hx-trigger="submit[onValidate()]"
       hx-target="#view-blog-page"
       hx-swap="outerHTML"
     >
-      <h1 class="flex justify-center mb-2 font-semibold">Add Comment</h1>
-      <textarea
-        class="shadow-lg rounded-md pl-2.5 py-1 w-full lg:h-20 h-32 outline-0"
-        name="comment"
-        id="comment"
-        placeholder="Comment Something ..."
-      ></textarea>
-      <p id="commentError" class="text-3xl text-red-600 lg:text-lg"></p>
-      <div class="h-20 lg:h-4"></div>
-      <!-- Display Server's Response -->
-      <div id="output" class="flex justify-center text-red-600">
-        {{ .Message }}
+      <h1 class="h-16 p-4 overflow-hidden font-semibold bg-blue-500 rounded-bl-none rounded-br-none rounded-xl">
+        Post Comment
+      </h1>
+      <div class="p-4">
+        <textarea
+          class="shadow-lg mt-5 rounded-md pl-2.5 py-1 w-full lg:h-20 h-32 outline-0"
+          name="comment"
+          id="comment"
+          placeholder="Comment Something ..."
+        ></textarea>
+        <p id="commentError" class="text-3xl text-red-600 lg:text-lg"></p>
+        <!-- Display Server's Response -->
+        <div id="output" class="flex justify-center text-red-600">
+          {{ .Message }}
+        </div>
+        <input
+          id="commentButton"
+          class="w-full h-24 py-2 mx-1 mt-5 border-2 rounded-full shadow-lg cursor-pointer lg:h-14 opacity-80 hover:opacity-100"
+          type="submit"
+          value="Comment"
+        />
       </div>
-      <input
-        id="commentButton"
-        class="flex justify-center w-64 h-24 py-2 mt-5 border-2 rounded-full shadow-lg cursor-pointer lg:h-14 opacity-80 hover:opacity-100"
-        type="submit"
-        value="Comment"
-      />
     </form>
 
     <div

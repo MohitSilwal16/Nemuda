@@ -12,11 +12,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Nemuda/client/model"
+	"github.com/Nemuda/client/models"
 	"github.com/gin-gonic/gin"
 )
 
-// Helper methods
+// Cookie handling
 func setSessionTokenInCookie(w http.ResponseWriter, token string) {
 	cookie := &http.Cookie{
 		Name:  "sessionToken",
@@ -50,6 +50,7 @@ func deleteSessionTokenFromCookie(w http.ResponseWriter) {
 	http.SetCookie(w, cookie)
 }
 
+// Helper methods
 func isBlogLiked(ctx *gin.Context, title string, sessionToken string) (bool, error) {
 	// 200 => Blog liked
 	// 201 => Blog not liked
@@ -69,7 +70,7 @@ func isBlogLiked(ctx *gin.Context, title string, sessionToken string) (bool, err
 
 	defer cancelFunc()
 
-	serviceURL := BASE_URL + "blogs/like/" + title + "?sessionToken=" + sessionToken
+	serviceURL := SERVICE_BASE_URL + "blogs/like/" + title + "?sessionToken=" + sessionToken
 
 	// Create Request with Timeout
 	requestToBackend_Server, err := http.NewRequestWithContext(ctxTimeout, "GET", serviceURL, nil)
@@ -151,7 +152,7 @@ func fetchBlogsByTag(ctx *gin.Context, tag string, offset string, sessionToken s
 	ctxTimeout, cancelFunc := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancelFunc()
 
-	serviceURL := BASE_URL + "blogs/" + tag + "?sessionToken=" + sessionToken + "&offset=" + offset
+	serviceURL := SERVICE_BASE_URL + "blogs/" + tag + "?sessionToken=" + sessionToken + "&offset=" + offset
 
 	requestToBackend_server, err := http.NewRequestWithContext(ctxTimeout, "GET", serviceURL, nil)
 
@@ -196,8 +197,8 @@ func fetchBlogsByTag(ctx *gin.Context, tag string, offset string, sessionToken s
 		defer res.Body.Close()
 
 		var responseDataStructure struct {
-			Blogs      []model.Blog `json:"blogs"`
-			NextOffset string       `json:"nextOffset"`
+			Blogs      []models.Blog `json:"blogs"`
+			NextOffset string        `json:"nextOffset"`
 		}
 
 		err = json.Unmarshal(responseJSONData, &responseDataStructure)
@@ -245,7 +246,7 @@ func getBlogByTitle(ctx *gin.Context, title string, message string) {
 
 	sessionToken := getSessionTokenFromCookie(ctx.Request)
 
-	serviceURL := BASE_URL + "blogs/title/" + title + "?sessionToken=" + sessionToken
+	serviceURL := SERVICE_BASE_URL + "blogs/title/" + title + "?sessionToken=" + sessionToken
 
 	// Create Request with Timeout
 	requestToBackend_Server, err := http.NewRequestWithContext(ctxTimeout, "GET", serviceURL, nil)
@@ -287,7 +288,7 @@ func getBlogByTitle(ctx *gin.Context, title string, message string) {
 			return
 		}
 
-		var blog model.Blog
+		var blog models.Blog
 		err = json.Unmarshal(responseJSONData, &blog)
 		if err != nil {
 			log.Println("Error: ", err)
@@ -332,7 +333,7 @@ func isBlogEditableDeletable(ctx *gin.Context, title string, sessionToken string
 
 	defer cancelFunc()
 
-	serviceURL := BASE_URL + "blogs/updatable_deletable?sessionToken=" + sessionToken + "&title=" + title
+	serviceURL := SERVICE_BASE_URL + "blogs/updatable_deletable?sessionToken=" + sessionToken + "&title=" + title
 	serviceURL = strings.Replace(serviceURL, " ", "%20", -1)
 
 	// Create Request with Timeout
@@ -383,7 +384,7 @@ func isBlogEditableDeletable(ctx *gin.Context, title string, sessionToken string
 	}
 }
 
-func fetchBlogByTitleAndReturn(ctx *gin.Context, title string) (model.Blog, error) {
+func fetchBlogByTitleAndReturn(ctx *gin.Context, title string) (models.Blog, error) {
 	// 200 => Blog found
 	// 201 => Blog not found
 	// 202 => Invalid Session Token
@@ -392,7 +393,7 @@ func fetchBlogByTitleAndReturn(ctx *gin.Context, title string) (model.Blog, erro
 	// Set the Content-Type header to "text/html"
 	ctx.Header("Content-Type", "text/html")
 
-	var b model.Blog
+	var b models.Blog
 
 	ctxTimeout, cancelFunc := context.WithTimeout(context.Background(), 3*time.Second)
 
@@ -400,7 +401,7 @@ func fetchBlogByTitleAndReturn(ctx *gin.Context, title string) (model.Blog, erro
 
 	sessionToken := getSessionTokenFromCookie(ctx.Request)
 
-	serviceURL := BASE_URL + "blogs/title/" + title + "?sessionToken=" + sessionToken
+	serviceURL := SERVICE_BASE_URL + "blogs/title/" + title + "?sessionToken=" + sessionToken
 
 	// Create Request with Timeout
 	requestToBackend_Server, err := http.NewRequestWithContext(ctxTimeout, "GET", serviceURL, nil)
@@ -442,7 +443,7 @@ func fetchBlogByTitleAndReturn(ctx *gin.Context, title string) (model.Blog, erro
 			return b, err
 		}
 
-		var blog model.Blog
+		var blog models.Blog
 		err = json.Unmarshal(responseJSONData, &blog)
 		if err != nil {
 			log.Println("Error: ", err)
@@ -472,7 +473,7 @@ func fetchBlogByTitleAndReturn(ctx *gin.Context, title string) (model.Blog, erro
 	}
 }
 
-func isSessionTokenValid(ctx *gin.Context) (bool, error) {
+func IsSessionTokenValid(ctx *gin.Context) (bool, error) {
 	// 200 => Session Token is Valid
 	// 201 => Session Token is Invalid
 	// 500 => Internal Server Error
@@ -490,7 +491,7 @@ func isSessionTokenValid(ctx *gin.Context) (bool, error) {
 
 	defer cancelFunc()
 
-	serviceURL := BASE_URL + sessionToken
+	serviceURL := SERVICE_BASE_URL + sessionToken
 
 	requestToBackend_Server, err := http.NewRequestWithContext(ctxTimeout, "GET", serviceURL, nil)
 

@@ -1,0 +1,32 @@
+<div
+  hx-get="/blogs/{{ .RequestedTag }}?offset={{ .Offset }}"
+  hx-trigger="intersect once"
+  hx-target="#blogs"
+  hx-swap="beforeend"
+>
+  <div
+    class="grid grid-flow-col grid-cols-3 mx-2 my-10 overflow-hidden border shadow-xl cursor-pointer rounded-xl lg:mx-24 hover:border-2 hover:border-white"
+    hx-get="/blogs/title/{{ .LastBlog.Title }}"
+    hx-target="#home-body"
+    hx-swap="outerHTML"
+  >
+    <img
+      src="{{ .LastBlog.ImagePath }}"
+      class="transition duration-500 ease-in bg-white h-60 hover:scale-110"
+      alt="Image"
+    />
+    <div class="col-span-2 px-8 py-6">
+      <span class="font-semibold">Username:</span>
+      {{ .LastBlog.Username }}
+      <br />
+      <span class="font-semibold">Title:</span>
+      {{ .LastBlog.Title }}
+      <br />
+      <span class="font-semibold">Tag:</span>
+      {{ .LastBlog.Tag }}
+      <br />
+      <span class="font-semibold">Description:</span>
+      {{ .LastBlog.Description }}
+    </div>
+  </div>
+</div>

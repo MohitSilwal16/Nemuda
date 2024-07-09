@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/MohitSilwal16/Nemuda/models"
+	"github.com/MohitSilwal16/Nemuda/server/models"
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"

@@ -17,7 +17,7 @@
   >
     <label for="title">Title:</label>
     <input
-      class="shadow-lg rounded-md pl-2.5 py-1 w-full lg:h-10 h-16 outline-0"
+      class="shadow-lg rounded-md text-4xl lg:text-2xl pl-2.5 py-1 w-full lg:h-10 h-16 outline-0"
       type="text"
       name="title"
       id="title"
@@ -35,7 +35,7 @@
     <div class="h-8 lg:h-4"></div>
     <label for="description">Description:</label>
     <textarea
-      class="shadow-lg rounded-md pl-2.5 py-1 w-full lg:h-20 h-32 outline-0"
+      class="shadow-lg rounded-md text-4xl lg:text-2xl pl-2.5 py-1 w-full lg:h-20 h-32 outline-0"
       name="description"
       id="description"
       placeholder="Enter Description ..."
@@ -45,7 +45,7 @@
     <p id="descError" class="text-3xl text-red-600 lg:text-lg"></p>
     <div class="h-20 lg:h-4"></div>
     <label for="tag">Tag:</label>
-    <select class="py-1 pl-2 bg-blue-500 rounded-lg" id="tag" name="tag">
+    <select class="py-1 pl-2 text-4xl bg-blue-500 rounded-lg lg:text-2xl" id="tag" name="tag">
       {{ range .TagsList }}
       <option {{ if eq . $.Blog.Tag}} selected {{ end }}>{{ . }}</option>
       {{ end }}

@@ -1,20 +1,17 @@
 package main
 
 import (
-	"fmt"
 	"log"
-	"os"
 
+	"github.com/Nemuda/client/constants"
 	"github.com/Nemuda/client/controller"
-	"github.com/Nemuda/client/model"
-	"github.com/Nemuda/client/utils"
+	"github.com/Nemuda/client/models"
 	"github.com/gin-gonic/gin"
 )
 
-func main() {
-	// Clear the terminal
-	utils.ClearScreen()
+const BASE_URL = constants.BASE_URL
 
+func main() {
 	// Set Gin to release mode
 	gin.SetMode(gin.ReleaseMode)
 
@@ -50,7 +47,7 @@ func main() {
 	})
 
 	r.GET("/update_blog/:title", func(ctx *gin.Context) {
-		controller.RenderUpdateBlogPage(ctx, model.Blog{}, "")
+		controller.RenderUpdateBlogPage(ctx, models.Blog{}, "")
 	})
 
 	r.POST("/blogs", controller.PostBlog)
@@ -65,29 +62,13 @@ func main() {
 
 	r.GET("/blogs/comment/:title", controller.AddComment)
 
+	r.GET("/chats", controller.RenderChatPage)
+
+	r.GET("/message/:user", controller.GetMessages)
+
+	r.GET("/search-users", controller.SearchUsersByPattern)
+
 	r.NoRoute(controller.RenderPageNotFound)
-
-	go func() {
-		log.Println("Running Server on http://localhost:4200")
-		r.Run("localhost:4200")
-	}()
-
-	var choi string
-
-	for {
-		fmt.Scanln(&choi)
-
-		switch choi {
-		case "h":
-			log.Println("h - help")
-			log.Println("c - clear")
-			log.Println("q - quit")
-		case "c":
-			utils.ClearScreen()
-		case "q":
-			os.Exit(0)
-		default:
-			log.Println("Enter h for help")
-		}
-	}
+	log.Println("Running Server on", BASE_URL)
+	r.Run(BASE_URL)
 }

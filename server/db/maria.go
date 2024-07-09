@@ -7,8 +7,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/MohitSilwal16/Nemuda/models"
-	"github.com/MohitSilwal16/Nemuda/utils"
+	"github.com/MohitSilwal16/Nemuda/server/models"
+	"github.com/MohitSilwal16/Nemuda/server/utils"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
 )
@@ -53,7 +53,7 @@ func Init_MariaDB() error {
 }
 
 // Helper methods
-func IsSessionTokenDuplicate(token string) (bool, error) {
+func IsSessionTokenValid(token string) (bool, error) {
 	rows, err := sqlDB.Query("SELECT 1 from Users WHERE Token = ?;", token)
 
 	if err != nil {
@@ -73,7 +73,7 @@ func UpdateTokenInDBAndReturn(username string) (string, error) {
 	// Checking whether the generated session token is already used or not
 	// If so then generate another session token & keep this loop until we find a unique session token
 	for {
-		isSessionTokenDuplicate, err := IsSessionTokenDuplicate(sessionToken)
+		isSessionTokenDuplicate, err := IsSessionTokenValid(sessionToken)
 		if err != nil {
 			return "", err
 		}
@@ -93,7 +93,7 @@ func UpdateTokenInDBAndReturn(username string) (string, error) {
 }
 
 func DeleteTokenInDB(sessionToken string) error {
-	isSessionTokenValid, err := IsSessionTokenDuplicate(sessionToken)
+	isSessionTokenValid, err := IsSessionTokenValid(sessionToken)
 	if err != nil {
 		return err
 	}
@@ -116,7 +116,7 @@ func DeleteTokenInDB(sessionToken string) error {
 	return nil
 }
 
-func SearchUserByName(username string) (bool, error) {
+func DoesUserExists(username string) (bool, error) {
 	rows, err := sqlDB.Query("SELECT 1 FROM Users WHERE Username = ?;", username)
 
 	if err != nil {
@@ -130,7 +130,7 @@ func SearchUserByName(username string) (bool, error) {
 }
 
 func AddUser(user models.User) error {
-	userAlreadyExists, err := SearchUserByName(user.Username)
+	userAlreadyExists, err := DoesUserExists(user.Username)
 
 	if err != nil {
 		return err
@@ -155,7 +155,7 @@ func AddUser(user models.User) error {
 }
 
 func VerifyIdPass(user models.User) (bool, error) {
-	doesUserExists, err := SearchUserByName(user.Username)
+	doesUserExists, err := DoesUserExists(user.Username)
 
 	if err != nil {
 		return false, err
@@ -200,4 +200,66 @@ func GetUsernameBySessionToken(sessionToken string) (string, error) {
 	} else {
 		return "", errors.New("INVALID SESSION TOKEN")
 	}
+}
+
+func GetMessages(sender string, receiver string) ([]models.Message, error) {
+	rows, err := sqlDB.Query("SELECT * FROM Messages WHERE (Sender = ? AND Receiver = ? ) OR (Sender = ? AND Receiver = ? ) ORDER BY DateTime;", sender, receiver, receiver, sender)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var messages []models.Message
+	for rows.Next() {
+		var message models.Message
+
+		if err = rows.Scan(&message.Sender, &message.Receiver, &message.MessageContent, &message.Status, &message.DateTime); err != nil {
+			return nil, err
+		}
+		messages = append(messages, message)
+	}
+
+	return messages, nil
+}
+
+func AddMessage(message models.Message) error {
+	stmt, err := sqlDB.Prepare("INSERT INTO Messages (Sender, Receiver, MessageContent, Status, DateTime) VALUE (? , ? , ?, ?, ?);")
+
+	if err != nil {
+		return err
+	}
+
+	_, err = stmt.Exec(message.Sender, message.Receiver, message.MessageContent, message.Status, message.DateTime)
+
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Return users whose name starts with searchString
+func SearchUsersByPattern(searchString string) ([]string, error) {
+	searchString += "%"
+
+	rows, err := sqlDB.Query("SELECT Username FROM Users WHERE Username LIKE ?;", searchString)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var usernames []string
+	for rows.Next() {
+		var username string
+
+		if err = rows.Scan(&username); err != nil {
+			return nil, err
+		}
+		usernames = append(usernames, username)
+	}
+
+	return usernames, nil
 }

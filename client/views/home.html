@@ -2,11 +2,13 @@
 <div
 id="home-body"
 style="background-color: #d7f2f6;"
-class="flex flex-col h-screen px-10 pb-2 overflow-hidden text-2xl text-white"
+class="flex flex-col h-screen pb-2 overflow-hidden text-2xl text-white bg-gradient-image"
 >
-  <header class="flex font-semibold">
-    <div class="w-1/6 py-6 border-r-2 cursor-pointer">Nemu</div>
+  <header class="flex mx-10 font-semibold">
+    <img src="../static/images/menu-bar.png" class="block h-12 mt-4 mr-4 lg:hidden" alt="" id="menu">
+    <div class="w-1/6 py-6 cursor-pointer lg:border-r-2">Nemu</div>
     <div class="w-4/6 py-6 text-center" id="title-heading">{{ .RequestedTag }}</div>
+    <img src="../static/images/message.png" alt="" class="h-10 mt-5 mr-10 cursor-pointer" hx-get="/chats" hx-swap="outerHTML" hx-target="#home-body">
     <button
       class="m-4 text-2xl font-normal bg-blue-700 rounded-md w-36 hover:bg-blue-800"
       hx-delete="/login"
@@ -17,16 +19,32 @@ class="flex flex-col h-screen px-10 pb-2 overflow-hidden text-2xl text-white"
     </button>
   </header>
   <hr/>
-  <div class="relative flex overflow-hidden">
-    <nav class="w-1/6 h-screen pt-6 font-semibold border-r-2" id="nav-bar">
+  <div class="relative flex flex-col h-full overflow-hidden lg:flex-row">
+    <nav class="absolute hidden w-3/5 h-screen pt-6 overflow-y-auto text-3xl font-semibold text-center border-r-2 lg:mx-10 lg:text-2xl bg-gradient-image lg:relative lg:bg-transparent lg:text-start lg:w-1/6 lg:block" id="nav-bar">
       <p class="m-2 cursor-pointer" {{if eq .RequestedTag "All"}}style="text-decoration: underline;"{{end}} hx-get="/blogs/All?offset=0" hx-target="#home-body" hx-swap="outerHTML">All</p>
+      <div class="h-10 lg:hidden"></div>
       {{ range .TagsList }}
       <p class="m-2 cursor-pointer" {{if eq $.RequestedTag . }}style="text-decoration: underline;"{{end}} hx-get="/blogs/{{ . }}?offset=0" hx-target="#home-body" hx-swap="outerHTML">{{ . }}</p>
+      <div class="h-10 lg:hidden"></div>
       {{ end }}
     </nav>
-        <main class="w-5/6 overflow-y-auto scroll-bar" id="blogs">
+        <main class="w-screen mx-3 overflow-y-auto lg:mx-0 lg:w-5/6 scroll-bar" id="blogs">
      {{ template "blog.html" . }}
     </main>
     <img src="../static/images/add_post.png" class="absolute h-16 cursor-pointer right-10 bottom-10 hover:opacity-70" hx-get="/post_blog"  hx-target="#home-body" hx-swap="outerHTML"></img>
   </div>
+  <script>
+    var menuButton = document.getElementById("menu");
+    
+    menu.addEventListener("click",() => {
+      let navBar = document.getElementById("nav-bar");
+      
+      if (navBar.classList.contains("hidden")){
+        navBar.classList.remove("hidden");
+        return;
+      }
+      navBar.classList.add("hidden");
+    
+    });
+  </script>
 </div>

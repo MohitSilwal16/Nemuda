@@ -1,18 +1,18 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 
-	"github.com/MohitSilwal16/Nemuda/db"
-	"github.com/MohitSilwal16/Nemuda/handler"
-	"github.com/MohitSilwal16/Nemuda/utils"
+	"github.com/MohitSilwal16/Nemuda/server/db"
+	"github.com/MohitSilwal16/Nemuda/server/handler"
+	"github.com/MohitSilwal16/Nemuda/server/utils"
 	"github.com/gin-gonic/gin"
 )
 
+const BASE_URL = "127.0.0.1:8080"
+
 func init() {
-	// Clear the terminal
 	utils.ClearScreen()
 
 	err := db.Init_MariaDB()
@@ -61,6 +61,8 @@ func main() {
 
 	r.GET("/users/:username", handler.SearchUser)
 
+	r.GET("/get-users-by-sessionToken/:sessionToken", handler.GetUsernameBySessionToken)
+
 	r.GET("/blogs/title/:title", handler.SearchBlogByTitle)
 
 	r.GET("/blogs/updatable_deletable", handler.CanUserUpdate_DeleteBlog)
@@ -76,27 +78,11 @@ func main() {
 
 	r.GET("/blogs/comment/:comment", handler.AddComment)
 
-	go func() {
-		log.Println("Running Server on http://localhost:8080")
-		r.Run("localhost:8080")
-	}()
+	r.POST("/messages", handler.AddMessage)
+	r.GET("/messages/:user", handler.GetMessages)
 
-	var choi string
+	r.GET("/search-users", handler.SearchUsersByPattern)
 
-	for {
-		fmt.Scanln(&choi)
-
-		switch choi {
-		case "h":
-			log.Println("h - help")
-			log.Println("c - clear")
-			log.Println("q - quit")
-		case "c":
-			utils.ClearScreen()
-		case "q":
-			os.Exit(0)
-		default:
-			log.Println("Enter h for help")
-		}
-	}
+	log.Println("Running Back-end Server on", BASE_URL)
+	r.Run(BASE_URL)
 }

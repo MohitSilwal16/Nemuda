@@ -1,0 +1,8 @@
+<!DOCTYPE html>
+<div hx-swap-oob="beforeend:#messages">
+  <p id="message" style="display: none">{{ . }}</p>
+  <script>
+    var msg = document.getElementById("message").innerText;
+    alert(msg);
+  </script>
+</div>

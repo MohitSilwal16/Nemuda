@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"text/template"
 
-	"github.com/Nemuda/client/model"
+	"github.com/Nemuda/client/models"
 	"github.com/gin-gonic/gin"
 )
 
@@ -22,7 +22,7 @@ func RenderInitPage(ctx *gin.Context) {
 	// Set the Content-Type header to "text/html"
 	ctx.Header("Content-Type", "text/html")
 
-	isSessionTokenValid, err := isSessionTokenValid(ctx)
+	isSessionTokenValid, err := IsSessionTokenValid(ctx)
 
 	if err != nil {
 		fmt.Fprint(ctx.Writer, "")
@@ -67,12 +67,19 @@ func RenderLoginPage(ctx *gin.Context, message string) {
 	}
 }
 
-func RenderHomePage(ctx *gin.Context, blogs []model.Blog, tag string, offset string) {
+func RenderHomePage(ctx *gin.Context, blogs []models.Blog, tag string, offset string) {
 	// Set the Content-Type header to "text/html"
 	ctx.Header("Content-Type", "text/html")
 
+	// var lastBlog models.Blog
+	// if blogs != nil {
+	// 	lastBlog = blogs[len(blogs)-1]
+	// 	blogs = blogs[:len(blogs)-1]
+	// }
+
 	data := map[string]interface{}{
-		"Blogs":        blogs,
+		"Blogs": blogs,
+		// "LastBlog":     lastBlog,
 		"RequestedTag": tag,
 		"TagsList":     tagsList,
 		"Offset":       offset,
@@ -98,7 +105,7 @@ func RenderPostBlogPage(ctx *gin.Context, message string) {
 		fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
 		return
 	}
-	isSessionTokenValid, err := isSessionTokenValid(ctx)
+	isSessionTokenValid, err := IsSessionTokenValid(ctx)
 
 	if err != nil {
 		fmt.Fprint(ctx.Writer, "")
@@ -117,7 +124,7 @@ func RenderPostBlogPage(ctx *gin.Context, message string) {
 	temp.Execute(ctx.Writer, data)
 }
 
-func RenderUpdateBlogPage(ctx *gin.Context, blog model.Blog, message string) {
+func RenderUpdateBlogPage(ctx *gin.Context, blog models.Blog, message string) {
 	temp, err := template.ParseFiles("./views/update_blog.html")
 	if err != nil {
 		log.Println("Error: ", err)
@@ -136,7 +143,7 @@ func RenderUpdateBlogPage(ctx *gin.Context, blog model.Blog, message string) {
 		}
 	}
 
-	isSessionTokenValid, err := isSessionTokenValid(ctx)
+	isSessionTokenValid, err := IsSessionTokenValid(ctx)
 
 	if err != nil {
 		fmt.Fprint(ctx.Writer, "")
@@ -157,7 +164,7 @@ func RenderUpdateBlogPage(ctx *gin.Context, blog model.Blog, message string) {
 	temp.Execute(ctx.Writer, data)
 }
 
-func RenderGetBlogPage(ctx *gin.Context, blog model.Blog, message string) {
+func RenderGetBlogPage(ctx *gin.Context, blog models.Blog, message string) {
 	temp, err := template.ParseFiles("./views/view_blog.html")
 	if err != nil {
 		log.Println("Error: ", err)
@@ -206,4 +213,62 @@ func RenderPageNotFound(ctx *gin.Context) {
 
 		fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
 	}
+}
+
+func RenderChatPage(ctx *gin.Context) {
+	// Set the Content-Type header to "text/html"
+	ctx.Header("Content-Type", "text/html")
+
+	tmpl, err := template.ParseFiles("./views/chats.html", "./views/messaging_page.html", "./views/search_users.html")
+
+	data := map[string]interface{}{
+		"Messages": nil,
+		"Receiver": "Nemu Chat",
+	}
+
+	if err != nil {
+		log.Println("Error: ", err)
+		log.Println("Description: Error in tmpl.Execute() in RenderChatPage()")
+
+		fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
+	}
+
+	tmpl.Execute(ctx.Writer, data)
+}
+
+func RenderMessageBodyContainer(ctx *gin.Context, messages []models.Message, receiver string) {
+	// Set the Content-Type header to "text/html"
+	ctx.Header("Content-Type", "text/html")
+
+	tmpl, err := template.ParseFiles("./views/messaging_page.html")
+
+	data := map[string]interface{}{
+		"Messages": messages,
+		"Receiver": receiver,
+	}
+
+	if err != nil {
+		log.Println("Error: ", err)
+		log.Println("Description: Error in tmpl.Execute() in RenderChatPage()")
+
+		fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
+	}
+
+	tmpl.Execute(ctx.Writer, data)
+}
+
+func RenderSearchUsersContainer(ctx *gin.Context, users []string) {
+	// Set the Content-Type header to "text/html"
+	ctx.Header("Content-Type", "text/html")
+
+	tmpl, err := template.ParseFiles("./views/search_users.html")
+
+	if err != nil {
+		log.Println("Error: ", err)
+		log.Println("Description: Error in tmpl.Execute() in RenderChatPage()")
+
+		fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
+	}
+
+	tmpl.Execute(ctx.Writer, users)
 }

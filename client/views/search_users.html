@@ -1,0 +1,11 @@
+{{ range . }}
+<div
+  class="px-5 py-5 mb-5 mr-5 bg-blue-700 rounded-lg cursor-pointer"
+  hx-get="/message/{{ . }}"
+  hx-target="#message-body"
+  onclick="onUserClick()"
+>
+  <p class="font-semibold">{{ . }}</p>
+  <p>Hey there I'm using Nemu Chat</p>
+</div>
+{{ end }}

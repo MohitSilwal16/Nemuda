@@ -1,6 +1,10 @@
 TODO.txt
 
 server/.env
+server/tmp
 
 client/static/css/output.css
 client/static/images/blogs
+client/tmp
+
+chat/tmp
