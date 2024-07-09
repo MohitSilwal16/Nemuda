@@ -4,10 +4,11 @@ import (
 	"log"
 
 	"github.com/MohitSilwal16/Nemuda/chat/chatwebsocket"
+	"github.com/MohitSilwal16/Nemuda/chat/constants"
 	"github.com/gin-gonic/gin"
 )
 
-const BASE_URL = "127.0.0.1:3000"
+const BASE_URL = constants.BASE_URL
 
 func main() {
 	// Set Gin to release mode

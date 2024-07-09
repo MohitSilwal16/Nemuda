@@ -2,6 +2,11 @@ function clearMessageField() {
     document.getElementById("message").value = "";
 }
 
+// Function to scroll to the bottom of the message container
+function scrollToBottom(element) {
+    element.scrollTop = element.scrollHeight;
+}
+
 var socket = new WebSocket("ws://localhost:3000/ws/chat");
 
 socket.addEventListener("open", function (event) {
@@ -145,14 +150,18 @@ function onclickNotification() {
         .then((html) => {
             document.getElementById("message-body").innerHTML = html;
             closeNotification();
+
+            const msgInput = document.getElementById("messageInput");
+            msgInput.removeAttribute("readonly");
+            msgInput.focus();
+
+            const messagesContainer = document.getElementById("messages");
+            scrollToBottom(messagesContainer);
         })
         .catch((error) => {
             console.error("Error fetching data:", error);
         });
 
-    const msgInput = document.getElementById("messageInput");
-    msgInput.removeAttribute("readonly");
-    msgInput.focus();
 }
 
 function closeNotification() {
@@ -163,9 +172,39 @@ function closeNotification() {
 function onUserClick() {
     messageInput.focus();
     document.getElementById("messageInput").removeAttribute("readonly");
+    closeMenu();
 }
 
 // Close socket when back button is pressed
 window.addEventListener('popstate', function (event) {
     socket.close();
 });
+
+function openMenu() {
+    let navBar = document.getElementById("nav-bar");
+
+    if (navBar.classList.contains("hidden")) {
+        navBar.classList.remove("hidden");
+    }
+
+    let messageInput = document.getElementById("messageInput");
+    let sendButton = document.getElementById("send-button");
+    if (messageInput.classList.contains("hidden") && sendButton.classList.contains("hidden")) {
+        return;
+    }
+    messageInput.classList.add("hidden");
+    sendButton.classList.add("hidden");
+}
+function closeMenu() {
+    let navBar = document.getElementById("nav-bar");
+    if (!navBar.classList.contains("hidden")) {
+        navBar.classList.add("hidden");
+    }
+
+    let messageInput = document.getElementById("messageInput");
+    let sendButton = document.getElementById("send-button");
+    if (messageInput.classList.contains("hidden") && sendButton.classList.contains("hidden")) {
+        messageInput.classList.remove("hidden");
+        sendButton.classList.remove("hidden");
+    }
+}

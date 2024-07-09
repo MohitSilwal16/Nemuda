@@ -1,44 +1,53 @@
 <!DOCTYPE html>
-<div
-  class="flex items-center justify-center mt-5 text-2xl font-semibold bg-blue-400 rounded-lg h-14"
-  id="title"
->
-  {{ .Receiver }}
+<div class="flex lg:block">
+  <img
+    src="../static/images/menu-bar.png"
+    class="block h-20 mt-5 mr-4 lg:hidden"
+    alt=""
+    id="menu"
+    onclick="openMenu()"
+  />
+  <div
+    class="flex items-center justify-center w-full h-20 mt-5 mb-10 text-4xl font-semibold bg-blue-400 rounded-lg lg:text-2xl lg:h-14 lg:mb-0"
+    id="title"
+  >
+    {{ .Receiver }}
+  </div>
 </div>
 
 <!-- Messages -->
 <div
   id="messages"
-  class="p-10 mt-3 overflow-y-auto border border-white rounded-lg h-9/10 scroll-bar"
+  class="p-10 mt-3 overflow-y-auto text-3xl border border-white rounded-lg lg:text-xl h-9/10 scroll-bar"
 >
   {{ if eq .Receiver "Nemu Chat" }}
-  <p class="text-3xl text-center text-white">Welcome to Nemu Chat</p>
+  <p class="text-center text-white lg:text-md">Welcome to Nemu Chat</p>
   {{ else if not .Messages }}
   <div class="p-8 text-center shadow-lg rounded-xl" id="noMsgBox">
-    <p class="text-3xl text-white">
+    <p class="text-white">
       No Messages with
       <span class="font-bold">{{ $.Receiver }}</span>
     </p>
   </div>
   {{ end }} {{ range .Messages }} {{ if eq .Sender $.Receiver }}
   <!-- Receiver Message -->
-  <div class="flex justify-start mb-4">
+  <div class="flex justify-start mb-4 text-2xl lg:text-lg">
     <div class="max-w-xs p-3 text-white bg-blue-600 rounded-lg">
       <div class="flex items-center justify-between">
-        <span class="text-xs">{{ .DateTime }}</span>
+        <span class="text-md lg:text-sm">{{ .DateTime }}</span>
       </div>
       <p class="mt-1 font-semibold">{{ .MessageContent }}</p>
     </div>
   </div>
   {{ else }}
   <!-- Sender Message -->
-  <div class="flex justify-end mb-4">
-    <div class="max-w-xs p-3 text-white bg-blue-600 rounded-lg">
+  <div class="flex justify-end mb-4 text-2xl lg:text-lg">
+    <div class="max-w-md p-3 text-white bg-blue-600 rounded-lg">
       <div class="flex items-center justify-between">
-        <span class="text-xs">{{ .DateTime }}</span>
+        <span class="text-md lg:text-xs">{{ .DateTime }}</span>
       </div>
       <p class="mt-1 font-semibold">{{ .MessageContent }}</p>
-      <div class="mt-1 text-xs text-right text-gray-300">{{ .Status }}</div>
+      <div class="mt-1 text-right text-gray-300 text-md lg:text-xs">{{ .Status }}</div>
     </div>
   </div>
   {{ end }} {{ end }}
