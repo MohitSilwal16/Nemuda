@@ -152,11 +152,9 @@ func Register(ctx *gin.Context) {
 			RenderRegsiterPage(ctx, "Username is already used")
 		} else if res.StatusCode == 500 {
 			log.Println("Error: Back-end server has Internal Server Error")
-
 			RenderRegsiterPage(ctx, "Internal Server Error")
 		} else {
 			log.Println("Bug: Unexpected Status Code ", res.StatusCode)
-
 			RenderRegsiterPage(ctx, "Internal Server Error")
 		}
 	}
@@ -1140,6 +1138,25 @@ func GetMoreBlogsByTagWithOffset(ctx *gin.Context) {
 	}
 
 	if offsetInt == -1 {
+		data := map[string]interface{}{
+			"Blogs":        nil,
+			"RequestedTag": tag,
+			"Offset":       "-2",
+		}
+
+		tmpl := template.Must(template.ParseFiles("./views/blog.html"))
+		err = tmpl.Execute(ctx.Writer, data)
+
+		if err != nil {
+			log.Println("Error: ", err)
+			log.Println("Description: Error in tmpl.Execute() in GetMoreBlogsByTagWithOffset()")
+
+			fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
+		}
+		return
+	}
+
+	if offsetInt == -2 {
 		// No changes're made HTML
 		ctx.Status(http.StatusNoContent)
 		return
@@ -1209,7 +1226,6 @@ func GetMoreBlogsByTagWithOffset(ctx *gin.Context) {
 		data := map[string]interface{}{
 			"Blogs":        responseDataStructure.Blogs,
 			"RequestedTag": tag,
-			"TagsList":     tagsList,
 			"Offset":       responseDataStructure.NextOffset,
 		}
 
@@ -1218,7 +1234,7 @@ func GetMoreBlogsByTagWithOffset(ctx *gin.Context) {
 
 		if err != nil {
 			log.Println("Error: ", err)
-			log.Println("Description: Error in tmpl.Execute() in RenderHomePage()")
+			log.Println("Description: Error in tmpl.Execute() in GetMoreBlogsByTagWithOffset()")
 
 			fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
 		}
@@ -1226,7 +1242,7 @@ func GetMoreBlogsByTagWithOffset(ctx *gin.Context) {
 		response := "No Blogs found for " + tag + " tag"
 		log.Println(response)
 
-		RenderHomePage(ctx, nil, tag, "-1")
+		RenderHomePage(ctx, nil, tag, "-2")
 	} else if res.StatusCode == 202 {
 		response := "<script>alert('Session Timed Out');location.href='" + SERVICE_BASE_URL + "login';</script>"
 		fmt.Fprint(ctx.Writer, response)
@@ -1235,8 +1251,21 @@ func GetMoreBlogsByTagWithOffset(ctx *gin.Context) {
 
 		fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
 	} else if res.StatusCode == 203 {
-		// No changes're made in HTML
-		ctx.Status(http.StatusNoContent)
+		data := map[string]interface{}{
+			"Blogs":        nil,
+			"RequestedTag": tag,
+			"Offset":       "-2",
+		}
+
+		tmpl := template.Must(template.ParseFiles("./views/blog.html"))
+		err = tmpl.Execute(ctx.Writer, data)
+
+		if err != nil {
+			log.Println("Error: ", err)
+			log.Println("Description: Error in tmpl.Execute() in GetMoreBlogsByTagWithOffset()")
+
+			fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
+		}
 	} else {
 		log.Println("Bug: Unexpected Status Code ", res.StatusCode)
 
@@ -1320,7 +1349,7 @@ func GetMessages(ctx *gin.Context) {
 	} else if res.StatusCode == 201 {
 		RenderMessageBodyContainer(ctx, nil, receiverName)
 	} else if res.StatusCode == 202 {
-		RenderLoginPage(ctx, "Session Timed Out")
+		fmt.Fprint(ctx.Writer, "<script>location.href='login';</script>")
 	} else if res.StatusCode == 203 {
 		log.Println("Error: Invalid Receiver")
 		fmt.Fprint(ctx.Writer, "<script>alert('User Not Found');</script>")
@@ -1398,7 +1427,7 @@ func SearchUsersByPattern(ctx *gin.Context) {
 	} else if res.StatusCode == 201 {
 		fmt.Fprint(ctx.Writer, nil)
 	} else if res.StatusCode == 202 {
-		RenderLoginPage(ctx, "Session Timed Out")
+		fmt.Fprint(ctx.Writer, "<script>location.href='login';</script>")
 	} else if res.StatusCode == 500 {
 		log.Println("Error: Back-end server has Internal Server Error")
 

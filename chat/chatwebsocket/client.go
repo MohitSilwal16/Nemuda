@@ -12,7 +12,7 @@ import (
 // Define the date format
 const dateFormat = "2006-01-02 15:04:05"
 
-func (client *Client) readMessages() {
+func (client *Client) readMessages(username string) {
 	defer func() {
 		client.Connection.Close()
 		client.Router.Unregister <- client
@@ -29,10 +29,10 @@ func (client *Client) readMessages() {
 		_, msg, err := client.Connection.ReadMessage()
 		if err != nil {
 			log.Println("Error:", err)
-			break
-		}
+			log.Println("Description: Cannot Read Message from Client")
 
-		log.Println("Message:", string(msg))
+			return
+		}
 
 		var wsMessage WSMessage
 		reader := bytes.NewReader(msg)
@@ -44,10 +44,26 @@ func (client *Client) readMessages() {
 			return
 		}
 
+		if wsMessage.Message == "" {
+			client.Router.SendError <- ErrorMessage{
+				Username: username,
+				Error:    "Empty Message",
+			}
+			return
+		}
+
+		if len(wsMessage.Message) > 100 {
+			client.Router.SendError <- ErrorMessage{
+				Username: username,
+				Error:    "Max Message length: 100 chars",
+			}
+			return
+		}
+
 		currentTime := time.Now().Format(dateFormat)
 
 		client.Router.SendMessage <- Message{
-			Sender:         client.Username,
+			Sender:         username,
 			MessageContent: wsMessage.Message,
 			Receiver:       wsMessage.Receiver,
 			DateTime:       currentTime,
@@ -65,9 +81,9 @@ func (client *Client) writeMessage() {
 
 	for {
 		select {
-		case msg, ok := <-client.Send:
+		case msg, ok := <-client.SendMessage:
 			if !ok {
-				// Hub is closed
+				// Router is closed
 				client.Connection.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}

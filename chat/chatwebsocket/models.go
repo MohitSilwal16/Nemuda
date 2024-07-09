@@ -15,16 +15,17 @@ type Client struct {
 	Username     string
 	Connection   *websocket.Conn
 	Router       *Router
-	Send         chan []byte
+	SendMessage  chan []byte
 	SessionToken string
 }
 
 type Router struct {
 	sync.RWMutex
-	ClientsMap  map[*Client]bool
+	ClientsMap  map[string]*Client // Key: Username
 	Register    chan *Client
 	Unregister  chan *Client
 	SendMessage chan Message
+	SendError   chan ErrorMessage
 }
 
 type Message struct {
@@ -34,4 +35,9 @@ type Message struct {
 	Status         string `json:"status"` // Send, Delivered, Read
 	DateTime       string `json:"dateTime"`
 	SelfMessage    bool   `json:"selfMessage"` // Sending message to himself/herself
+}
+
+type ErrorMessage struct {
+	Username string `json:"username"`
+	Error    string `json:"error"`
 }

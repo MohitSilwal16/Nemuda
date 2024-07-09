@@ -1,9 +1,23 @@
-<!doctype html>
+<!DOCTYPE html>
 
 <div
   class="grid w-screen h-screen grid-rows-4 text-5xl font-semibold text-white bg-no-repeat bg-cover lg:text-2xl bg-register-login"
   id="login-body"
 >
+  <head>
+    <title>Nemuda</title>
+    <script src="./static/js/htmx.min.js"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="icon" type="image/x-icon" href="../static/images/favico.svg" />
+
+    <link rel="stylesheet" href="./static/css/output.css" />
+
+    <!-- Extension to send data in JSON Format using hx-ext="json-enc" -->
+    <script src="./static/js/json-enc.js"></script>
+  </head>
   <h1
     id="login-page-heading"
     class="font-bold text-center text-7xl lg:text-5xl mt-60 lg:mt-36"
@@ -15,7 +29,7 @@
     hx-trigger="submit[onValidate()]"
     hx-target="#login-body"
     hx-swap="outerHTML"
-    hx-push-url="/"
+    hx-push-url="/home"
   >
     <h1
       class="flex justify-center mb-20 text-6xl font-semibold lg:mb-10 lg:text-4xl"
@@ -77,6 +91,7 @@
       hx-get="/register"
       hx-target="#login-body"
       hx-swap="outerHTML"
+      hx-push-url="/register"
       >New to Nemuda ?</a
     >
   </form>

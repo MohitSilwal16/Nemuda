@@ -122,7 +122,6 @@ func isBlogLiked(ctx *gin.Context, title string, sessionToken string) (bool, err
 
 func fetchBlogsByTag(ctx *gin.Context, tag string, offset string, sessionToken string) {
 	// 200 => Blogs found
-	// 201 => No blog found for the specific tag
 	// 202 => Invalid Session Token
 	// 203 => No more blogs available
 	// 205 => Invalid Offset
@@ -211,15 +210,10 @@ func fetchBlogsByTag(ctx *gin.Context, tag string, offset string, sessionToken s
 		}
 
 		RenderHomePage(ctx, responseDataStructure.Blogs, tag, responseDataStructure.NextOffset)
-	} else if res.StatusCode == 201 {
-		response := "No Blogs found for " + tag + " tag"
-		log.Println(response)
-
-		RenderHomePage(ctx, nil, tag, "-1")
 	} else if res.StatusCode == 202 {
 		RenderLoginPage(ctx, "Session Timed Out")
 	} else if res.StatusCode == 203 {
-		RenderHomePage(ctx, nil, tag, "-1")
+		RenderHomePage(ctx, nil, tag, "-2")
 	} else if res.StatusCode == 500 {
 		log.Println("Error: Back-end server has Internal Server Error")
 

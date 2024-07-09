@@ -2,18 +2,30 @@
 <div
 id="home-body"
 style="background-color: #d7f2f6;"
-class="flex flex-col h-screen pb-2 overflow-hidden text-2xl text-white bg-gradient-image"
+class="flex flex-col h-screen pb-2 overflow-hidden text-3xl text-white lg:text-2xl bg-gradient-image"
 >
+<head>
+  <title>Nemuda</title>
+  <script src="./static/js/htmx.min.js"></script>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;700&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="icon" type="image/x-icon" href="../static/images/favico.svg" />
+
+  <link rel="stylesheet" href="./static/css/output.css" />
+</head>
   <header class="flex mx-10 font-semibold">
     <img src="../static/images/menu-bar.png" class="block h-12 mt-4 mr-4 lg:hidden" alt="" id="menu">
     <div class="w-1/6 py-6 cursor-pointer lg:border-r-2">Nemu</div>
     <div class="w-4/6 py-6 text-center" id="title-heading">{{ .RequestedTag }}</div>
-    <img src="../static/images/message.png" alt="" class="h-10 mt-5 mr-10 cursor-pointer" hx-get="/chats" hx-swap="outerHTML" hx-target="#home-body">
+    <img src="../static/images/message.png" alt="" class="h-10 mt-5 mr-10 cursor-pointer" hx-get="/chats" hx-swap="outerHTML" hx-target="#home-body" hx-push-url="/chats">
     <button
-      class="m-4 text-2xl font-normal bg-blue-700 rounded-md w-36 hover:bg-blue-800"
+      class="px-5 m-4 text-2xl font-normal bg-blue-700 rounded-md w-44 lg:w-36 hover:bg-blue-800"
       hx-delete="/login"
       hx-target="#home-body"
       hx-swap="outerHTML"
+      hx-push-url="/login"
     >
       Log Out
     </button>
@@ -28,10 +40,10 @@ class="flex flex-col h-screen pb-2 overflow-hidden text-2xl text-white bg-gradie
       <div class="h-10 lg:hidden"></div>
       {{ end }}
     </nav>
-        <main class="w-screen mx-3 overflow-y-auto lg:mx-0 lg:w-5/6 scroll-bar" id="blogs">
+        <main class="w-screen mx-3 mb-5 overflow-y-auto lg:mx-0 lg:w-5/6 scroll-bar" id="blogs">
      {{ template "blog.html" . }}
     </main>
-    <img src="../static/images/add_post.png" class="absolute h-16 cursor-pointer right-10 bottom-10 hover:opacity-70" hx-get="/post_blog"  hx-target="#home-body" hx-swap="outerHTML"></img>
+    <img src="../static/images/add_post.png" class="absolute cursor-pointer h-28 lg:h-16 right-10 bottom-10 hover:opacity-70" hx-get="/post-blog"  hx-target="#home-body" hx-swap="outerHTML" hx-push-url="/post-blog"></img>
   </div>
   <script>
     var menuButton = document.getElementById("menu");
@@ -45,6 +57,14 @@ class="flex flex-col h-screen pb-2 overflow-hidden text-2xl text-white bg-gradie
       }
       navBar.classList.add("hidden");
     
+    });
+
+    document.addEventListener("htmx:afterRequest",function(){
+      const loadMores = document.getElementsByClassName("load-more");
+
+      for (let i = 0 ; i < loadMores.length - 1 ; ++i){
+        loadMores[i].classList.add("hidden");
+      }
     });
   </script>
 </div>

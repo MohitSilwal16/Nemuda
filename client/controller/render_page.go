@@ -71,15 +71,8 @@ func RenderHomePage(ctx *gin.Context, blogs []models.Blog, tag string, offset st
 	// Set the Content-Type header to "text/html"
 	ctx.Header("Content-Type", "text/html")
 
-	// var lastBlog models.Blog
-	// if blogs != nil {
-	// 	lastBlog = blogs[len(blogs)-1]
-	// 	blogs = blogs[:len(blogs)-1]
-	// }
-
 	data := map[string]interface{}{
-		"Blogs": blogs,
-		// "LastBlog":     lastBlog,
+		"Blogs":        blogs,
 		"RequestedTag": tag,
 		"TagsList":     tagsList,
 		"Offset":       offset,
@@ -218,6 +211,20 @@ func RenderPageNotFound(ctx *gin.Context) {
 func RenderChatPage(ctx *gin.Context) {
 	// Set the Content-Type header to "text/html"
 	ctx.Header("Content-Type", "text/html")
+
+	isSessionTokenValid, err := IsSessionTokenValid(ctx)
+
+	if err != nil {
+		log.Println("Error: ", err)
+		log.Println("Description: Error in tmpl.Execute() in RenderChatPage()")
+
+		fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
+	}
+
+	if !isSessionTokenValid {
+		RenderLoginPage(ctx, "Session Timed Out")
+		return
+	}
 
 	tmpl, err := template.ParseFiles("./views/chats.html", "./views/messaging_page.html", "./views/search_users.html")
 

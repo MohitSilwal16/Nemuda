@@ -38,15 +38,17 @@ func main() {
 	r.POST("/login", controller.Login)
 	r.DELETE("/login", controller.Logout)
 
+	r.GET("/home", controller.RenderInitPage)
+
 	r.GET("/users", controller.SearchUserForRegistration)
 
 	r.GET("/blogs/:tag", controller.GetMoreBlogsByTagWithOffset)
 
-	r.GET("/post_blog", func(ctx *gin.Context) {
+	r.GET("/post-blog", func(ctx *gin.Context) {
 		controller.RenderPostBlogPage(ctx, "")
 	})
 
-	r.GET("/update_blog/:title", func(ctx *gin.Context) {
+	r.GET("/update-blog/:title", func(ctx *gin.Context) {
 		controller.RenderUpdateBlogPage(ctx, models.Blog{}, "")
 	})
 

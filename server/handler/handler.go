@@ -18,7 +18,7 @@ import (
 // Tags' slice
 var tagsList = []string{"Political", "Technical", "Educational", "Geographical", "Programming", "Other"}
 
-const BLOG_LIMIT = 1
+const BLOG_LIMIT = 3
 
 func VerifySessionToken(ctx *gin.Context) {
 	// 200 => Session Token is Valid
@@ -1152,7 +1152,6 @@ func GetBlogsByTag(ctx *gin.Context) {
 	// AVOID USING 204 BECAUSE IT DOESN'T SEND ANY CONTENT OR BODY
 
 	// 200 => Blogs found
-	// 201 => No blog found for the specific tag
 	// 202 => Invalid Session Token
 	// 203 => No more blogs available
 	// 205 => Invalid Offset
@@ -1240,7 +1239,6 @@ func GetBlogsByTag(ctx *gin.Context) {
 func GetUsernameBySessionToken(ctx *gin.Context) {
 	// 200 => Username found
 	// 201 => Invalid Session Token
-	// 202 => Invalid Session Token
 	// 500 => Internal Server Error
 
 	// Set the Content-Type header to "application/json"

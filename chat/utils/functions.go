@@ -4,13 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
 	"time"
 
 	"github.com/MohitSilwal16/Nemuda/chat/constants"
-	"github.com/gin-gonic/gin"
 )
 
 const SERVICE_BASE_URL = constants.SERVICE_BASE_URL
@@ -51,15 +49,10 @@ func DeleteSessionTokenFromCookie(w http.ResponseWriter) {
 
 const INTERNAL_SERVER_ERROR_MESSAGE = "<script>alert('Internal Server Error');</script>"
 
-func IsSessionTokenValid(ctx *gin.Context) (bool, error) {
+func IsSessionTokenValid(sessionToken string) (bool, error) {
 	// 200 => Session Token is Valid
 	// 201 => Session Token is Invalid
 	// 500 => Internal Server Error
-
-	// Set the Content-Type header to "text/html"
-	ctx.Header("Content-Type", "text/html")
-
-	sessionToken := GetSessionTokenFromCookie(ctx.Request)
 
 	if sessionToken == "" {
 		return false, nil
@@ -76,7 +69,7 @@ func IsSessionTokenValid(ctx *gin.Context) (bool, error) {
 	if err != nil {
 		log.Println("Error: ", err)
 		log.Println("Description: Cannot Create DELETE Request with Context")
-		fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
+
 		return false, err
 	}
 
@@ -86,12 +79,10 @@ func IsSessionTokenValid(ctx *gin.Context) (bool, error) {
 		if ctxTimeout.Err() == context.DeadlineExceeded {
 			log.Println("Error: ", err)
 			log.Println("Description: Back-end server didn't responsed in given time")
-			fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
 			return false, err
 		}
 		log.Println("Error: ", err)
 		log.Println("Description: Cannot send DELETE request(with timeout(context)) to back-end server")
-		fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
 		return false, err
 	}
 
@@ -100,25 +91,17 @@ func IsSessionTokenValid(ctx *gin.Context) (bool, error) {
 	} else if res.StatusCode == 201 {
 		return false, nil
 	} else if res.StatusCode == 500 {
-		fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
 		return false, errors.New("INTERNAL SERVER ERROR")
 	} else {
 		log.Println("Bug: Unexpected Status Code ", res.StatusCode)
-
-		fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
 		return false, errors.New("INTERNAL SERVER ERROR")
 	}
 }
 
-func GetUsernameBySessionToken(ctx *gin.Context) (string, error) {
+func GetUsernameBySessionToken(sessionToken string) (string, error) {
 	// 200 => Session Token is Valid
 	// 201 => Session Token is Invalid
 	// 500 => Internal Server Error
-
-	// Set the Content-Type header to "text/html"
-	ctx.Header("Content-Type", "text/html")
-
-	sessionToken := GetSessionTokenFromCookie(ctx.Request)
 
 	if sessionToken == "" {
 		return "", nil
@@ -135,7 +118,6 @@ func GetUsernameBySessionToken(ctx *gin.Context) (string, error) {
 	if err != nil {
 		log.Println("Error: ", err)
 		log.Println("Description: Cannot Create DELETE Request with Context")
-		fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
 		return "", err
 	}
 
@@ -145,12 +127,10 @@ func GetUsernameBySessionToken(ctx *gin.Context) (string, error) {
 		if ctxTimeout.Err() == context.DeadlineExceeded {
 			log.Println("Error: ", err)
 			log.Println("Description: Back-end server didn't responsed in given time")
-			fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
 			return "", err
 		}
 		log.Println("Error: ", err)
 		log.Println("Description: Cannot send DELETE request(with timeout(context)) to back-end server")
-		fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
 		return "", err
 	}
 
@@ -162,7 +142,6 @@ func GetUsernameBySessionToken(ctx *gin.Context) (string, error) {
 		if err != nil {
 			log.Println("Error:", err)
 			log.Println("Description: Data from server is not in JSON format")
-			fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
 			return "", nil
 		}
 		username, ok := responseDataStructure["username"]
@@ -174,12 +153,9 @@ func GetUsernameBySessionToken(ctx *gin.Context) (string, error) {
 	} else if res.StatusCode == 201 {
 		return "", nil
 	} else if res.StatusCode == 500 {
-		fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
 		return "", errors.New("INTERNAL SERVER ERROR")
 	} else {
 		log.Println("Bug: Unexpected Status Code ", res.StatusCode)
-
-		fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
 		return "", errors.New("INTERNAL SERVER ERROR")
 	}
 }

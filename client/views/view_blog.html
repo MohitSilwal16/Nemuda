@@ -1,8 +1,23 @@
-<!doctype html>
+<!DOCTYPE html>
 <div
   id="view-blog-page"
   class="h-screen px-10 pb-10 overflow-y-auto text-2xl text-white lg:px-44 scroll-bar bg-gradient-image"
 >
+  <head>
+    <title>Nemuda</title>
+    <script src="../../static/js/htmx.min.js"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="../../static/images/favico.svg"
+    />
+
+    <link rel="stylesheet" href="../../static/css/output.css" />
+  </head>
   <div
     class="grid grid-flow-col grid-cols-7 my-10 overflow-hidden border rounded-lg shadow-xl cursor-pointer backdrop-blur-md"
   >
@@ -39,6 +54,7 @@
     hx-get="/blogs/All?offset=0"
     hx-target="#view-blog-page"
     hx-swap="outerHTML"
+    hx-push-url="/home"
   >
     Home
   </button>
@@ -67,9 +83,10 @@
   {{if .IsEditableDeletable }}
   <button
     class="h-24 py-2 mt-5 mr-16 border-2 rounded-full shadow-lg cursor-pointer backdrop-blur-md w-60 lg:h-14 opacity-80 hover:opacity-100"
-    hx-get="/update_blog/{{ .Blog.Title }}"
+    hx-get="/update-blog/{{ .Blog.Title }}"
     hx-target="#view-blog-page"
     hx-swap="outerHTML"
+    hx-push-url="/update-blog/{{ .Blog.Title }}"
   >
     Update Blog
   </button>
@@ -78,7 +95,7 @@
     hx-delete="/blogs/{{ .Blog.Title }}"
     hx-target="#view-blog-page"
     hx-swap="outerHTML"
-    hx-push-url="/"
+    hx-push-url="/home"
   >
     Delete Blog
   </button>
@@ -86,15 +103,18 @@
   <br />
   <br />
 
-  <div class="flex flex-col mt-16 justify-evenly lg:flex-row">
+  <!-- For large screens -->
+  <div class="hidden mt-16 lg:flex lg:justify-between">
     <form
-      class="w-64 border border-white lg:w-96 backdrop-blur-md rounded-xl"
+      class="border border-white w-96 backdrop-blur-md rounded-xl"
       hx-get="/blogs/comment/{{ .Blog.Title }}"
       hx-trigger="submit[onValidate()]"
       hx-target="#view-blog-page"
       hx-swap="outerHTML"
     >
-      <h1 class="h-16 p-4 overflow-hidden font-semibold bg-blue-500 rounded-bl-none rounded-br-none rounded-xl">
+      <h1
+        class="h-16 p-4 overflow-hidden font-semibold bg-blue-500 rounded-bl-none rounded-br-none rounded-xl"
+      >
         Post Comment
       </h1>
       <div class="p-4">
@@ -149,6 +169,74 @@
       </div>
     </div>
   </div>
+
+  <!-- For mobile screens -->
+  <div class="flex justify-between mt-16 lg:hidden">
+    <form
+      class="border border-white w-96 h-96 backdrop-blur-md rounded-xl"
+      hx-get="/blogs/comment/{{ .Blog.Title }}"
+      hx-trigger="submit[onValidate()]"
+      hx-target="#view-blog-page"
+      hx-swap="outerHTML"
+    >
+      <h1
+        class="h-16 p-4 overflow-hidden font-semibold bg-blue-500 rounded-bl-none rounded-br-none rounded-xl"
+      >
+        Post Comment
+      </h1>
+      <div class="p-4">
+        <textarea
+          class="shadow-lg mt-5 rounded-md pl-2.5 py-1 w-full lg:h-20 h-32 outline-0"
+          name="comment"
+          id="comment"
+          placeholder="Comment Something ..."
+        ></textarea>
+        <p id="commentError" class="text-3xl text-red-600 lg:text-lg"></p>
+        <!-- Display Server's Response -->
+        <div id="output" class="flex justify-center text-red-600">
+          {{ .Message }}
+        </div>
+        <input
+          id="commentButton"
+          class="w-full h-24 py-2 mx-1 mt-5 border-2 rounded-full shadow-lg cursor-pointer lg:h-14 opacity-80 hover:opacity-100"
+          type="submit"
+          value="Comment"
+        />
+      </div>
+    </form>
+
+    <div
+      class="overflow-y-auto border border-white w-96 backdrop-blur-md rounded-xl h-96 scroll-bar"
+    >
+      <h1 class="sticky top-0 p-4 bg-blue-500">Comments</h1>
+      {{ if not .Blog.Comments}}
+      <div class="flex justify-center mt-10">No Comments</div>
+      {{ end }}
+      <div class="m-4">
+        {{ range .Blog.Comments }}
+        <div class="p-2 border border-white rounded-lg">
+          <span class="font-semibold">{{ .Username }}:</span>
+          {{ .Description }}
+        </div>
+        <br />
+        {{ end }}
+      </div>
+    </div>
+  </div>
+
+  <div
+    class="mx-auto mt-40 overflow-y-auto border border-white w-96 backdrop-blur-md rounded-xl h-80 scroll-bar lg:hidden"
+  >
+    <h1 class="sticky top-0 p-4 bg-blue-500">Liked Users</h1>
+    {{ if not .Blog.LikedUsername}}
+    <div class="flex justify-center mt-10">No Liked Users</div>
+    {{ end }}
+    <div class="m-4">
+      {{ range .Blog.LikedUsername}} {{ . }} <br />
+      {{ end }}
+    </div>
+  </div>
+
   <script>
     function onValidate() {
       let comment = document.getElementById("comment");

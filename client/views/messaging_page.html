@@ -21,12 +21,29 @@
     </p>
   </div>
   {{ end }} {{ range .Messages }} {{ if eq .Sender $.Receiver }}
-  <p class="text-white">
-    {{ .Sender }}: {{ .MessageContent }} "{{ .DateTime }}" {{ .Status }}
-  </p>
+  <!-- Receiver Message -->
+  <div class="flex justify-start mb-4">
+    <div class="max-w-xs p-3 text-white bg-blue-600 rounded-lg">
+      <div class="flex items-center justify-between">
+        <span class="text-xs">{{ .DateTime }}</span>
+      </div>
+      <p class="mt-1 font-semibold">{{ .MessageContent }}</p>
+    </div>
+  </div>
   {{ else }}
-  <p class="text-right text-white">
-    {{ .Sender }}: {{ .MessageContent }} "{{ .DateTime }}" {{ .Status }}
-  </p>
+  <!-- Sender Message -->
+  <div class="flex justify-end mb-4">
+    <div class="max-w-xs p-3 text-white bg-blue-600 rounded-lg">
+      <div class="flex items-center justify-between">
+        <span class="text-xs">{{ .DateTime }}</span>
+      </div>
+      <p class="mt-1 font-semibold">{{ .MessageContent }}</p>
+      <div class="mt-1 text-xs text-right text-gray-300">{{ .Status }}</div>
+    </div>
+  </div>
   {{ end }} {{ end }}
+  <script>
+    var messagesContainer = document.getElementById("messages");
+    scrollToBottom(messagesContainer);
+  </script>
 </div>

@@ -39,7 +39,7 @@ func AddMessageInDB(client *Client, message Message) {
 		log.Println("Error: ", err)
 		log.Println("Description: Cannot parse Client's data to JSON")
 
-		client.Send <- INTERNAL_SERVER_ERROR_BYTES
+		client.SendMessage <- INTERNAL_SERVER_ERROR_BYTES
 		return
 	}
 
@@ -55,7 +55,7 @@ func AddMessageInDB(client *Client, message Message) {
 		log.Println("Error: ", err)
 		log.Println("Description: Cannot Create POST Request with Context")
 
-		client.Send <- INTERNAL_SERVER_ERROR_BYTES
+		client.SendMessage <- INTERNAL_SERVER_ERROR_BYTES
 		return
 	}
 	requestToBackend_Server.Header.Set("Content-Type", "application/json")
@@ -68,13 +68,13 @@ func AddMessageInDB(client *Client, message Message) {
 			log.Println("Error: ", err)
 			log.Println("Description: Back-end server didn't responsed in given time")
 
-			client.Send <- REQUEST_TIMED_OUT_ERROR_BYTES
+			client.SendMessage <- REQUEST_TIMED_OUT_ERROR_BYTES
 			return
 		}
 		log.Println("Error: ", err)
 		log.Println("Description: Cannot send POST request(with timeout(context)) to back-end server")
 
-		client.Send <- INTERNAL_SERVER_ERROR_BYTES
+		client.SendMessage <- INTERNAL_SERVER_ERROR_BYTES
 
 		return
 	}
@@ -85,12 +85,12 @@ func AddMessageInDB(client *Client, message Message) {
 		return
 	} else if res.StatusCode == 201 {
 		log.Println("Error: Message data isn't in proper format")
-		client.Send <- INTERNAL_SERVER_ERROR_BYTES
+		client.SendMessage <- INTERNAL_SERVER_ERROR_BYTES
 	} else if res.StatusCode == 500 {
 		log.Println("Error: Back-end server has Internal Server Error")
-		client.Send <- INTERNAL_SERVER_ERROR_BYTES
+		client.SendMessage <- INTERNAL_SERVER_ERROR_BYTES
 	} else {
 		log.Println("Bug: Unexpected Status Code ", res.StatusCode)
-		client.Send <- INTERNAL_SERVER_ERROR_BYTES
+		client.SendMessage <- INTERNAL_SERVER_ERROR_BYTES
 	}
 }

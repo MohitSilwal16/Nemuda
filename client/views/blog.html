@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 {{ if not .Blogs}}
 <div class="p-8 text-center shadow-lg rounded-xl">
   <p class="text-3xl text-white">
@@ -9,10 +8,11 @@
 </div>
 {{ end }} {{ range .Blogs }}
 <div
-  class="grid grid-flow-col grid-cols-3 mx-2 my-10 overflow-hidden border shadow-xl cursor-pointer rounded-xl lg:mx-24 hover:border-2 hover:border-white"
+  class="grid grid-flow-col grid-cols-3 mx-10 my-10 overflow-hidden border shadow-xl cursor-pointer rounded-xl lg:mx-24 hover:border-2 hover:border-white"
   hx-get="/blogs/title/{{ .Title }}"
   hx-target="#home-body"
   hx-swap="outerHTML"
+  hx-push-url="/blogs/title/{{ .Title }}"
 >
   <img
     src="{{ .ImagePath }}"
@@ -34,9 +34,13 @@
   </div>
 </div>
 {{ end }}
-<div
-  hx-get="/blogs/{{ $.RequestedTag }}?offset={{ $.Offset }}"
-  hx-trigger="intersect once"
-  hx-target="#blogs"
-  hx-swap="beforeend"
-></div>
+<div class="flex justify-center">
+  <button
+    class="px-5 py-3 m-4 text-2xl font-normal bg-blue-700 rounded-md load-more hover:bg-blue-800"
+    hx-get="/blogs/{{ $.RequestedTag }}?offset={{ $.Offset }}"
+    hx-target="#blogs"
+    hx-swap="beforeend"
+  >
+    Load More
+  </button>
+</div>

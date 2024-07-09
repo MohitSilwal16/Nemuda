@@ -25,10 +25,11 @@ var upgrader = websocket.Upgrader{
 
 func NewRouter() *Router {
 	return &Router{
-		ClientsMap:  map[*Client]bool{},
+		ClientsMap:  map[string]*Client{},
 		Register:    make(chan *Client),
 		Unregister:  make(chan *Client),
 		SendMessage: make(chan Message),
+		SendError:   make(chan ErrorMessage),
 	}
 }
 
@@ -38,7 +39,11 @@ func (router *Router) Run() {
 		select {
 		case client := <-router.Register:
 			router.Lock()
-			router.ClientsMap[client] = true
+			if oldClient, ok := router.ClientsMap[client.Username]; ok {
+				close(oldClient.SendMessage)
+				oldClient.Connection.Close()
+			}
+			router.ClientsMap[client.Username] = client
 			router.Unlock()
 
 			log.Println("Client Registerd:", client.Username)
@@ -46,73 +51,87 @@ func (router *Router) Run() {
 
 		case client := <-router.Unregister:
 			router.Lock()
-			if _, ok := router.ClientsMap[client]; ok {
-				close(client.Send)
-				delete(router.ClientsMap, client)
+
+			if _, ok := router.ClientsMap[client.Username]; ok {
+				close(client.SendMessage)
+				delete(router.ClientsMap, client.Username)
 			}
+
 			router.Unlock()
 			log.Println("Client Unregisterd:", client.Username)
 			log.Println("Users:", len(router.ClientsMap))
 
 		case msg := <-router.SendMessage:
+			// Self message
+			sender, ok := router.ClientsMap[msg.Sender]
 
-			for client := range router.ClientsMap {
-				if client.Username == msg.Receiver && client.Username == msg.Sender {
-					// AddMessageInDB(client, msg)
+			if msg.Sender == msg.Receiver && ok {
+				msg.SelfMessage = true
 
-					msg.SelfMessage = true
-
-					msgJSON, err := json.Marshal(msg)
-
-					if err != nil {
-						log.Println("Error:", err)
-						log.Println("Description: Data isn't in JSON format")
-						return
-					}
-
-					select {
-					case client.Send <- msgJSON:
-					default:
-						close(client.Send)
-						delete(router.ClientsMap, client)
-					}
-				} else if client.Username == msg.Receiver {
-					msg.SelfMessage = false
-
-					msgJSON, err := json.Marshal(msg)
-
-					if err != nil {
-						log.Println("Error:", err)
-						log.Println("Description: Data isn't in JSON format")
-						return
-					}
-
-					select {
-					case client.Send <- msgJSON:
-					default:
-						close(client.Send)
-						delete(router.ClientsMap, client)
-					}
-				} else if client.Username == msg.Sender {
-					// AddMessageInDB(client, msg)
-
-					msg.SelfMessage = true
-
-					msgJSON, err := json.Marshal(msg)
-
-					if err != nil {
-						log.Println("Error:", err)
-						log.Println("Description: Data isn't in JSON format")
-						return
-					}
-
-					select {
-					case client.Send <- msgJSON:
-					default:
-						close(client.Send)
-						delete(router.ClientsMap, client)
-					}
+				msgJSON, err := json.Marshal(msg)
+				if err != nil {
+					log.Println("Error:", err)
+					log.Println("Description: Data isn't in JSON format")
+					return
 				}
+				sender.SendMessage <- msgJSON
+				continue
+			}
+
+			// To Receiver
+			receiver, ok := router.ClientsMap[msg.Receiver]
+
+			var messageDelivered bool
+
+			if ok {
+				msg.SelfMessage = false
+				msgJSON, err := json.Marshal(msg)
+
+				if err != nil {
+					log.Println("Error:", err)
+					log.Println("Description: Data isn't in JSON format")
+					return
+				}
+				receiver.SendMessage <- msgJSON
+				messageDelivered = true
+			}
+
+			// To Sender
+			sender, ok = router.ClientsMap[msg.Sender]
+
+			if ok {
+				msg.SelfMessage = true
+				if messageDelivered {
+					msg.Status = "Delivered"
+				}
+
+				msgJSON, err := json.Marshal(msg)
+				if err != nil {
+					log.Println("Error:", err)
+					log.Println("Description: Data isn't in JSON format")
+					return
+				}
+				sender.SendMessage <- msgJSON
+			}
+
+			AddMessageInDB(sender, msg)
+
+		case errorMessage := <-router.SendError:
+			log.Println("Error: ")
+			log.Printf("%#v", errorMessage)
+
+			sender, ok := router.ClientsMap[errorMessage.Username]
+
+			if ok {
+				errorMsgJSON, err := json.Marshal(errorMessage)
+
+				if err != nil {
+					log.Println("Error:", err)
+					log.Println("Description: Data isn't in JSON format")
+					return
+				}
+
+				sender.SendMessage <- errorMsgJSON
 			}
 		}
 	}
@@ -126,33 +145,33 @@ func (router *Router) ServeWS(ctx *gin.Context) {
 		return
 	}
 
-	username, err := utils.GetUsernameBySessionToken(ctx)
+	sessionToken := utils.GetSessionTokenFromCookie(ctx.Request)
+	username, err := utils.GetUsernameBySessionToken(sessionToken)
 
 	if err != nil {
 		log.Println("Error:", err)
 		log.Println("Description: Cannot get username from session token")
-		return
-	}
 
-	sessionToken := utils.GetSessionTokenFromCookie(ctx.Request)
+		router.SendError <- ErrorMessage{}
+	}
 
 	client := &Client{
 		Username:     username,
 		Connection:   conn,
 		Router:       router,
-		Send:         make(chan []byte),
+		SendMessage:  make(chan []byte),
 		SessionToken: sessionToken,
 	}
 
 	router.Register <- client
 
-	go client.readMessages()
+	go client.readMessages(username)
 	go client.writeMessage()
 }
 
 func Logger(router *Router) {
 	log.Println("Username:")
-	for client := range router.ClientsMap {
-		log.Print(client.Username)
+	for username := range router.ClientsMap {
+		log.Print(username)
 	}
 }
