@@ -3,7 +3,10 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
+	"net/http"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -357,6 +360,7 @@ func PostBlog(ctx *gin.Context) {
 	// 201 => Title, Description, Tag is not in requested format(JSON)
 	// 202 => Title is already used
 	// 203 => Invalid Session Token
+	// 205 => Image is not in proper format
 	// 500 => Internal Server Error
 
 	// Set the Content-Type header to "application/json"
@@ -387,18 +391,28 @@ func PostBlog(ctx *gin.Context) {
 		return
 	}
 
-	var blog models.Blog
-	err = json.NewDecoder(ctx.Request.Body).Decode(&blog)
+	// Parse the multipart form
+	if err := ctx.Request.ParseMultipartForm(10 << 20); err != nil { // 10 MB max
+		ctx.JSON(205, gin.H{"error": "File too large"})
+		return
+	}
+	// log.Printf("Multipart form files: %#v", ctx.Request.MultipartForm.File)
 
-	if err != nil {
-		log.Println("Error: ", err)
+	// Retrieve the JSON data from form data
+	data := ctx.Request.FormValue("data")
+	var blog models.Blog
+	if err := json.Unmarshal([]byte(data), &blog); err != nil {
 		ctx.JSON(201, gin.H{
-			"message": "Provided data is not in correct format(JSON).",
-		})
+			"message": "Title, Description, Tag is not in proper format"})
 		return
 	}
 
 	blog.Username, err = db.GetUsernameBySessionToken(sessionToken)
+	blog.Comments = []models.Comment{}
+	blog.LikedUsername = []string{}
+	blog.Likes = 0
+
+	log.Printf("Blog Data: %#v", blog)
 
 	if err != nil {
 		if err.Error() == "INVALID SESSION TOKEN" {
@@ -429,6 +443,70 @@ func PostBlog(ctx *gin.Context) {
 			"message": response},
 		)
 	} else {
+		image, header, err := ctx.Request.FormFile("file")
+		if err != nil {
+			log.Println("Error: ", err)
+			log.Println("Description: Cannot fetch image from user")
+
+			ctx.JSON(205, gin.H{
+				"message": "Cannot fetch Image",
+			})
+			return
+		}
+
+		// For example, save the file and log the additional data
+		filename := header.Filename
+		// Save the file or process it as needed
+		fmt.Printf("Received file: %s\n", filename)
+
+		// Read the first 512 bytes of the file
+		buffer := make([]byte, 512)
+		_, err = image.Read(buffer)
+		if err != nil {
+			ctx.JSON(207, gin.H{"error": "Unable to read file"})
+			return
+		}
+
+		// Reset the file reader to the beginning
+		image.Seek(0, 0)
+
+		contentType := http.DetectContentType(buffer)
+		log.Println("Detected Content Type:", contentType)
+
+		// Check if the content type is an allowed image type
+		allowedTypes := map[string]bool{
+			"image/jpeg": true,
+			"image/jpg":  true,
+			"image/png":  true,
+		}
+
+		if !allowedTypes[contentType] {
+			ctx.JSON(205, gin.H{
+				"message": "Invalid file type, upload a JPG, JPEG, or PNG image",
+			})
+			return
+		}
+
+		maxSize := 2 * 1024 * 1024 // 2MB
+		if ctx.Request.MultipartForm.File["file"][0].Size > int64(maxSize) {
+			ctx.JSON(205, gin.H{
+				"message": "Image size exceeds 2 MB",
+			})
+			return
+		}
+
+		out, err := os.Create(blog.ImagePath)
+		if err != nil {
+			ctx.JSON(500, gin.H{"error": "Unable to save the file"})
+			return
+		}
+		defer out.Close()
+
+		if _, err := io.Copy(out, image); err != nil {
+			ctx.JSON(500, gin.H{"error": "Unable to copy the file"})
+			return
+		}
+
 		err = db.AddBlog(blog)
 
 		if err != nil {
@@ -837,6 +915,7 @@ func UpdateBlog(ctx *gin.Context) {
 	// 203 => Blog not found
 	// 205 => Invalid Session Token
 	// 206 => Blog Title is already used
+	// 207 => Image is not in proper format
 	// 500 => Internal Server Error
 
 	// Set the Content-Type header to "application/json"
@@ -867,9 +946,9 @@ func UpdateBlog(ctx *gin.Context) {
 		return
 	}
 
-	title := ctx.Query("title")
+	oldTitle := ctx.Query("title")
 
-	if title == "" {
+	if oldTitle == "" {
 		ctx.JSON(201, gin.H{
 			"message": "Title is Empty",
 		})
@@ -893,34 +972,37 @@ func UpdateBlog(ctx *gin.Context) {
 		}
 		return
 	}
+
+	// Retrieve the JSON data from form data
+	data := ctx.Request.FormValue("data")
 	var blog models.Blog
-	err = json.NewDecoder(ctx.Request.Body).Decode(&blog)
-
-	if err != nil {
-		log.Println("Error: ", err)
-		log.Println("Description: Cannot read JSON data in blog object")
-
+	if err := json.Unmarshal([]byte(data), &blog); err != nil {
 		ctx.JSON(201, gin.H{
-			"message": "Provided data is not in correct format(JSON).",
-		})
+			"message": "Title, Description, Tag is not in proper format"})
 		return
 	}
+
+	blog.Comments = []models.Comment{}
+	blog.LikedUsername = []string{}
+	blog.Likes = 0
+
+	log.Printf("Blog Data: %#v", blog)
 
 	if !regexp.MustCompile(`^[a-zA-Z0-9 ,'"&]*$`).MatchString(blog.Title) {
 		response := "Title should be alphanumeric b'twin 5-20 chars"
 		ctx.JSON(201, gin.H{
-			"message": response},
-		)
+			"message": response,
+		})
 	} else if !utils.Contains(tagsList, blog.Tag) {
 		response := "Unknown tag"
 		ctx.JSON(201, gin.H{
-			"message": response},
-		)
+			"message": response,
+		})
 	} else if len(blog.Description) < 4 || len(blog.Description) > 50 {
 		response := "Desc: Min 4 letters & Max 50 letters"
 		ctx.JSON(201, gin.H{
-			"message": response},
-		)
+			"message": response,
+		})
 	} else {
 		doesBlogExists, err := db.SearchBlogByTitle(blog.Title)
 
@@ -933,6 +1015,7 @@ func UpdateBlog(ctx *gin.Context) {
 			})
 			return
 		}
+
 		if doesBlogExists {
 			ctx.JSON(206, gin.H{
 				"message": "Blog Title is already used",
@@ -940,7 +1023,71 @@ func UpdateBlog(ctx *gin.Context) {
 			return
 		}
 
-		err = db.UpdateBlog(title, username, blog.Title, blog.Description, blog.ImagePath, blog.Tag)
+		image, header, err := ctx.Request.FormFile("file")
+		if err != nil {
+			log.Println("Error: ", err)
+			log.Println("Description: Cannot fetch image from user")
+
+			ctx.JSON(207, gin.H{
+				"message": "Cannot fetch Image",
+			})
+			return
+		}
+
+		// For example, save the file and log the additional data
+		filename := header.Filename
+		// Save the file or process it as needed
+		fmt.Printf("Received file: %s\n", filename)
+
+		// Read the first 512 bytes of the file
+		buffer := make([]byte, 512)
+		_, err = image.Read(buffer)
+		if err != nil {
+			ctx.JSON(207, gin.H{"error": "Unable to read file"})
+			return
+		}
+
+		// Reset the file reader to the beginning
+		image.Seek(0, 0)
+
+		contentType := http.DetectContentType(buffer)
+		log.Println("Detected Content Type:", contentType)
+
+		// Check if the content type is an allowed image type
+		allowedTypes := map[string]bool{
+			"image/jpeg": true,
+			"image/jpg":  true,
+			"image/png":  true,
+		}
+
+		if !allowedTypes[contentType] {
+			ctx.JSON(207, gin.H{
+				"message": "Invalid file type, upload a JPG, JPEG, or PNG image",
+			})
+			return
+		}
+
+		maxSize := 2 * 1024 * 1024 // 2MB
+		if ctx.Request.MultipartForm.File["file"][0].Size > int64(maxSize) {
+			ctx.JSON(207, gin.H{
+				"message": "Image size exceeds 2 MB",
+			})
+			return
+		}
+
+		out, err := os.Create(blog.ImagePath)
+		if err != nil {
+			ctx.JSON(500, gin.H{"error": "Unable to save the file"})
+			return
+		}
+		defer out.Close()
+
+		if _, err := io.Copy(out, image); err != nil {
+			ctx.JSON(500, gin.H{"error": "Unable to copy the file"})
+			return
+		}
+
+		err = db.UpdateBlog(oldTitle, username, blog.Title, blog.Description, blog.ImagePath, blog.Tag)
 
 		if err != nil {
 			if err.Error() == "USER CANNOT UPDATE THIS BLOG" {
@@ -960,6 +1107,26 @@ func UpdateBlog(ctx *gin.Context) {
 			}
 			return
 		}
+		err = ctx.SaveUploadedFile(header, blog.ImagePath)
+
+		if err != nil {
+			log.Println("Error: ", err)
+			log.Println("Description: Cannot save image of blog")
+
+			fmt.Fprint(ctx.Writer, "Image of blog cannot be saved")
+		}
+		oldImagePath := "./static/images/blogs/" + oldTitle + ".png"
+
+		err = os.Remove(oldImagePath)
+
+		if err != nil {
+			if !os.IsNotExist(err) {
+				log.Println("Error: ", err)
+				log.Println("Description: Cannot delete ", oldImagePath)
+			}
+			// No need to return
+		}
+
 		ctx.JSON(200, gin.H{
 			"message": "Blog Updated",
 		})
@@ -1052,6 +1219,19 @@ func DeleteBlog(ctx *gin.Context) {
 		}
 		return
 	}
+
+	imagePath := "./static/images/blogs/" + title + ".png"
+
+	err = os.Remove(imagePath)
+
+	if err != nil {
+		if !os.IsNotExist(err) {
+			log.Println("Error: ", err)
+			log.Println("Description: Cannot delete ", imagePath)
+		}
+		// No need to return
+	}
+
 	ctx.JSON(200, gin.H{
 		"message": "Blog Deleted",
 	})
@@ -1492,4 +1672,88 @@ func SearchUsersByPattern(ctx *gin.Context) {
 		return
 	}
 	ctx.JSON(200, users)
+}
+
+// User can revert the status of message
+func ChangeStatusOfMessage(ctx *gin.Context) {
+	// 200 => Status Changed
+	// 201 => Message not found
+	// 202 => Invalid Session Token
+	// 203 => Invalid New Status
+	// 500 => Internal Server Error
+
+	// Set the Content-Type header to "application/json"
+	ctx.Header("Content-Type", "application/json")
+
+	sessionToken := ctx.Query("sessionToken")
+
+	if sessionToken == "" {
+		ctx.JSON(202, gin.H{
+			"message": "Invalid Session Token",
+		})
+		return
+	}
+
+	isSessionTokenValid, err := db.IsSessionTokenValid(sessionToken)
+
+	if err != nil {
+		log.Println("Error:", err)
+		log.Println("Description: Cannot validate session token")
+		ctx.JSON(500, gin.H{
+			"message": "Internal Server Error",
+		})
+		return
+	}
+
+	if !isSessionTokenValid {
+		ctx.JSON(202, gin.H{
+			"message": "Invalid Session Token",
+		})
+		return
+	}
+
+	var message models.Message
+	err = json.NewDecoder(ctx.Request.Body).Decode(&message)
+
+	if err != nil {
+		log.Println("Error: ", err)
+		log.Println("Description: Cannot read json data")
+
+		ctx.JSON(201, gin.H{
+			"message": "Provided data is not in correct format(JSON).",
+		})
+		return
+	}
+
+	newStatus := ctx.Param("newStatus")
+
+	if newStatus != "Read" && newStatus != "Sent" && newStatus != "Delivered" {
+		ctx.JSON(203, gin.H{
+			"message": "New Status must be either Sent, Delivered or Read",
+		})
+		return
+	}
+
+	err = db.ChangeStatusOfMessage(message, newStatus)
+
+	if err != nil {
+		if err.Error() == "MESSAGE NOT FOUND" {
+			ctx.JSON(201, gin.H{
+				"message": "Message Not Found",
+			})
+			return
+		}
+
+		log.Println("Error:", err)
+		log.Println("Description: Cannot Change Status of Message")
+
+		ctx.JSON(500, gin.H{
+			"message": "Internal Server Error",
+		})
+		return
+	}
+
+	ctx.JSON(200, gin.H{
+		"message": "Status Updated",
+	})
 }

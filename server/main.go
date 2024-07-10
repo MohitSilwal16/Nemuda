@@ -36,20 +36,11 @@ func main() {
 	// Create a new Gin engine without the default middleware
 	r := gin.New()
 
-	// CORS NOT WORKING OR IDK IF IT'S WORKING
-	// Define the CORS middleware with specific IP addresses allowed
-	// allowedOrigins := []string{
-	// 	// "http://localhost:4200",
-	// 	// "http://127.0.0.1:4200",
-	// 	// "http://192.168.1.100",
-	// }
-	// config := cors.DefaultConfig()
-	// config.AllowOrigins = allowedOrigins
-
-	// r.Use(cors.New(config))
-
 	// Add Logger and Recovery middleware
 	r.Use(gin.Logger(), gin.Recovery())
+
+	// Serve static files from the "static" directory
+	r.Static("/static", "./static")
 
 	r.GET("/:sessionToken", handler.VerifySessionToken)
 
@@ -80,6 +71,7 @@ func main() {
 
 	r.POST("/messages", handler.AddMessage)
 	r.GET("/messages/:user", handler.GetMessages)
+	r.PUT("/messages/:newStatus", handler.ChangeStatusOfMessage)
 
 	r.GET("/search-users", handler.SearchUsersByPattern)
 

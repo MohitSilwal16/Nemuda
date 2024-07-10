@@ -32,7 +32,7 @@ type Message struct {
 	Sender         string `json:"sender"`
 	Receiver       string `json:"receiver"`
 	MessageContent string `json:"messageContent"`
-	Status         string `json:"status"` // Send, Delivered, Read
+	Status         string `json:"status"` // Sent, Delivered, Read
 	DateTime       string `json:"dateTime"`
 	SelfMessage    bool   `json:"selfMessage"` // Sending message to himself/herself
 }

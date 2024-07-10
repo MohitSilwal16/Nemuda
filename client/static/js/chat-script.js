@@ -1,12 +1,3 @@
-function clearMessageField() {
-    document.getElementById("message").value = "";
-}
-
-// Function to scroll to the bottom of the message container
-function scrollToBottom(element) {
-    element.scrollTop = element.scrollHeight;
-}
-
 var socket = new WebSocket("ws://localhost:3000/ws/chat");
 
 socket.addEventListener("open", function (event) {
@@ -66,6 +57,11 @@ function onMessageSend() {
         return;
     }
 
+    if (message.length > 100) {
+        openAlert("Message Limit Exceeded", "Message should be less than 100 characters");
+        return;
+    }
+
     const jsonData = {
         message: message,
         receiver: document.getElementById("title").innerText,
@@ -73,6 +69,10 @@ function onMessageSend() {
 
     socket.send(JSON.stringify(jsonData));
     messageInput.value = "";
+}
+
+function clearMessageField() {
+    document.getElementById("message").value = "";
 }
 
 function createMessageCard(responseData) {

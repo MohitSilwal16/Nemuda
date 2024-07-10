@@ -2,6 +2,7 @@ TODO.txt
 
 server/.env
 server/tmp
+server/static/images/blogs
 
 client/static/css/output.css
 client/static/images/blogs

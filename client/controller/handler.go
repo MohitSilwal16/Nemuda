@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"mime/multipart"
 	"net/http"
-	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -528,10 +528,18 @@ func PostBlog(ctx *gin.Context) {
 	// 201 => Title, Description, Tag is not in requested format
 	// 202 => Title is already used
 	// 203 => Invalid Session Token
+	// 205 => Image is not in proper format
 	// 500 => Internal Server Error
 
 	// Set the Content-Type header to "text/html"
 	ctx.Header("Content-Type", "text/html")
+
+	sessionToken := getSessionTokenFromCookie(ctx.Request)
+
+	if sessionToken == "" {
+		RenderLoginPage(ctx, "Session Timed Out")
+		return
+	}
 
 	var blog models.Blog
 
@@ -585,15 +593,51 @@ func PostBlog(ctx *gin.Context) {
 			return
 		}
 
-		ctxTimeout, cancelFunction := context.WithTimeout(context.Background(), 3*time.Second)
-		defer cancelFunction()
+		// Create a buffer to store our multipart data
+		var requestBody bytes.Buffer
+		writer := multipart.NewWriter(&requestBody)
 
-		sessionToken := getSessionTokenFromCookie(ctx.Request)
-		serviceURL := SERVICE_BASE_URL + "blogs?sessionToken=" + sessionToken
+		// Add the file to the form
+		part, err := writer.CreateFormFile("file", image.Filename)
+		if err != nil {
+			log.Println("Error:", err)
+			log.Println("Description: Unable to create form file")
+			RenderPostBlogPage(ctx, "Internal Server Error")
+			return
+		}
 
-		// Create Request with Timeout
-		requestToBackend_Server, err := http.NewRequestWithContext(ctxTimeout, "POST", serviceURL, bytes.NewBuffer(blogJSON))
+		// Open the image
+		openedFile, err := image.Open()
+		if err != nil {
+			RenderPostBlogPage(ctx, "Unable to open file")
+			return
+		}
+		defer openedFile.Close()
 
+		if _, err := io.Copy(part, openedFile); err != nil {
+			log.Println("Error:", err)
+			log.Println("Description: Unable to copy file")
+			RenderPostBlogPage(ctx, "Unable to copy file")
+			return
+		}
+
+		// Add additional data
+		if err := writer.WriteField("data", string(blogJSON)); err != nil {
+			log.Println("Error:", err)
+			log.Println("Description: Unable to write form data")
+			RenderPostBlogPage(ctx, "Internal Server Error")
+			return
+		}
+
+		// Close the writer to finalize the multipart form data
+		writer.Close()
+
+		// Create a request with a timeout context
+		ctxTimeout, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
+
+		client := &http.Client{}
+		req, err := http.NewRequestWithContext(ctxTimeout, "POST", SERVICE_BASE_URL+"blogs?sessionToken="+sessionToken, &requestBody)
 		if err != nil {
 			log.Println("Error: ", err)
 			log.Println("Description: Cannot Create POST Request with Context")
@@ -601,11 +645,11 @@ func PostBlog(ctx *gin.Context) {
 			RenderPostBlogPage(ctx, "Internal Server Error")
 			return
 		}
-		requestToBackend_Server.Header.Set("Content-Type", "application/json")
 
-		// Send request(with timeout) to back-end server
-		res, err := http.DefaultClient.Do(requestToBackend_Server)
+		req.Header.Set("Content-Type", writer.FormDataContentType())
 
+		// Send the request
+		res, err := client.Do(req)
 		if err != nil {
 			if ctxTimeout.Err() == context.DeadlineExceeded {
 				log.Println("Error: ", err)
@@ -620,19 +664,10 @@ func PostBlog(ctx *gin.Context) {
 			RenderPostBlogPage(ctx, "Internal Server Error")
 			return
 		}
-
 		defer res.Body.Close()
 
 		if res.StatusCode == 200 {
-			err = ctx.SaveUploadedFile(image, blog.ImagePath)
-
-			if err != nil {
-				log.Println("Error: ", err)
-				log.Println("Description: Cannot save image of blog")
-
-				fmt.Fprint(ctx.Writer, "Image of blog cannot be saved")
-			}
-
+			sessionToken := getSessionTokenFromCookie(ctx.Request)
 			fetchBlogsByTag(ctx, "All", "0", sessionToken)
 		} else if res.StatusCode == 201 {
 			RenderPostBlogPage(ctx, "Title, Description, Tag is not in format")
@@ -640,6 +675,20 @@ func PostBlog(ctx *gin.Context) {
 			RenderPostBlogPage(ctx, "Title is already used")
 		} else if res.StatusCode == 203 {
 			RenderLoginPage(ctx, "Session Timed Out")
+		} else if res.StatusCode == 205 {
+			RenderPostBlogPage(ctx, "Image is not in proper format")
+
+			var responseData map[string]string
+			err = json.NewDecoder(res.Body).Decode(&responseData)
+
+			if err != nil {
+				log.Println("Error while decoding:", err)
+			}
+
+			for k, v := range responseData {
+				log.Println("Key: ", k)
+				log.Println("Val: ", v)
+			}
 		} else if res.StatusCode == 500 {
 			log.Println("Error: Back-end server has Internal Server Error")
 			RenderPostBlogPage(ctx, "Internal Server Error")
@@ -871,10 +920,18 @@ func UpdateBlog(ctx *gin.Context) {
 	// 203 => Blog not found
 	// 205 => Invalid Session Token
 	// 206 => Blog Title is already used
+	// 207 => Image is not in proper format
 	// 500 => Internal Server Error
 
 	// Set the Content-Type header to "text/html"
 	ctx.Header("Content-Type", "text/html")
+
+	sessionToken := getSessionTokenFromCookie(ctx.Request)
+
+	if sessionToken == "" {
+		RenderLoginPage(ctx, "Session Timed Out")
+		return
+	}
 
 	oldTitle := ctx.Param("title")
 
@@ -912,7 +969,7 @@ func UpdateBlog(ctx *gin.Context) {
 
 		maxSize := 2 * 1024 * 1024 // 2MB
 		if image.Size > int64(maxSize) {
-			RenderUpdateBlogPage(ctx, blog, "Image size exceeds 2 MB")
+			RenderUpdateBlogPage(ctx, blog, "Image Size Exceeds 2 MB")
 			return
 		}
 
@@ -930,27 +987,75 @@ func UpdateBlog(ctx *gin.Context) {
 			return
 		}
 
-		ctxTimeout, cancelFunction := context.WithTimeout(context.Background(), 3*time.Second)
-		defer cancelFunction()
+		// Create a buffer to store our multipart data
+		var requestBody bytes.Buffer
+		writer := multipart.NewWriter(&requestBody)
 
-		sessionToken := getSessionTokenFromCookie(ctx.Request)
-		serviceURL := SERVICE_BASE_URL + "blogs?sessionToken=" + sessionToken + "&title=" + oldTitle
-		serviceURL = strings.Replace(serviceURL, " ", "%20", -1)
-
-		// Create Request with Timeout
-		requestToBackend_Server, err := http.NewRequestWithContext(ctxTimeout, "PUT", serviceURL, bytes.NewBuffer(blogJSON))
-
+		// Add the file to the form
+		part, err := writer.CreateFormFile("file", image.Filename)
 		if err != nil {
-			log.Println("Error: ", err)
-			log.Println("Description: Cannot Create PUT Request with Context")
-
+			log.Println("Error:", err)
+			log.Println("Description: Unable to create form file")
 			RenderUpdateBlogPage(ctx, blog, "Internal Server Error")
 			return
 		}
-		requestToBackend_Server.Header.Set("Content-Type", "application/json")
+
+		// Open the image
+		openedFile, err := image.Open()
+		if err != nil {
+			RenderUpdateBlogPage(ctx, blog, "Unable to open file")
+			return
+		}
+		defer openedFile.Close()
+
+		if _, err := io.Copy(part, openedFile); err != nil {
+			log.Println("Error:", err)
+			log.Println("Description: Unable to copy file")
+			RenderUpdateBlogPage(ctx, blog, "Unable to copy file")
+			return
+		}
+
+		// Add additional data
+		if err := writer.WriteField("data", string(blogJSON)); err != nil {
+			log.Println("Error:", err)
+			log.Println("Description: Unable to write form data")
+			RenderUpdateBlogPage(ctx, blog, "Internal Server Error")
+			return
+		}
+
+		// Close the writer to finalize the multipart form data
+		writer.Close()
+
+		// Create a request with a timeout context
+		ctxTimeout, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
+
+		serviceURL := SERVICE_BASE_URL + "blogs?sessionToken=" + sessionToken + "&title=" + oldTitle
+		serviceURL = strings.Replace(serviceURL, " ", "%20", -1)
+
+		req, err := http.NewRequestWithContext(ctxTimeout, "PUT", serviceURL, &requestBody)
+		if err != nil {
+			log.Println("Error: ", err)
+			log.Println("Description: Cannot Create POST Request with Context")
+
+			RenderPostBlogPage(ctx, "Internal Server Error")
+			return
+		}
+
+		req.Header.Set("Content-Type", writer.FormDataContentType())
+
+		if image.Header.Get("Content-Type") != "image/jpeg" &&
+			image.Header.Get("Content-Type") != "image/png" &&
+			image.Header.Get("Content-Type") != "image/jpg" {
+			RenderUpdateBlogPage(ctx, blog, "Invalid file type, upload an image")
+			return
+		}
+
+		ctxTimeout, cancelFunction := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancelFunction()
 
 		// Send request(with timeout) to back-end server
-		res, err := http.DefaultClient.Do(requestToBackend_Server)
+		res, err := http.DefaultClient.Do(req)
 
 		if err != nil {
 			if ctxTimeout.Err() == context.DeadlineExceeded {
@@ -970,26 +1075,6 @@ func UpdateBlog(ctx *gin.Context) {
 		defer res.Body.Close()
 
 		if res.StatusCode == 200 {
-			err = ctx.SaveUploadedFile(image, blog.ImagePath)
-
-			if err != nil {
-				log.Println("Error: ", err)
-				log.Println("Description: Cannot save image of blog")
-
-				fmt.Fprint(ctx.Writer, "Image of blog cannot be saved")
-			}
-			oldImagePath := "./static/images/blogs/" + oldTitle + ".png"
-
-			err = os.Remove(oldImagePath)
-
-			if err != nil {
-				if !os.IsNotExist(err) {
-					log.Println("Error: ", err)
-					log.Println("Description: Cannot delete ", oldImagePath)
-				}
-				// No need to return
-			}
-
 			fetchBlogsByTag(ctx, "All", "0", sessionToken)
 		} else if res.StatusCode == 201 {
 			RenderUpdateBlogPage(ctx, blog, "Title, Description, Tag is not in format")
@@ -1006,6 +1091,7 @@ func UpdateBlog(ctx *gin.Context) {
 			RenderUpdateBlogPage(ctx, blog, "Internal Server Error")
 		} else {
 			log.Println("Bug: Unexpected Status Code ", res.StatusCode)
+			log.Print("Hello")
 			RenderUpdateBlogPage(ctx, blog, "Internal Server Error")
 		}
 	}
@@ -1069,18 +1155,6 @@ func DeleteBlog(ctx *gin.Context) {
 	defer res.Body.Close()
 
 	if res.StatusCode == 200 {
-		oldImagePath := "./static/images/blogs/" + title + ".png"
-
-		err = os.Remove(oldImagePath)
-
-		if err != nil {
-			if !os.IsNotExist(err) {
-				log.Println("Error: ", err)
-				log.Println("Description: Cannot delete ", oldImagePath)
-			}
-			// No need to return
-		}
-
 		fetchBlogsByTag(ctx, "All", "0", sessionToken)
 	} else if res.StatusCode == 201 {
 		getBlogByTitle(ctx, title, "")

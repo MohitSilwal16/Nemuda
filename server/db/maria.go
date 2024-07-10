@@ -263,3 +263,22 @@ func SearchUsersByPattern(searchString string) ([]string, error) {
 
 	return usernames, nil
 }
+
+func ChangeStatusOfMessage(message models.Message, newStatus string) error {
+	result, err := sqlDB.Exec("UPDATE Messages SET Status = ? WHERE Sender = ? AND Receiver = ? AND MessageContent = ? AND DateTime = ?;", newStatus, message.Sender, message.Receiver, message.MessageContent, message.DateTime)
+
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return errors.New("MESSAGE NOT FOUND")
+	}
+
+	return nil
+}

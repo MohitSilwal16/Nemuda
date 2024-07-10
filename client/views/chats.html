@@ -17,6 +17,12 @@
     />
     <link rel="stylesheet" href="./static/css/output.css" />
     <script src="./static/js/chat-script.js"></script>
+    <script>
+      // Function to scroll to the bottom of the message container
+      function scrollToBottom(element) {
+        element.scrollTop = element.scrollHeight;
+      }
+    </script>
   </head>
 
   <!-- Nav Bar -->
@@ -104,7 +110,7 @@
             type="text"
             name="message"
             id="messageInput"
-            class="w-full h-24 px-2 py-4 pl-6 text-3xl border-2 border-white lg:text-xl lg:h-full rounded-xl"
+            class="w-full h-24 px-2 py-4 pl-6 pr-20 text-3xl border-2 border-white lg:text-xl lg:h-full rounded-xl"
             placeholder="Enter message ..."
           />
 
