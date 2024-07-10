@@ -1,0 +1,145 @@
+[{
+  "_id": {
+    "$oid": "665b3dda91fa8895e3388a66"
+  },
+  "comments": [
+    {
+      "username": "Nimesh",
+      "description": "Hello"
+    },
+    {
+      "username": "Nimesh",
+      "description": "Hello"
+    },
+    {
+      "username": "Nimesh",
+      "description": "Hello"
+    },
+    {
+      "username": "Prachin",
+      "description": "Nah I like Darshan"
+    },
+    {
+      "username": "Nimesh",
+      "description": "Hey there"
+    },
+    {
+      "username": "Nimesh",
+      "description": "Parth navro che"
+    }
+  ],
+  "description": "I'm Nimesh Gadhvi, owner of Gadhvi Airlines.",
+  "likes": 3,
+  "title": "I love Hitler's wife",
+  "username": "Nimesh",
+  "imagepath": "./static/images/blogs/I love Hitler's wife.png",
+  "tag": "Political",
+  "likedUsername": [
+    "Palash",
+    "Nimesh",
+    "Aayush"
+  ]
+},
+{
+  "_id": {
+    "$oid": "6667072c5b6aadf459620b2f"
+  },
+  "username": "Palash",
+  "title": "JS Frameworks're best",
+  "tag": "Programming",
+  "description": "I love JS Frameworks.\r\nNode modules're light",
+  "likes": 2,
+  "likedusername": null,
+  "comments": [
+    {
+      "username": "Prachin",
+      "description": "I agree brother"
+    },
+    {
+      "username": "Nimesh",
+      "description": "Nah bruh I prefer asm over js"
+    },
+    {
+      "username": "Konark",
+      "description": "Yea, MERN & MEAN <3"
+    }
+  ],
+  "imagepath": "./static/images/blogs/JS Frameworks're best.png",
+  "likedUsername": [
+    "Prachin",
+    "Konark"
+  ]
+},
+{
+  "_id": {
+    "$oid": "666905b95920408e1ca78971"
+  },
+  "username": "Konark",
+  "title": "I love Front End Dev",
+  "tag": "Educational",
+  "description": "Front End is fun, especially CSS & JS",
+  "likes": 0,
+  "likedusername": null,
+  "comments": [],
+  "imagepath": "./static/images/blogs/I love Front End Dev.png",
+  "likedUsername": []
+},
+{
+  "_id": {
+    "$oid": "6669069b5920408e1ca78972"
+  },
+  "username": "Prachin",
+  "title": "I love KL Rahul",
+  "tag": "Other",
+  "description": "I'm his fan since I was in elementary school",
+  "likes": 0,
+  "likedusername": null,
+  "comments": [],
+  "imagepath": "./static/images/blogs/I love KL Rahul.png",
+  "likedUsername": []
+},
+{
+  "_id": {
+    "$oid": "66697e77b10a17cb3de60ad1"
+  },
+  "username": "Robin",
+  "title": "I'm pedophile",
+  "tag": "Other",
+  "description": "I'm gay pedophile",
+  "likes": 1,
+  "likedusername": null,
+  "comments": [],
+  "imagepath": "./static/images/blogs/I'm pedophile.png",
+  "likedUsername": [
+    "Robin"
+  ]
+},
+{
+  "_id": {
+    "$oid": "66702fb07bd77d1fa4722bd8"
+  },
+  "username": "Nimesh",
+  "title": "Hello",
+  "tag": "Technical",
+  "description": "I'm Nimesh Gadhvi, owner of Gadhvi Airlines",
+  "likes": 1,
+  "likedusername": null,
+  "comments": [],
+  "imagepath": "./static/images/blogs/Hello.png",
+  "likedUsername": [
+    "Nimesh"
+  ]
+},
+{
+  "_id": {
+    "$oid": "668e06d8df2ff249048b4dde"
+  },
+  "username": "Krish",
+  "title": "I'm Child Prodigy",
+  "tag": "Educational",
+  "description": "I'm Krish Panchal from Generation of Miracles",
+  "likes": 0,
+  "likedusername": [],
+  "comments": [],
+  "imagepath": "./static/images/blogs/I'm Child Prodigy.png"
+}]
