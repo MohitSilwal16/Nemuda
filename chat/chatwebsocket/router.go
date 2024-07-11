@@ -6,14 +6,13 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/MohitSilwal16/Nemuda/chat/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 )
 
 const (
 	maxMessageSize = 512
-	pongWaitTime   = time.Second * 60
+	pongWaitTime   = time.Second * 30
 	pingWaitTime   = (pongWaitTime * 9) / 10
 )
 
@@ -29,20 +28,21 @@ func NewRouter() *Router {
 		Register:    make(chan *Client),
 		Unregister:  make(chan *Client),
 		SendMessage: make(chan Message),
-		SendError:   make(chan ErrorMessage),
 	}
 }
 
 func (router *Router) Run() {
+	defer log.Println("Closing Router ...")
 	for {
-		// Logger(router)
+		// logger(router)
 		select {
 		case client := <-router.Register:
 			router.Lock()
-			if oldClient, ok := router.ClientsMap[client.Username]; ok {
-				close(oldClient.SendMessage)
-				oldClient.Connection.Close()
+
+			if _, ok := router.ClientsMap[client.Username]; ok {
+				client.SendMessage <- DOUBLE_CONNECTION_ERROR_BYTES
 			}
+
 			router.ClientsMap[client.Username] = client
 			router.Unlock()
 
@@ -58,28 +58,33 @@ func (router *Router) Run() {
 			}
 
 			router.Unlock()
+
 			log.Println("Client Unregisterd:", client.Username)
 			log.Println("Users:", len(router.ClientsMap))
 
 		case msg := <-router.SendMessage:
 			// Self message
-			sender, ok := router.ClientsMap[msg.Sender]
+			router.Lock()
+			sender, okSender := router.ClientsMap[msg.Sender]
+			router.Unlock()
 
-			if msg.Sender == msg.Receiver && ok {
+			if msg.Sender == msg.Receiver && okSender {
 				msg.SelfMessage = true
 
 				msgJSON, err := json.Marshal(msg)
 				if err != nil {
 					log.Println("Error:", err)
 					log.Println("Description: Data isn't in JSON format")
-					return
+					continue
 				}
 				sender.SendMessage <- msgJSON
 				continue
 			}
 
 			// To Receiver
+			router.Lock()
 			receiver, ok := router.ClientsMap[msg.Receiver]
+			router.Unlock()
 
 			var messageDelivered bool
 
@@ -90,16 +95,14 @@ func (router *Router) Run() {
 				if err != nil {
 					log.Println("Error:", err)
 					log.Println("Description: Data isn't in JSON format")
-					return
+					continue
 				}
 				receiver.SendMessage <- msgJSON
 				messageDelivered = true
 			}
 
 			// To Sender
-			sender, ok = router.ClientsMap[msg.Sender]
-
-			if ok {
+			if okSender {
 				msg.SelfMessage = true
 				if messageDelivered {
 					msg.Status = "Delivered"
@@ -109,30 +112,12 @@ func (router *Router) Run() {
 				if err != nil {
 					log.Println("Error:", err)
 					log.Println("Description: Data isn't in JSON format")
-					return
+					continue
 				}
 				sender.SendMessage <- msgJSON
 			}
 
-			AddMessageInDB(sender, msg)
-
-		case errorMessage := <-router.SendError:
-			log.Println("Error: ")
-			log.Printf("%#v", errorMessage)
-
-			sender, ok := router.ClientsMap[errorMessage.Username]
-
-			if ok {
-				errorMsgJSON, err := json.Marshal(errorMessage)
-
-				if err != nil {
-					log.Println("Error:", err)
-					log.Println("Description: Data isn't in JSON format")
-					return
-				}
-
-				sender.SendMessage <- errorMsgJSON
-			}
+			addMessageInDB(sender, msg)
 		}
 	}
 }
@@ -145,14 +130,29 @@ func (router *Router) ServeWS(ctx *gin.Context) {
 		return
 	}
 
-	sessionToken := utils.GetSessionTokenFromCookie(ctx.Request)
-	username, err := utils.GetUsernameBySessionToken(sessionToken)
+	sessionToken := ctx.Param("sessionToken")
+
+	if sessionToken == "" {
+		log.Println("Error: Empty Session Token")
+
+		conn.WriteMessage(websocket.TextMessage, SESSION_TIMED_OUT_ERROR_BYTES)
+		return
+	}
+	username, err := getUsernameBySessionToken(sessionToken)
 
 	if err != nil {
 		log.Println("Error:", err)
 		log.Println("Description: Cannot get username from session token")
 
-		router.SendError <- ErrorMessage{}
+		conn.WriteMessage(websocket.TextMessage, INTERNAL_SERVER_ERROR_BYTES)
+		return
+	}
+
+	if username == "" {
+		log.Println("Error: Cannot get username from session token")
+
+		conn.WriteMessage(websocket.TextMessage, SESSION_TIMED_OUT_ERROR_BYTES)
+		return
 	}
 
 	client := &Client{
@@ -165,13 +165,16 @@ func (router *Router) ServeWS(ctx *gin.Context) {
 
 	router.Register <- client
 
-	go client.readMessages(username)
+	go client.readMessages()
 	go client.writeMessage()
 }
 
-func Logger(router *Router) {
-	log.Println("Username:")
+// Only for logging purpose
+func logger(router *Router) {
+	log.Println("Users: ")
+	router.Lock()
 	for username := range router.ClientsMap {
-		log.Print(username)
+		log.Println(username)
 	}
+	router.Unlock()
 }

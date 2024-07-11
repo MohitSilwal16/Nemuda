@@ -7,8 +7,9 @@ import (
 )
 
 type WSMessage struct {
-	Message  string `json:"message"`
-	Receiver string `json:"receiver"`
+	Message      string `json:"message"`
+	Receiver     string `json:"receiver"`
+	SessionToken string `json:"sessionToken"`
 }
 
 type Client struct {
@@ -25,7 +26,6 @@ type Router struct {
 	Register    chan *Client
 	Unregister  chan *Client
 	SendMessage chan Message
-	SendError   chan ErrorMessage
 }
 
 type Message struct {
@@ -35,9 +35,4 @@ type Message struct {
 	Status         string `json:"status"` // Sent, Delivered, Read
 	DateTime       string `json:"dateTime"`
 	SelfMessage    bool   `json:"selfMessage"` // Sending message to himself/herself
-}
-
-type ErrorMessage struct {
-	Username string `json:"username"`
-	Error    string `json:"error"`
 }

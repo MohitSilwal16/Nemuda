@@ -20,14 +20,11 @@ func main() {
 	// Add Logger and Recovery middleware
 	r.Use(gin.Logger(), gin.Recovery())
 
-	// Serve static files from the "static" directory
-	r.Static("/static", "./static")
-
 	router := chatwebsocket.NewRouter()
 
 	go router.Run()
 
-	r.GET("/ws/chat", router.ServeWS)
+	r.GET("/ws/chat/:sessionToken", router.ServeWS)
 
 	log.Println("Running Messaging Server on", BASE_URL)
 	r.Run(BASE_URL)

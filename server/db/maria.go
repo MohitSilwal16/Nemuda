@@ -13,8 +13,6 @@ import (
 	"github.com/joho/godotenv"
 )
 
-var PORT = "3600"
-
 var sqlDB *sql.DB
 
 func Init_MariaDB() error {
@@ -25,10 +23,9 @@ func Init_MariaDB() error {
 	}
 
 	dbUser := os.Getenv("sqlDBUser")
-	var dbPass string
-	fmt.Println("Enter Maria DB Password: ")
-	fmt.Scan(&dbPass)
+	dbPass := os.Getenv("sqlDBPass")
 	dbName := os.Getenv("sqlDBName")
+	dbPort := os.Getenv("sqlDBPort")
 
 	if dbUser == "" || dbName == "" || dbPass == "" {
 		return errors.New("DATABASE NAME, USER NOT SPECIFIED IN .ENV FILE")
@@ -37,7 +34,7 @@ func Init_MariaDB() error {
 	// On port 3306 MYSQL is running
 	// username:password@tcp(localhost:3306)/mydb
 
-	dbURL := fmt.Sprintf("%s:%s@tcp(localhost:%s)/%s", dbUser, dbPass, PORT, dbName)
+	dbURL := fmt.Sprintf("%s:%s@tcp(localhost:%s)/%s", dbUser, dbPass, dbPort, dbName)
 
 	sqlDB, err = sql.Open("mysql", dbURL)
 

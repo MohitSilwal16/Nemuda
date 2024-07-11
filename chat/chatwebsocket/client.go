@@ -6,15 +6,26 @@ import (
 	"log"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 )
 
 // Define the date format
 const dateFormat = "2006-01-02 15:04:05"
 
-func (client *Client) readMessages(username string) {
+var EMPTY_MESSAGE_JSON = gin.H{
+	"error": "Message is Empty",
+}
+
+var MESSAGE_LENGTH_EXCEEDED = gin.H{
+	"error": "Max Message length: 100 chars",
+}
+
+var EMPTY_MESSAGE_BYTES, _ = json.Marshal(EMPTY_MESSAGE_JSON)
+var MESSAGE_LENGTH_EXCEEDED_BYTES, _ = json.Marshal(MESSAGE_LENGTH_EXCEEDED)
+
+func (client *Client) readMessages() {
 	defer func() {
-		client.Connection.Close()
 		client.Router.Unregister <- client
 	}()
 
@@ -28,9 +39,7 @@ func (client *Client) readMessages(username string) {
 	for {
 		_, msg, err := client.Connection.ReadMessage()
 		if err != nil {
-			log.Println("Error:", err)
-			log.Println("Description: Cannot Read Message from Client")
-
+			log.Println("Error:", err, " User:", client.Username)
 			return
 		}
 
@@ -45,25 +54,21 @@ func (client *Client) readMessages(username string) {
 		}
 
 		if wsMessage.Message == "" {
-			client.Router.SendError <- ErrorMessage{
-				Username: username,
-				Error:    "Empty Message",
-			}
+
+			client.SendMessage <- EMPTY_MESSAGE_BYTES
 			return
 		}
 
 		if len(wsMessage.Message) > 100 {
-			client.Router.SendError <- ErrorMessage{
-				Username: username,
-				Error:    "Max Message length: 100 chars",
-			}
+
+			client.SendMessage <- MESSAGE_LENGTH_EXCEEDED_BYTES
 			return
 		}
 
 		currentTime := time.Now().Format(dateFormat)
 
 		client.Router.SendMessage <- Message{
-			Sender:         username,
+			Sender:         client.Username,
 			MessageContent: wsMessage.Message,
 			Receiver:       wsMessage.Receiver,
 			DateTime:       currentTime,
@@ -75,13 +80,13 @@ func (client *Client) readMessages(username string) {
 func (client *Client) writeMessage() {
 	ticker := time.NewTicker(pingWaitTime)
 	defer func() {
-		client.Connection.Close()
 		client.Router.Unregister <- client
 	}()
 
 	for {
 		select {
 		case msg, ok := <-client.SendMessage:
+
 			if !ok {
 				// Router is closed
 				client.Connection.WriteMessage(websocket.CloseMessage, []byte{})
@@ -105,7 +110,7 @@ func (client *Client) writeMessage() {
 			}
 		case <-ticker.C:
 			if err := client.Connection.WriteMessage(websocket.PingMessage, nil); err != nil {
-				log.Println("No response of ping from client")
+				log.Println("No response of ping from client:", client.Username)
 				return
 			}
 		}

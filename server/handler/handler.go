@@ -1529,6 +1529,11 @@ func GetMessages(ctx *gin.Context) {
 		return
 	}
 
+	for _, message := range messages {
+		db.ChangeStatusOfMessage(message, "Read")
+		message.Status = "Read"
+	}
+
 	ctx.JSON(200, messages)
 }
 

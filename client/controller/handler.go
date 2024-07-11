@@ -1400,8 +1400,6 @@ func GetMessages(ctx *gin.Context) {
 
 	sessionToken := getSessionTokenFromCookie(ctx.Request)
 
-	log.Println(sessionToken)
-
 	receiverName := ctx.Param("user")
 
 	ctxTimeout, cancelFunc := context.WithTimeout(context.Background(), 3*time.Second)

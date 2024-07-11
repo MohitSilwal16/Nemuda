@@ -6,15 +6,12 @@ import (
 
 	"github.com/MohitSilwal16/Nemuda/server/db"
 	"github.com/MohitSilwal16/Nemuda/server/handler"
-	"github.com/MohitSilwal16/Nemuda/server/utils"
 	"github.com/gin-gonic/gin"
 )
 
 const BASE_URL = "0.0.0.0:8080"
 
 func init() {
-	utils.ClearScreen()
-
 	err := db.Init_MariaDB()
 
 	if err != nil {
