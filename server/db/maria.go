@@ -39,6 +39,7 @@ func Init_MariaDB() error {
 	sqlDB, err = sql.Open("mysql", dbURL)
 
 	if err != nil {
+		log.Println("Error:", err)
 		return err
 	}
 
@@ -53,7 +54,7 @@ func Init_MariaDB() error {
 
 // Helper methods
 func IsSessionTokenValid(token string) (bool, error) {
-	rows, err := sqlDB.Query("SELECT 1 from Users WHERE Token = ?;", token)
+	rows, err := sqlDB.Query("SELECT 1 from users WHERE Token = ?;", token)
 
 	if err != nil {
 		return false, err
@@ -83,7 +84,7 @@ func UpdateTokenInDBAndReturn(username string) (string, error) {
 		log.Println("Duplicate Token " + sessionToken)
 	}
 
-	_, err := sqlDB.Query("UPDATE Users SET Token = ? WHERE Username = ?;", sessionToken, username)
+	_, err := sqlDB.Query("UPDATE users SET Token = ? WHERE Username = ?;", sessionToken, username)
 
 	if err != nil {
 		return "", nil
@@ -102,7 +103,7 @@ func DeleteTokenInDB(sessionToken string) error {
 		return errors.New("INVALID SESSION TOKEN")
 	}
 
-	stmt, err := sqlDB.Prepare("UPDATE Users SET TOKEN = '' WHERE Token = ?;")
+	stmt, err := sqlDB.Prepare("UPDATE users SET TOKEN = '' WHERE Token = ?;")
 
 	if err != nil {
 		return err
@@ -116,7 +117,7 @@ func DeleteTokenInDB(sessionToken string) error {
 }
 
 func DoesUserExists(username string) (bool, error) {
-	rows, err := sqlDB.Query("SELECT 1 FROM Users WHERE Username = ?;", username)
+	rows, err := sqlDB.Query("SELECT 1 FROM users WHERE Username = ?;", username)
 
 	if err != nil {
 		return false, err
@@ -139,7 +140,7 @@ func AddUser(user models.User) error {
 		return errors.New("USERNAME IS ALREADY USED")
 	}
 
-	stmt, err := sqlDB.Prepare("INSERT INTO Users (Username , Password , Token) VALUE (? , ? , ?);")
+	stmt, err := sqlDB.Prepare("INSERT INTO users (Username , Password , Token) VALUE (? , ? , ?);")
 
 	if err != nil {
 		return err
@@ -164,7 +165,7 @@ func VerifyIdPass(user models.User) (bool, error) {
 		return false, errors.New("USER DOESN'T EXISTS")
 	}
 
-	rows, err := sqlDB.Query("SELECT 1 FROM Users WHERE Username = ? AND Password = ?;", user.Username, user.Password)
+	rows, err := sqlDB.Query("SELECT 1 FROM users WHERE Username = ? AND Password = ?;", user.Username, user.Password)
 
 	if err != nil {
 		return false, err
@@ -180,7 +181,7 @@ func GetUsernameBySessionToken(sessionToken string) (string, error) {
 		return "", errors.New("INVALID SESSION TOKEN")
 	}
 
-	rows, err := sqlDB.Query("SELECT Username FROM Users WHERE Token = ? LIMIT 1;", sessionToken)
+	rows, err := sqlDB.Query("SELECT Username FROM users WHERE Token = ? LIMIT 1;", sessionToken)
 
 	if err != nil {
 		return "", err
@@ -202,7 +203,7 @@ func GetUsernameBySessionToken(sessionToken string) (string, error) {
 }
 
 func GetMessages(sender string, receiver string) ([]models.Message, error) {
-	rows, err := sqlDB.Query("SELECT * FROM Messages WHERE (Sender = ? AND Receiver = ? ) OR (Sender = ? AND Receiver = ? ) ORDER BY DateTime;", sender, receiver, receiver, sender)
+	rows, err := sqlDB.Query("SELECT * FROM messages WHERE (Sender = ? AND Receiver = ? ) OR (Sender = ? AND Receiver = ? ) ORDER BY DateTime;", sender, receiver, receiver, sender)
 
 	if err != nil {
 		return nil, err
@@ -224,7 +225,7 @@ func GetMessages(sender string, receiver string) ([]models.Message, error) {
 }
 
 func AddMessage(message models.Message) error {
-	stmt, err := sqlDB.Prepare("INSERT INTO Messages (Sender, Receiver, MessageContent, Status, DateTime) VALUE (? , ? , ?, ?, ?);")
+	stmt, err := sqlDB.Prepare("INSERT INTO messages (Sender, Receiver, MessageContent, Status, DateTime) VALUE (? , ? , ?, ?, ?);")
 
 	if err != nil {
 		return err
@@ -242,7 +243,7 @@ func AddMessage(message models.Message) error {
 func SearchUsersByPattern(searchString string) ([]string, error) {
 	searchString += "%"
 
-	rows, err := sqlDB.Query("SELECT Username FROM Users WHERE Username LIKE ?;", searchString)
+	rows, err := sqlDB.Query("SELECT Username FROM users WHERE Username LIKE ?;", searchString)
 
 	if err != nil {
 		return nil, err
@@ -264,7 +265,7 @@ func SearchUsersByPattern(searchString string) ([]string, error) {
 }
 
 func ChangeStatusOfMessage(message models.Message, newStatus string) error {
-	result, err := sqlDB.Exec("UPDATE Messages SET Status = ? WHERE Sender = ? AND Receiver = ? AND MessageContent = ? AND DateTime = ?;", newStatus, message.Sender, message.Receiver, message.MessageContent, message.DateTime)
+	result, err := sqlDB.Exec("UPDATE messages SET Status = ? WHERE Sender = ? AND Receiver = ? AND MessageContent = ? AND DateTime = ?;", newStatus, message.Sender, message.Receiver, message.MessageContent, message.DateTime)
 
 	if err != nil {
 		return err
