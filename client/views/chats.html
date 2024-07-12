@@ -10,11 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;700&display=swap"
       rel="stylesheet"
     />
-    <link
-      rel="icon"
-      type="image/x-icon"
-      href="../../static/images/favico.svg"
-    />
+    <link rel="icon" type="image/x-icon" href="./static/images/favico.svg" />
     <link rel="stylesheet" href="./static/css/output.css" />
     <script>
       // Function to scroll to the bottom of the message container
@@ -105,10 +101,9 @@
         <!-- Textfield -->
         <form onsubmit="onMessageSend()">
           <input
-            readonly
             type="text"
-            name="message"
             id="messageInput"
+            readonly
             class="w-full h-24 px-2 py-4 pl-6 pr-20 text-3xl border-2 border-white lg:text-xl lg:h-full rounded-xl"
             placeholder="Enter message ..."
           />
@@ -202,32 +197,57 @@
     // Listen for messages
     socket.addEventListener("message", function (event) {
       const responseData = JSON.parse(event.data);
-      const receiver = document.getElementById("title").innerText;
+      const titleUser = document.getElementById("title").innerText;
 
+      console.log(responseData);
       if (responseData.error) {
         if (responseData.error == "Invalid Session Token") {
           socket.close();
           location.href = "login";
-          return;
-        }
-
-        if (
+        } else if (
           responseData.error ==
           "Oops! Looks like you're double-dipping. Disconnect from one device or tab to keep things smooth"
         ) {
           openAlert("Error", responseData.error);
           socket.close();
-          return;
+        } else {
+          openAlert("Error", responseData.error);
         }
-        openAlert("Error", responseData.error);
+        return;
+      }
+
+      if (responseData.messageType == "Read") {
+        if (responseData.sender == titleUser) {
+          let messagesStatus =
+            document.getElementsByClassName("message-status");
+
+          for (let i = messagesStatus.length - 1; i > 0; --i) {
+            if (messagesStatus.innerHTML == "Read") {
+              break;
+            }
+            messagesStatus[i].innerHTML = "Read";
+          }
+        }
         return;
       }
 
       // There's no err message so continue
       // Send message in alert pop up if receiver hasn't open sender's chat
-      if (receiver != responseData.sender && !responseData.selfMessage) {
+      if (
+        titleUser != responseData.sender &&
+        !responseData.selfMessage &&
+        responseData.messageContent != ""
+      ) {
         openNotification(responseData.sender, responseData.messageContent);
         return;
+      }
+
+      if (responseData.messageType == "Read") {
+        return;
+      }
+
+      if (!responseData.selfMessage) {
+        markMessageAsRead(responseData.sender);
       }
 
       const messagesContainer = document.getElementById("messages");
@@ -238,12 +258,10 @@
 
       if (noMsgBox) {
         noMsgBox.remove();
-        noMsgBox.classList.add("hidden");
       }
 
       // Scroll to the bottom after adding the new message
       scrollToBottom(messagesContainer);
-      console.log("Message handled");
     });
 
     // Send a message to the server
@@ -265,6 +283,7 @@
         return;
       }
       const jsonData = {
+        messageType: "Message",
         message: message,
         receiver: document.getElementById("title").innerText,
         sessionToken: getSessionToken(),
@@ -272,7 +291,17 @@
 
       socket.send(JSON.stringify(jsonData));
       messageInput.value = "";
-      console.log("Message Sent");
+    }
+
+    function markMessageAsRead(receiver) {
+      const jsonData = {
+        messageType: "Read",
+        receiver: receiver,
+        sessionToken: getSessionToken(),
+      };
+
+      socket.send(JSON.stringify(jsonData));
+      console.log("Sent Message:" + JSON.stringify(jsonData));
     }
 
     function getSessionToken() {
@@ -289,7 +318,6 @@
           sessionToken = cookieValue; // Assign sessionToken value
         }
       });
-
       return sessionToken;
     }
 
@@ -331,6 +359,7 @@
       if (responseData.selfMessage) {
         messageContainer.classList.add("justify-end");
         statusElement.classList.add("text-gray-300");
+        statusElement.classList.add("message-status");
       } else {
         messageContainer.classList.add("justify-start");
         statusElement.classList.add("hidden");
@@ -361,20 +390,28 @@
     }
 
     function onclickNotification() {
-      const title = document.getElementById("notificationTitle").innerText;
+      const receiver = document.getElementById("notificationTitle").innerText;
+      const title = document.getElementById("title").innerText;
 
-      fetch("/message/" + title)
+      if (title == receiver) {
+        console.log("Already opened");
+        closeNotification();
+        return;
+      }
+
+      fetch("/message/" + receiver)
         .then((response) => response.text())
         .then((html) => {
           document.getElementById("message-body").innerHTML = html;
-          closeNotification();
 
           const msgInput = document.getElementById("messageInput");
           msgInput.removeAttribute("readonly");
-          msgInput.focus();
+          closeNotification();
 
+          msgInput.focus();
           const messagesContainer = document.getElementById("messages");
           scrollToBottom(messagesContainer);
+          markMessageAsRead(receiver);
         })
         .catch((error) => {
           console.error("Error fetching data:", error);
@@ -386,9 +423,10 @@
     }
 
     // Called when username card is clicked
-    function onUserClick() {
-      messageInput.focus();
+    function onUserClick(username) {
       document.getElementById("messageInput").removeAttribute("readonly");
+      messageInput.focus();
+      markMessageAsRead(username);
       closeMenu();
     }
 
@@ -431,10 +469,5 @@
         sendButton.classList.remove("hidden");
       }
     }
-
-    window.addEventListener("beforeunload", function (e) {
-      alert("Why're you reloading ?");
-      socket.close();
-    });
   </script>
 </div>

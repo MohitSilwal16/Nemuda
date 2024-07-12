@@ -59,6 +59,7 @@ func (router *Router) Run() {
 			}
 			router.Lock()
 
+			// If user is connecting same account from two devices, tabs or windows disconnect both accounts
 			if oldClient, ok := router.ClientsMap[client.Username]; ok {
 				close(oldClient.SendMessage)
 				if oldClient.Connection != nil {
@@ -102,8 +103,23 @@ func (router *Router) Run() {
 
 		case msg, ok := <-router.SendMessage:
 			if !ok {
-				log.Println("Send Message Channel is closed")
+				log.Println("Send Message Channel of Router is closed")
 			}
+
+			// Giving feedback that I've read your message
+			if msg.MessageType == "Read" {
+				// To Receiver
+				router.Lock()
+				receiver, ok := router.ClientsMap[msg.Receiver]
+				router.Unlock()
+
+				if ok {
+					receiver.SendMessage <- msg
+				}
+				log.Println("Message Read")
+				continue
+			}
+			log.Println("Message Sent")
 
 			// Self message
 			router.Lock()
@@ -111,6 +127,7 @@ func (router *Router) Run() {
 			router.Unlock()
 
 			if msg.Sender == msg.Receiver && okSender {
+				msg.Status = "Read"
 				msg.SelfMessage = true
 				sender.SendMessage <- msg
 				continue

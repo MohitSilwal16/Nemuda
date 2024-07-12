@@ -47,7 +47,9 @@
         <span class="text-md lg:text-xs">{{ .DateTime }}</span>
       </div>
       <p class="mt-1 font-semibold">{{ .MessageContent }}</p>
-      <div class="mt-1 text-right text-gray-300 text-md lg:text-xs">{{ .Status }}</div>
+      <div class="mt-1 text-right text-gray-300 text-md lg:text-xs message-status">
+        {{ .Status }}
+      </div>
     </div>
   </div>
   {{ end }} {{ end }}

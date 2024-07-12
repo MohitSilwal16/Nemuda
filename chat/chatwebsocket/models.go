@@ -10,6 +10,7 @@ type WSMessage struct {
 	Message      string `json:"message"`
 	Receiver     string `json:"receiver"`
 	SessionToken string `json:"sessionToken"`
+	MessageType  string `json:"messageType"` // Message, Read
 }
 
 type Client struct {
@@ -36,4 +37,5 @@ type Message struct {
 	DateTime       string `json:"dateTime"`
 	SelfMessage    bool   `json:"selfMessage"` // Sending message to himself/herself
 	Error          string `json:"error"`
+	MessageType    string `json:"messageType"` // Message, Read
 }

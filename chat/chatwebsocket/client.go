@@ -43,11 +43,27 @@ func (client *Client) readMessages() {
 		if !isSessionTokenValid {
 			return
 		}
+
+		if wsMessage.MessageType == "Read" {
+			if client.Username == wsMessage.Receiver {
+				continue
+			}
+			client.Router.SendMessage <- Message{
+				Sender:      client.Username,
+				Receiver:    wsMessage.Receiver,
+				MessageType: "Read",
+			}
+			continue
+		}
+
 		if wsMessage.Message == "" {
-			return
+			continue
 		}
 		if len(wsMessage.Message) > 100 {
-			return
+			client.SendMessage <- Message{
+				Error: "Message should be less than 100 chars",
+			}
+			continue
 		}
 
 		currentTime := time.Now().Format(dateFormat)
@@ -57,6 +73,7 @@ func (client *Client) readMessages() {
 			Receiver:       wsMessage.Receiver,
 			DateTime:       currentTime,
 			Status:         "Sent",
+			MessageType:    "Message",
 		}
 	}
 }
