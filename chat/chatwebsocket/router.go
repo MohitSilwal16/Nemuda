@@ -41,10 +41,11 @@ var upgrader = websocket.Upgrader{
 
 func NewRouter() *Router {
 	return &Router{
-		ClientsMap:  map[string]*Client{},
-		Register:    make(chan *Client),
-		Unregister:  make(chan *Client),
-		SendMessage: make(chan Message),
+		ClientsMap:         map[string]*Client{},
+		Register:           make(chan *Client),
+		Unregister:         make(chan *Client),
+		SendMessage:        make(chan Message),
+		UsersWhoAreWaiting: map[string][]*Client{},
 	}
 }
 
@@ -76,6 +77,28 @@ func (router *Router) Run() {
 			}
 
 			router.ClientsMap[client.Username] = client
+
+			usersWhoAreWaiting, ok := router.UsersWhoAreWaiting[client.Username]
+
+			if !ok {
+				router.Unlock()
+
+				log.Println("Client Registerd:", client.Username)
+				log.Println("Users:", len(router.ClientsMap))
+				continue
+			}
+
+			for _, cli := range usersWhoAreWaiting {
+				if _, ok := router.ClientsMap[cli.Username]; ok {
+					cli.SendMessage <- Message{
+						Sender:      client.Username,
+						Receiver:    cli.Username,
+						MessageType: "Delivered",
+					}
+				}
+			}
+			router.UsersWhoAreWaiting[client.Username] = []*Client{}
+
 			router.Unlock()
 
 			log.Println("Client Registerd:", client.Username)
@@ -117,6 +140,8 @@ func (router *Router) Run() {
 					receiver.SendMessage <- msg
 				}
 				log.Println("Message Read")
+
+				// changeStatusOfMessage(c)
 				continue
 			}
 			log.Println("Message Sent")
@@ -130,6 +155,8 @@ func (router *Router) Run() {
 				msg.Status = "Read"
 				msg.SelfMessage = true
 				sender.SendMessage <- msg
+
+				addMessageInDB(sender, msg)
 				continue
 			}
 
@@ -151,6 +178,10 @@ func (router *Router) Run() {
 				msg.SelfMessage = true
 				if messageDelivered {
 					msg.Status = "Delivered"
+				} else {
+					router.Lock()
+					router.UsersWhoAreWaiting[msg.Receiver] = append(router.UsersWhoAreWaiting[msg.Receiver], sender)
+					router.Unlock()
 				}
 				sender.SendMessage <- msg
 			}

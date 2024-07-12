@@ -23,10 +23,11 @@ type Client struct {
 
 type Router struct {
 	sync.RWMutex
-	ClientsMap  map[string]*Client // Key: Username
-	Register    chan *Client
-	Unregister  chan *Client
-	SendMessage chan Message
+	ClientsMap         map[string]*Client // Key: Username
+	Register           chan *Client
+	Unregister         chan *Client
+	SendMessage        chan Message
+	UsersWhoAreWaiting map[string][]*Client // Stores the client who'll be notified when user gets online & Key: Username
 }
 
 type Message struct {
@@ -37,5 +38,5 @@ type Message struct {
 	DateTime       string `json:"dateTime"`
 	SelfMessage    bool   `json:"selfMessage"` // Sending message to himself/herself
 	Error          string `json:"error"`
-	MessageType    string `json:"messageType"` // Message, Read
+	MessageType    string `json:"messageType"` // Message, Read, Delivered
 }

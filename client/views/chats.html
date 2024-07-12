@@ -222,10 +222,28 @@
             document.getElementsByClassName("message-status");
 
           for (let i = messagesStatus.length - 1; i > 0; --i) {
-            if (messagesStatus.innerHTML == "Read") {
+            if (messagesStatus[i].innerHTML == "Read") {
               break;
             }
             messagesStatus[i].innerHTML = "Read";
+          }
+        }
+        return;
+      }
+
+      if (responseData.messageType == "Delivered") {
+        if (responseData.sender == titleUser) {
+          let messagesStatus =
+            document.getElementsByClassName("message-status");
+
+          for (let i = messagesStatus.length - 1; i > 0; --i) {
+            if (
+              messagesStatus[i].innerText == "Read" ||
+              messagesStatus[i].innerText == "Delivered"
+            ) {
+              break;
+            }
+            messagesStatus[i].innerHTML = "Delivered";
           }
         }
         return;

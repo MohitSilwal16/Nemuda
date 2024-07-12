@@ -214,3 +214,5 @@ func isSessionTokenValid(client *Client, sessionToken string) bool {
 		return false
 	}
 }
+
+func changeStatusOfMessage(client *Client, message Message, newStatus string) {}
