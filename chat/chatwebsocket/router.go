@@ -1,6 +1,7 @@
 package chatwebsocket
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -15,6 +16,22 @@ const (
 	pongWaitTime   = time.Second * 30
 	pingWaitTime   = (pongWaitTime * 9) / 10
 )
+
+var INTERNAL_SERVER_ERROR_MESSAGE = Message{
+	Error: "Internal Server Error",
+}
+
+var REQUEST_TIMED_OUT_MESSAGE = Message{
+	Error: "Request Timed Out",
+}
+
+var SESSION_TIMED_OUT_MESSAGE = Message{
+	Error: "Session Timed Out",
+}
+
+var REQUEST_TIMED_OUT_MESSAGE_BYTES, _ = json.Marshal(REQUEST_TIMED_OUT_MESSAGE)
+var SESSION_TIMED_OUT_ERROR_BYTES, _ = json.Marshal(SESSION_TIMED_OUT_MESSAGE)
+var INTERNAL_SERVER_ERROR_BYTES, _ = json.Marshal(SESSION_TIMED_OUT_MESSAGE)
 
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
@@ -34,13 +51,27 @@ func NewRouter() *Router {
 func (router *Router) Run() {
 	defer log.Println("Closing Router ...")
 	for {
-		// logger(router)
+		// Logger(router)
 		select {
-		case client := <-router.Register:
+		case client, ok := <-router.Register:
+			if !ok {
+				log.Println("Register Channel is closed")
+			}
 			router.Lock()
 
-			if _, ok := router.ClientsMap[client.Username]; ok {
-				client.SendMessage <- DOUBLE_CONNECTION_ERROR_BYTES
+			if oldClient, ok := router.ClientsMap[client.Username]; ok {
+				close(oldClient.SendMessage)
+				if oldClient.Connection != nil {
+					oldClient.Connection.Close()
+				}
+				delete(router.ClientsMap, oldClient.Username)
+				close(client.SendMessage)
+				if client.Connection != nil {
+					client.Connection.Close()
+				}
+				router.Unlock()
+				log.Println("Double dipping,", oldClient.Username, "removed")
+				continue
 			}
 
 			router.ClientsMap[client.Username] = client
@@ -49,11 +80,18 @@ func (router *Router) Run() {
 			log.Println("Client Registerd:", client.Username)
 			log.Println("Users:", len(router.ClientsMap))
 
-		case client := <-router.Unregister:
+		case client, ok := <-router.Unregister:
+			if !ok {
+				log.Println("Unregister Channel is closed")
+			}
+
 			router.Lock()
 
 			if _, ok := router.ClientsMap[client.Username]; ok {
 				close(client.SendMessage)
+				if client.Connection != nil {
+					client.Connection.Close()
+				}
 				delete(router.ClientsMap, client.Username)
 			}
 
@@ -62,7 +100,11 @@ func (router *Router) Run() {
 			log.Println("Client Unregisterd:", client.Username)
 			log.Println("Users:", len(router.ClientsMap))
 
-		case msg := <-router.SendMessage:
+		case msg, ok := <-router.SendMessage:
+			if !ok {
+				log.Println("Send Message Channel is closed")
+			}
+
 			// Self message
 			router.Lock()
 			sender, okSender := router.ClientsMap[msg.Sender]
@@ -70,14 +112,7 @@ func (router *Router) Run() {
 
 			if msg.Sender == msg.Receiver && okSender {
 				msg.SelfMessage = true
-
-				msgJSON, err := json.Marshal(msg)
-				if err != nil {
-					log.Println("Error:", err)
-					log.Println("Description: Data isn't in JSON format")
-					continue
-				}
-				sender.SendMessage <- msgJSON
+				sender.SendMessage <- msg
 				continue
 			}
 
@@ -90,14 +125,7 @@ func (router *Router) Run() {
 
 			if ok {
 				msg.SelfMessage = false
-				msgJSON, err := json.Marshal(msg)
-
-				if err != nil {
-					log.Println("Error:", err)
-					log.Println("Description: Data isn't in JSON format")
-					continue
-				}
-				receiver.SendMessage <- msgJSON
+				receiver.SendMessage <- msg
 				messageDelivered = true
 			}
 
@@ -107,14 +135,7 @@ func (router *Router) Run() {
 				if messageDelivered {
 					msg.Status = "Delivered"
 				}
-
-				msgJSON, err := json.Marshal(msg)
-				if err != nil {
-					log.Println("Error:", err)
-					log.Println("Description: Data isn't in JSON format")
-					continue
-				}
-				sender.SendMessage <- msgJSON
+				sender.SendMessage <- msg
 			}
 
 			addMessageInDB(sender, msg)
@@ -131,27 +152,30 @@ func (router *Router) ServeWS(ctx *gin.Context) {
 	}
 
 	sessionToken := ctx.Param("sessionToken")
-
 	if sessionToken == "" {
 		log.Println("Error: Empty Session Token")
-
 		conn.WriteMessage(websocket.TextMessage, SESSION_TIMED_OUT_ERROR_BYTES)
+		conn.WriteMessage(websocket.CloseMessage, []byte{})
 		return
 	}
-	username, err := getUsernameBySessionToken(sessionToken)
 
+	username, err := getUsernameBySessionToken(sessionToken)
 	if err != nil {
 		log.Println("Error:", err)
 		log.Println("Description: Cannot get username from session token")
-
-		conn.WriteMessage(websocket.TextMessage, INTERNAL_SERVER_ERROR_BYTES)
+		if err == context.DeadlineExceeded {
+			conn.WriteMessage(websocket.TextMessage, REQUEST_TIMED_OUT_MESSAGE_BYTES)
+		} else {
+			conn.WriteMessage(websocket.TextMessage, INTERNAL_SERVER_ERROR_BYTES)
+		}
+		conn.WriteMessage(websocket.CloseMessage, []byte{})
 		return
 	}
 
 	if username == "" {
 		log.Println("Error: Cannot get username from session token")
-
 		conn.WriteMessage(websocket.TextMessage, SESSION_TIMED_OUT_ERROR_BYTES)
+		conn.WriteMessage(websocket.CloseMessage, []byte{})
 		return
 	}
 
@@ -159,7 +183,7 @@ func (router *Router) ServeWS(ctx *gin.Context) {
 		Username:     username,
 		Connection:   conn,
 		Router:       router,
-		SendMessage:  make(chan []byte),
+		SendMessage:  make(chan Message),
 		SessionToken: sessionToken,
 	}
 
@@ -170,7 +194,7 @@ func (router *Router) ServeWS(ctx *gin.Context) {
 }
 
 // Only for logging purpose
-func logger(router *Router) {
+func Logger(router *Router) {
 	log.Println("Users: ")
 	router.Lock()
 	for username := range router.ClientsMap {

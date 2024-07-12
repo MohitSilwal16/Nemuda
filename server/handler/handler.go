@@ -1529,9 +1529,12 @@ func GetMessages(ctx *gin.Context) {
 		return
 	}
 
+	// Fetching all messages of receiver indirectly means I read 'em so I should mark 'em as read
 	for _, message := range messages {
-		db.ChangeStatusOfMessage(message, "Read")
-		message.Status = "Read"
+		if message.Sender == receiver {
+			db.ChangeStatusOfMessage(message, "Read")
+			message.Status = "Read"
+		}
 	}
 
 	ctx.JSON(200, messages)

@@ -206,7 +206,7 @@
 
       if (responseData.error) {
         if (responseData.error == "Invalid Session Token") {
-          deleteSessionToken();
+          socket.close();
           location.href = "login";
           return;
         }
@@ -267,6 +267,7 @@
       const jsonData = {
         message: message,
         receiver: document.getElementById("title").innerText,
+        sessionToken: getSessionToken(),
       };
 
       socket.send(JSON.stringify(jsonData));
@@ -290,11 +291,6 @@
       });
 
       return sessionToken;
-    }
-
-    // Set Session Token to "" (Empty String)
-    function deleteSessionToken() {
-      document.cookie = "sessionToken=; path=/";
     }
 
     function createMessageCard(responseData) {

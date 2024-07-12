@@ -16,7 +16,7 @@ type Client struct {
 	Username     string
 	Connection   *websocket.Conn
 	Router       *Router
-	SendMessage  chan []byte
+	SendMessage  chan Message
 	SessionToken string
 }
 
@@ -35,4 +35,5 @@ type Message struct {
 	Status         string `json:"status"` // Sent, Delivered, Read
 	DateTime       string `json:"dateTime"`
 	SelfMessage    bool   `json:"selfMessage"` // Sending message to himself/herself
+	Error          string `json:"error"`
 }

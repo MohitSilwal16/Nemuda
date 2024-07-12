@@ -1,28 +1,15 @@
 package chatwebsocket
 
 import (
-	"bytes"
 	"encoding/json"
 	"log"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 )
 
 // Define the date format
 const dateFormat = "2006-01-02 15:04:05"
-
-var EMPTY_MESSAGE_JSON = gin.H{
-	"error": "Message is Empty",
-}
-
-var MESSAGE_LENGTH_EXCEEDED = gin.H{
-	"error": "Max Message length: 100 chars",
-}
-
-var EMPTY_MESSAGE_BYTES, _ = json.Marshal(EMPTY_MESSAGE_JSON)
-var MESSAGE_LENGTH_EXCEEDED_BYTES, _ = json.Marshal(MESSAGE_LENGTH_EXCEEDED)
 
 func (client *Client) readMessages() {
 	defer func() {
@@ -44,29 +31,26 @@ func (client *Client) readMessages() {
 		}
 
 		var wsMessage WSMessage
-		reader := bytes.NewReader(msg)
-		err = json.NewDecoder(reader).Decode(&wsMessage)
-
+		err = json.Unmarshal(msg, &wsMessage)
 		if err != nil {
 			log.Println("Error:", err)
-			log.Println("Error while decoding")
+			log.Println("Error decoding message while reading message from user")
 			return
 		}
 
+		isSessionTokenValid := isSessionTokenValid(client, wsMessage.SessionToken)
+
+		if !isSessionTokenValid {
+			return
+		}
 		if wsMessage.Message == "" {
-
-			client.SendMessage <- EMPTY_MESSAGE_BYTES
 			return
 		}
-
 		if len(wsMessage.Message) > 100 {
-
-			client.SendMessage <- MESSAGE_LENGTH_EXCEEDED_BYTES
 			return
 		}
 
 		currentTime := time.Now().Format(dateFormat)
-
 		client.Router.SendMessage <- Message{
 			Sender:         client.Username,
 			MessageContent: wsMessage.Message,
@@ -89,25 +73,18 @@ func (client *Client) writeMessage() {
 
 			if !ok {
 				// Router is closed
-				client.Connection.WriteMessage(websocket.CloseMessage, []byte{})
+				log.Println("Channel is closed for user:", client.Username)
 				return
 			}
 
-			w, err := client.Connection.NextWriter(websocket.TextMessage)
+			msgJSON, err := json.Marshal(msg)
 
 			if err != nil {
 				log.Println("Error:", err)
-				log.Println("Description: Error from client.Connection.NextWriter()")
+				log.Println("Description: Cannot convert Message struct into JSON while writing")
 				return
 			}
-
-			w.Write(msg)
-
-			if err = w.Close(); err != nil {
-				log.Println("Error:", err)
-				log.Println("Description: Error from client.Connection.NextWriter()")
-				return
-			}
+			client.Connection.WriteMessage(websocket.TextMessage, msgJSON)
 		case <-ticker.C:
 			if err := client.Connection.WriteMessage(websocket.PingMessage, nil); err != nil {
 				log.Println("No response of ping from client:", client.Username)
