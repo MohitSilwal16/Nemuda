@@ -12,6 +12,7 @@
     />
     <link rel="icon" type="image/x-icon" href="./static/images/favico.svg" />
     <link rel="stylesheet" href="./static/css/output.css" />
+    <script src="https://cdn.tailwindcss.com"></script>
     <script>
       // Function to scroll to the bottom of the message container
       function scrollToBottom(element) {
@@ -178,7 +179,7 @@
   <script>
     try {
       let sessionToken = getSessionToken();
-      var socket = new WebSocket("ws://127.0.0.1:3000/ws/chat/" + sessionToken);
+      var socket = new WebSocket("ws://nemuda.hopto.org:3000/ws/chat/" + sessionToken);
     } catch (e) {
       openAlert("WebSocket not Connected", "Try Refresing Browser");
     }
@@ -196,20 +197,14 @@
 
     // Listen for messages
     socket.addEventListener("message", function (event) {
+      console.log(event.data);
       const responseData = JSON.parse(event.data);
       const titleUser = document.getElementById("title").innerText;
 
-      console.log(responseData);
       if (responseData.error) {
         if (responseData.error == "Invalid Session Token") {
           socket.close();
           location.href = "login";
-        } else if (
-          responseData.error ==
-          "Oops! Looks like you're double-dipping. Disconnect from one device or tab to keep things smooth"
-        ) {
-          openAlert("Error", responseData.error);
-          socket.close();
         } else {
           openAlert("Error", responseData.error);
         }
@@ -221,11 +216,30 @@
           let messagesStatus =
             document.getElementsByClassName("message-status");
 
-          for (let i = messagesStatus.length - 1; i > 0; --i) {
+          for (let i = messagesStatus.length - 1; i >= 0; --i) {
             if (messagesStatus[i].innerHTML == "Read") {
               break;
             }
             messagesStatus[i].innerHTML = "Read";
+          }
+        }
+
+        // Update msg status to read in search chat cards
+        let searchUserCard = document.getElementById(
+          "search-user-" + responseData.sender
+        );
+
+        if (searchUserCard) {
+          let statusElement = document.getElementById(
+            "search-msg-status-" + responseData.sender
+          );
+
+          if (
+            (statusElement.innerText == "Sent" ||
+              statusElement.innerText == "Delivered") &&
+            !statusElement.classList.contains("hidden")
+          ) {
+            statusElement.innerText = "Read";
           }
         }
         return;
@@ -236,7 +250,7 @@
           let messagesStatus =
             document.getElementsByClassName("message-status");
 
-          for (let i = messagesStatus.length - 1; i > 0; --i) {
+          for (let i = messagesStatus.length - 1; i >= 0; --i) {
             if (
               messagesStatus[i].innerText == "Read" ||
               messagesStatus[i].innerText == "Delivered"
@@ -244,6 +258,24 @@
               break;
             }
             messagesStatus[i].innerHTML = "Delivered";
+          }
+        }
+
+        // Update msg status in search chat cards
+        let searchUserCard = document.getElementById(
+          "search-user-" + responseData.sender
+        );
+
+        if (searchUserCard) {
+          let statusElement = document.getElementById(
+            "search-msg-status-" + responseData.sender
+          );
+
+          if (
+            statusElement.innerText == "Sent" &&
+            !statusElement.classList.contains("hidden")
+          ) {
+            statusElement.innerText = "Delivered";
           }
         }
         return;
@@ -256,17 +288,17 @@
         !responseData.selfMessage &&
         responseData.messageContent != ""
       ) {
+        updateSearchUserCard(responseData);
         openNotification(responseData.sender, responseData.messageContent);
         return;
       }
 
-      if (responseData.messageType == "Read") {
-        return;
-      }
-
+      // If it's self message then no need to mark it as read
       if (!responseData.selfMessage) {
         markMessageAsRead(responseData.sender);
       }
+
+      updateSearchUserCard(responseData);
 
       const messagesContainer = document.getElementById("messages");
       const messageCard = createMessageCard(responseData);
@@ -309,6 +341,7 @@
 
       socket.send(JSON.stringify(jsonData));
       messageInput.value = "";
+      console.log("Message sent:" + JSON.stringify(jsonData));
     }
 
     function markMessageAsRead(receiver) {
@@ -319,7 +352,7 @@
       };
 
       socket.send(JSON.stringify(jsonData));
-      console.log("Sent Message:" + JSON.stringify(jsonData));
+      console.log("Message sent:" + JSON.stringify(jsonData));
     }
 
     function getSessionToken() {
@@ -337,6 +370,124 @@
         }
       });
       return sessionToken;
+    }
+
+    function updateSearchUserCard(responseData) {
+      let searchUserCard = document.getElementById(
+        "search-user-" + responseData.sender
+      );
+
+      // Update msg in search chat cards
+      if (!searchUserCard) {
+        return;
+      }
+      let searchMsgBody = document.getElementById(
+        "search-msg-body-" + responseData.sender
+      );
+
+      if (searchMsgBody.innerText == "No Messages") {
+        // Remove classes of No Messages
+        searchMsgBody.classList.remove("text-3xl");
+        searchMsgBody.classList.remove("font-semibold");
+        searchMsgBody.classList.remove("text-red-400");
+        searchMsgBody.classList.remove("lg:text-lg");
+
+        searchMsgBody.classList.add("flex");
+        searchMsgBody.classList.add("justify-between");
+
+        let searchMsgContent = document.createElement("p");
+        searchMsgContent.innerText = responseData.messageContent;
+        searchMsgContent.classList.add("text-2xl");
+        searchMsgContent.classList.add("lg:text-base");
+
+        let searchMsgStatus = document.createElement("p");
+        searchMsgStatus.innerText = responseData.status;
+
+        if (responseData.selfMessage) {
+          searchMsgBody.id = "search-msg-" + responseData.receiver;
+          searchMsgStatus.id = "search-msg-status-" + responseData.receiver;
+
+          searchMsgStatus.classList.add("text-xl");
+          searchMsgStatus.classList.add("lg:text-xs");
+        } else {
+          searchMsgBody.id = "search-msg-" + responseData.sender;
+          searchMsgStatus.id = "search-msg-status-" + responseData.sender;
+
+          if (responseData.status == "Read") {
+            searchMsgStatus.classList.add("hidden");
+          } else {
+            searchMsgStatus.innerText = "New Msg";
+            searchMsgStatus.classList.add("text-xl");
+            searchMsgStatus.classList.add("font-medium");
+            searchMsgStatus.classList.add("text-green-400");
+            searchMsgStatus.classList.add("lg:text-sm");
+          }
+        }
+
+        searchMsgBody.appendChild(searchMsgContent);
+        searchMsgBody.appendChild(searchMsgStatus);
+        return;
+      }
+
+      // There wasn't No Messages box
+      let searchMsgStatus;
+
+      if (responseData.selfMessage) {
+        document.getElementById(
+          "search-msg-" + responseData.receiver
+        ).innerText = responseData.messageContent;
+
+        searchMsgStatus = document.getElementById(
+          "search-msg-status-" + responseData.receiver
+        );
+      } else {
+        document.getElementById("search-msg-" + responseData.sender).innerText =
+          responseData.messageContent;
+
+        searchMsgStatus = document.getElementById(
+          "search-msg-status-" + responseData.sender
+        );
+      }
+
+      if (responseData.selfMessage) {
+        if (searchMsgStatus.classList.contains("hidden")) {
+          searchMsgStatus.classList.remove("hidden");
+        } else if (searchMsgStatus.classList.contains("text-green-400")) {
+          searchMsgStatus.classList.remove("font-medium");
+          searchMsgStatus.classList.remove("text-green-400");
+          searchMsgStatus.classList.remove("lg:text-sm");
+        }
+
+        searchMsgStatus.classList.add("text-xl");
+        searchMsgStatus.classList.add("lg:text-xs");
+        return;
+      }
+      // If Not SelfMessage
+      if (responseData.status == "Read") {
+        if (searchMsgStatus.classList.contains("text-green-400")) {
+          searchMsgStatus.classList.remove("text-xl");
+          searchMsgStatus.classList.remove("font-medium");
+          searchMsgStatus.classList.remove("text-green-400");
+          searchMsgStatus.classList.remove("lg:text-sm");
+        } else if (searchMsgStatus.classList.contains("lg:text-xs")) {
+          searchMsgStatus.classList.remove("text-xl");
+          searchMsgStatus.classList.remove("lg:text-xs");
+        }
+        searchMsgStatus.classList.add("hidden");
+      } else {
+        if (searchMsgStatus.classList.contains("lg:text-xs")) {
+          searchMsgStatus.classList.remove("text-xl");
+          searchMsgStatus.classList.remove("lg:text-xs");
+        } else if (searchMsgStatus.classList.contains("hidden")) {
+          searchMsgStatus.classList.remove("hidden");
+
+          searchMsgStatus.innerText = "New Msg";
+          searchMsgStatus.classList.add("text-xl");
+          searchMsgStatus.classList.add("font-medium");
+          searchMsgStatus.classList.add("text-green-400");
+          searchMsgStatus.classList.add("lg:text-sm");
+        }
+      }
     }
 
     function createMessageCard(responseData) {
@@ -412,7 +563,6 @@
       const title = document.getElementById("title").innerText;
 
       if (title == receiver) {
-        console.log("Already opened");
         closeNotification();
         return;
       }

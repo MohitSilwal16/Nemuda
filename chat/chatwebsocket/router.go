@@ -45,7 +45,7 @@ func NewRouter() *Router {
 		Register:           make(chan *Client),
 		Unregister:         make(chan *Client),
 		SendMessage:        make(chan Message),
-		UsersWhoAreWaiting: map[string][]*Client{},
+		UsersWhoAreWaiting: map[string][]string{},
 	}
 }
 
@@ -88,16 +88,27 @@ func (router *Router) Run() {
 				continue
 			}
 
+			if len(usersWhoAreWaiting) == 0 {
+				router.Unlock()
+
+				log.Println("Client Registerd:", client.Username)
+				log.Println("Users:", len(router.ClientsMap))
+				continue
+			}
+
 			for _, cli := range usersWhoAreWaiting {
-				if _, ok := router.ClientsMap[cli.Username]; ok {
-					cli.SendMessage <- Message{
+				if waitingClient, ok := router.ClientsMap[cli]; ok {
+					waitingClient.SendMessage <- Message{
 						Sender:      client.Username,
-						Receiver:    cli.Username,
+						Receiver:    cli,
 						MessageType: "Delivered",
 					}
 				}
 			}
-			router.UsersWhoAreWaiting[client.Username] = []*Client{}
+			// Change status of messages which're sent to this user
+			changeStatusOfMessage(client, "Delivered", "")
+
+			router.UsersWhoAreWaiting[client.Username] = []string{}
 
 			router.Unlock()
 
@@ -139,12 +150,17 @@ func (router *Router) Run() {
 				if ok {
 					receiver.SendMessage <- msg
 				}
-				log.Println("Message Read")
 
-				// changeStatusOfMessage(c)
+				router.Lock()
+				sender, okSender := router.ClientsMap[msg.Sender]
+				router.Unlock()
+
+				if okSender {
+					changeStatusOfMessage(sender, "Read", msg.Receiver)
+				}
+
 				continue
 			}
-			log.Println("Message Sent")
 
 			// Self message
 			router.Lock()
@@ -180,7 +196,7 @@ func (router *Router) Run() {
 					msg.Status = "Delivered"
 				} else {
 					router.Lock()
-					router.UsersWhoAreWaiting[msg.Receiver] = append(router.UsersWhoAreWaiting[msg.Receiver], sender)
+					router.UsersWhoAreWaiting[msg.Receiver] = append(router.UsersWhoAreWaiting[msg.Receiver], sender.Username)
 					router.Unlock()
 				}
 				sender.SendMessage <- msg

@@ -68,10 +68,15 @@ func main() {
 
 	r.POST("/messages", handler.AddMessage)
 	r.GET("/messages/:user", handler.GetMessages)
-	r.PUT("/messages/:newStatus", handler.ChangeStatusOfMessage)
+	r.PUT("/messages/:sessionToken", handler.ChangeStatusOfMessage)
 
 	r.GET("/search-users", handler.SearchUsersByPattern)
 
 	log.Println("Running Back-end Server on", BASE_URL)
-	r.Run(BASE_URL)
+
+	err := r.Run(BASE_URL)
+
+	if err != nil {
+		log.Println("Error:", err)
+	}
 }

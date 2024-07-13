@@ -412,8 +412,6 @@ func PostBlog(ctx *gin.Context) {
 	blog.LikedUsername = []string{}
 	blog.Likes = 0
 
-	log.Printf("Blog Data: %#v", blog)
-
 	if err != nil {
 		if err.Error() == "INVALID SESSION TOKEN" {
 			ctx.JSON(203, gin.H{
@@ -819,23 +817,6 @@ func AddComment(ctx *gin.Context) {
 		})
 		return
 	}
-
-	isSessionTokenValid, err := db.IsSessionTokenValid(sessionToken)
-	if err != nil {
-		log.Println("Error: ", err)
-		ctx.JSON(500, gin.H{
-			"message": "Internal Server Error",
-		})
-		return
-	}
-
-	if !isSessionTokenValid {
-		ctx.JSON(202, gin.H{
-			"message": "Invalid Session Token",
-		})
-		return
-	}
-
 	title := ctx.Query("title")
 
 	if title == "" {
@@ -985,8 +966,6 @@ func UpdateBlog(ctx *gin.Context) {
 	blog.Comments = []models.Comment{}
 	blog.LikedUsername = []string{}
 	blog.Likes = 0
-
-	log.Printf("Blog Data: %#v", blog)
 
 	if !regexp.MustCompile(`^[a-zA-Z0-9 ,'"&]*$`).MatchString(blog.Title) {
 		response := "Title should be alphanumeric b'twin 5-20 chars"
@@ -1529,11 +1508,16 @@ func GetMessages(ctx *gin.Context) {
 		return
 	}
 
+	lenMessages := len(messages)
+
 	// Fetching all messages of receiver indirectly means I read 'em so I should mark 'em as read
-	for _, message := range messages {
-		if message.Sender == receiver {
-			db.ChangeStatusOfMessage(message, "Read")
-			message.Status = "Read"
+	for i := lenMessages - 1; i >= 0; i-- {
+		if messages[i].Sender == receiver {
+			if messages[i].Status == "Read" {
+				break
+			}
+			db.ChangeStatusOfMessage(messages[i].Sender, messages[i].Receiver, "Read")
+			messages[i].Status = "Read"
 		}
 	}
 
@@ -1641,24 +1625,6 @@ func SearchUsersByPattern(ctx *gin.Context) {
 		return
 	}
 
-	isSessionTokenValid, err := db.IsSessionTokenValid(sessionToken)
-
-	if err != nil {
-		log.Println("Error:", err)
-		log.Println("Description: Cannot validate session token")
-		ctx.JSON(500, gin.H{
-			"message": "Internal Server Error",
-		})
-		return
-	}
-
-	if !isSessionTokenValid {
-		ctx.JSON(202, gin.H{
-			"message": "Invalid Session Token",
-		})
-		return
-	}
-
 	searchString := ctx.Query("searchString")
 
 	users, err := db.SearchUsersByPattern(searchString)
@@ -1679,21 +1645,65 @@ func SearchUsersByPattern(ctx *gin.Context) {
 		})
 		return
 	}
-	ctx.JSON(200, users)
+
+	receiver, err := db.GetUsernameBySessionToken(sessionToken)
+
+	if err != nil {
+		log.Println("Error: ", err)
+		log.Println("Description: Error while fetching username from session token")
+
+		if err.Error() == "INVALID SESSION TOKEN" {
+			ctx.JSON(202, gin.H{
+				"message": "Invalid Session Token",
+			})
+		} else {
+			ctx.JSON(500, gin.H{
+				"message": "Internal Server Error",
+			})
+		}
+		return
+	}
+
+	var users_And_LastMessage []models.UsersAndLastMessage
+	var user_And_LastMessage models.UsersAndLastMessage
+
+	// Now fetch last message for each user
+	for _, user := range users {
+
+		message, err := db.FetchLastMessage(user, receiver)
+		if err != nil {
+			log.Println("Error:", err)
+			log.Println("Description: Cannot Fetch Last Messages")
+
+			ctx.JSON(500, gin.H{
+				"message": "Internal Server Error",
+			})
+			return
+		}
+
+		user_And_LastMessage = models.UsersAndLastMessage{
+			User:        user,
+			LastMessage: message,
+		}
+
+		users_And_LastMessage = append(users_And_LastMessage, user_And_LastMessage)
+	}
+
+	ctx.JSON(200, users_And_LastMessage)
 }
 
 // User can revert the status of message
 func ChangeStatusOfMessage(ctx *gin.Context) {
 	// 200 => Status Changed
-	// 201 => Message not found
+	// 201 => NOTHING
 	// 202 => Invalid Session Token
-	// 203 => Invalid New Status
+	// 203 => Invalid Status
 	// 500 => Internal Server Error
 
 	// Set the Content-Type header to "application/json"
 	ctx.Header("Content-Type", "application/json")
 
-	sessionToken := ctx.Query("sessionToken")
+	sessionToken := ctx.Param("sessionToken")
 
 	if sessionToken == "" {
 		ctx.JSON(202, gin.H{
@@ -1702,56 +1712,38 @@ func ChangeStatusOfMessage(ctx *gin.Context) {
 		return
 	}
 
-	isSessionTokenValid, err := db.IsSessionTokenValid(sessionToken)
-
-	if err != nil {
-		log.Println("Error:", err)
-		log.Println("Description: Cannot validate session token")
-		ctx.JSON(500, gin.H{
-			"message": "Internal Server Error",
-		})
-		return
-	}
-
-	if !isSessionTokenValid {
-		ctx.JSON(202, gin.H{
-			"message": "Invalid Session Token",
-		})
-		return
-	}
-
-	var message models.Message
-	err = json.NewDecoder(ctx.Request.Body).Decode(&message)
+	sender, err := db.GetUsernameBySessionToken(sessionToken)
 
 	if err != nil {
 		log.Println("Error: ", err)
-		log.Println("Description: Cannot read json data")
+		log.Println("Description: Error while fetching username from session token")
 
-		ctx.JSON(201, gin.H{
-			"message": "Provided data is not in correct format(JSON).",
-		})
+		if err.Error() == "INVALID SESSION TOKEN" {
+			ctx.JSON(202, gin.H{
+				"message": "Invalid Session Token",
+			})
+		} else {
+			ctx.JSON(500, gin.H{
+				"message": "Internal Server Error",
+			})
+		}
 		return
 	}
 
-	newStatus := ctx.Param("newStatus")
+	newStatus := ctx.Query("newStatus")
 
-	if newStatus != "Read" && newStatus != "Sent" && newStatus != "Delivered" {
+	if newStatus != "Read" && newStatus != "Delivered" {
 		ctx.JSON(203, gin.H{
-			"message": "New Status must be either Sent, Delivered or Read",
+			"message": "New Status must be either Delivered or Read",
 		})
 		return
 	}
 
-	err = db.ChangeStatusOfMessage(message, newStatus)
+	receiver := ctx.Query("receiver")
+
+	err = db.ChangeStatusOfMessage(sender, receiver, newStatus)
 
 	if err != nil {
-		if err.Error() == "MESSAGE NOT FOUND" {
-			ctx.JSON(201, gin.H{
-				"message": "Message Not Found",
-			})
-			return
-		}
-
 		log.Println("Error:", err)
 		log.Println("Description: Cannot Change Status of Message")
 

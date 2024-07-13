@@ -215,4 +215,64 @@ func isSessionTokenValid(client *Client, sessionToken string) bool {
 	}
 }
 
-func changeStatusOfMessage(client *Client, message Message, newStatus string) {}
+func changeStatusOfMessage(client *Client, newStatus string, receiver string) {
+	// 200 => Status Changed
+	// 201 => NOTHING
+	// 202 => Invalid Session Token
+	// 203 => Invalid Status
+	// 500 => Internal Server Error
+
+	if client == nil {
+		log.Println("Null client\nSource: changeStatusOfMessage()")
+		return
+	}
+
+	ctxTimeout, cancelFunction := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancelFunction()
+
+	serviceURL := SERVICE_BASE_URL + "messages/" + client.SessionToken + "?newStatus=" + newStatus + "&receiver=" + receiver
+
+	// Create Request with Timeout
+	requestToBackend_Server, err := http.NewRequestWithContext(ctxTimeout, "PUT", serviceURL, nil)
+
+	if err != nil {
+		log.Println("Error: ", err, "\nSource: changeStatusOfMessage()")
+		log.Println("Description: Cannot Create POST Request with Context")
+
+		client.SendMessage <- INTERNAL_SERVER_ERROR_MESSAGE
+		return
+	}
+	requestToBackend_Server.Header.Set("Content-Type", "application/json")
+
+	// Send request(with timeout) to back-end server
+	res, err := http.DefaultClient.Do(requestToBackend_Server)
+
+	if err != nil {
+		if ctxTimeout.Err() == context.DeadlineExceeded {
+			log.Println("Error: ", err, "\nSource: changeStatusOfMessage()")
+			log.Println("Description: Back-end server didn't responsed in given time")
+
+			client.SendMessage <- REQUEST_TIMED_OUT_MESSAGE
+			return
+		}
+		log.Println("Error: ", err, "\nSource changeStatusOfMessage()")
+		log.Println("Description: Cannot send POST request(with timeout(context)) to back-end server")
+
+		client.SendMessage <- INTERNAL_SERVER_ERROR_MESSAGE
+		return
+	}
+
+	defer res.Body.Close()
+
+	if res.StatusCode == 200 {
+	} else if res.StatusCode == 202 {
+		client.SendMessage <- SESSION_TIMED_OUT_MESSAGE
+		client.Router.Unregister <- client
+	} else if res.StatusCode == 500 {
+		log.Println("Error: Back-end server has Internal Server Error\nSource: changeStatusOfMessage()")
+		client.SendMessage <- INTERNAL_SERVER_ERROR_MESSAGE
+	} else {
+		log.Println("Bug: Unexpected Status Code ", res.StatusCode, "Source: changeStatusOfMessage()")
+		client.SendMessage <- INTERNAL_SERVER_ERROR_MESSAGE
+	}
+}

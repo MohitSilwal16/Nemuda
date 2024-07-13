@@ -29,3 +29,8 @@ type Message struct {
 	Status         string `json:"status"` // Sent, Delivered, Read
 	DateTime       string `json:"dateTime"`
 }
+
+type UsersAndLastMessage struct {
+	User        string
+	LastMessage Message
+}

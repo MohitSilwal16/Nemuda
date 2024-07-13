@@ -1525,7 +1525,7 @@ func SearchUsersByPattern(ctx *gin.Context) {
 	defer res.Body.Close()
 
 	if res.StatusCode == 200 {
-		var responseDataStructure []string
+		var responseDataStructure []models.UsersAndLastMessage
 
 		err := json.NewDecoder(res.Body).Decode(&responseDataStructure)
 

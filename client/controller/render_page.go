@@ -231,6 +231,7 @@ func RenderChatPage(ctx *gin.Context) {
 	data := map[string]interface{}{
 		"Messages": nil,
 		"Receiver": "Nemu Chat",
+		"Users":    nil,
 	}
 
 	if err != nil {
@@ -264,11 +265,15 @@ func RenderMessageBodyContainer(ctx *gin.Context, messages []models.Message, rec
 	tmpl.Execute(ctx.Writer, data)
 }
 
-func RenderSearchUsersContainer(ctx *gin.Context, users []string) {
+func RenderSearchUsersContainer(ctx *gin.Context, usersAndLastMessage []models.UsersAndLastMessage) {
 	// Set the Content-Type header to "text/html"
 	ctx.Header("Content-Type", "text/html")
 
 	tmpl, err := template.ParseFiles("./views/search_users.html")
+
+	data := map[string][]models.UsersAndLastMessage{
+		"Users": usersAndLastMessage,
+	}
 
 	if err != nil {
 		log.Println("Error: ", err)
@@ -277,5 +282,5 @@ func RenderSearchUsersContainer(ctx *gin.Context, users []string) {
 		fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
 	}
 
-	tmpl.Execute(ctx.Writer, users)
+	tmpl.Execute(ctx.Writer, data)
 }

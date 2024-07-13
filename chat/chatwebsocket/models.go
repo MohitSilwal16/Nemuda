@@ -27,7 +27,7 @@ type Router struct {
 	Register           chan *Client
 	Unregister         chan *Client
 	SendMessage        chan Message
-	UsersWhoAreWaiting map[string][]*Client // Stores the client who'll be notified when user gets online & Key: Username
+	UsersWhoAreWaiting map[string][]string // Stores users who'll be notified when this user gets online
 }
 
 type Message struct {
@@ -40,3 +40,7 @@ type Message struct {
 	Error          string `json:"error"`
 	MessageType    string `json:"messageType"` // Message, Read, Delivered
 }
+
+// If msg is of type Read or Delivered then,
+// Sender means the one who is reading the message or to whom the message got delivered
+// Receiver means the guy who sent message

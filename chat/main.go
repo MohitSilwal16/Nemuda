@@ -27,5 +27,10 @@ func main() {
 	r.GET("/ws/chat/:sessionToken", router.ServeWS)
 
 	log.Println("Running Messaging Server on", BASE_URL)
-	r.Run(BASE_URL)
+	
+	err := r.Run(BASE_URL)
+
+	if err != nil {
+		log.Println("Error:", err)
+	}
 }

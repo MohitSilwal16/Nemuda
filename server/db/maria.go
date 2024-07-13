@@ -151,6 +151,31 @@ func AddUser(user models.User) error {
 	if err != nil {
 		return err
 	}
+
+	tableName := "messages_" + user.Username
+
+	sqlQuery := `CREATE TABLE ` + tableName + ` (
+        Sender VARCHAR(20) NOT NULL CHECK (Sender <> ''),
+        Receiver VARCHAR(20) NOT NULL CHECK (Receiver = ?),
+        MessageContent VARCHAR(100) NOT NULL CHECK (MessageContent <> '' AND CHAR_LENGTH(MessageContent) <= 100),
+        Status VARCHAR(10) NOT NULL CHECK (Status IN ('Sent', 'Delivered', 'Read')),
+        DateTime DATETIME NOT NULL,
+        FOREIGN KEY (Sender) REFERENCES users (Username),
+        FOREIGN KEY (Receiver) REFERENCES users (Username)
+    )`
+
+	// Prepare the SQL statement
+	stmt, err = sqlDB.Prepare(sqlQuery)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec(user.Username)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -203,7 +228,10 @@ func GetUsernameBySessionToken(sessionToken string) (string, error) {
 }
 
 func GetMessages(sender string, receiver string) ([]models.Message, error) {
-	rows, err := sqlDB.Query("SELECT * FROM messages WHERE (Sender = ? AND Receiver = ? ) OR (Sender = ? AND Receiver = ? ) ORDER BY DateTime;", sender, receiver, receiver, sender)
+	tableSender := "messages_" + sender
+	tableReceiver := "messages_" + receiver
+
+	rows, err := sqlDB.Query("SELECT * FROM "+tableSender+" WHERE Sender = ? UNION SELECT * FROM "+tableReceiver+" WHERE Sender = ? ORDER BY DateTime;", receiver, sender)
 
 	if err != nil {
 		return nil, err
@@ -225,7 +253,9 @@ func GetMessages(sender string, receiver string) ([]models.Message, error) {
 }
 
 func AddMessage(message models.Message) error {
-	stmt, err := sqlDB.Prepare("INSERT INTO messages (Sender, Receiver, MessageContent, Status, DateTime) VALUE (? , ? , ?, ?, ?);")
+	tableName := "messages_" + message.Receiver
+	// Tablename can't be used as placeholder
+	stmt, err := sqlDB.Prepare("INSERT INTO " + tableName + " (Sender, Receiver, MessageContent, Status, DateTime) VALUE (? , ? , ?, ?, ?);")
 
 	if err != nil {
 		return err
@@ -264,21 +294,48 @@ func SearchUsersByPattern(searchString string) ([]string, error) {
 	return usernames, nil
 }
 
-func ChangeStatusOfMessage(message models.Message, newStatus string) error {
-	result, err := sqlDB.Exec("UPDATE messages SET Status = ? WHERE Sender = ? AND Receiver = ? AND MessageContent = ? AND DateTime = ?;", newStatus, message.Sender, message.Receiver, message.MessageContent, message.DateTime)
+func ChangeStatusOfMessage(sender string, receiver string, newStatus string) error {
+	var err error
+	if newStatus == "Read" {
+		tableName := "messages_" + sender
+		_, err = sqlDB.Exec("UPDATE "+tableName+" SET Status = 'Read' WHERE Sender = ?;", receiver)
+	} else if newStatus == "Delivered" {
+		tableName := "messages_" + sender
+		_, err = sqlDB.Exec("UPDATE " + tableName + " SET Status = 'Delivered' WHERE Status = 'Sent';")
+	}
 
 	if err != nil {
 		return err
-	}
-
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-
-	if rowsAffected == 0 {
-		return errors.New("MESSAGE NOT FOUND")
 	}
 
 	return nil
+}
+
+func FetchLastMessage(sender string, receiver string) (models.Message, error) {
+	tableSender := "messages_" + sender
+	tableReceiver := "messages_" + receiver
+
+	var lastMessage models.Message
+	query := `
+		SELECT * FROM (
+			SELECT * FROM ` + tableSender + ` WHERE Sender = ? 
+			UNION ALL 
+			SELECT * FROM ` + tableReceiver + ` WHERE Sender = ?
+		) AS combined 
+		ORDER BY DateTime DESC LIMIT 1;
+	`
+
+	rows, err := sqlDB.Query(query, receiver, sender)
+	if err != nil {
+		return lastMessage, err
+	}
+	defer rows.Close()
+
+	if rows.Next() {
+		if err = rows.Scan(&lastMessage.Sender, &lastMessage.Receiver, &lastMessage.MessageContent, &lastMessage.Status, &lastMessage.DateTime); err != nil {
+			return lastMessage, err
+		}
+		return lastMessage, nil
+	}
+	return lastMessage, nil
 }

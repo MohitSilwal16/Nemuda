@@ -72,5 +72,9 @@ func main() {
 
 	r.NoRoute(controller.RenderPageNotFound)
 	log.Println("Running Server on", BASE_URL)
-	r.Run(BASE_URL)
+	err := r.Run(BASE_URL)
+
+	if err != nil {
+		log.Println("Error:", err)
+	}
 }
