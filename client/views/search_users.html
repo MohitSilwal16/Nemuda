@@ -6,24 +6,23 @@
   onclick="onUserClick('{{ .User }}')"
 >
   <!-- Username -->
-  <p class="mb-5 font-semibold lg:mb-0" id="search-user-{{ .User }}">
+  <p class="mb-5 font-semibold lg:mb-0" >
     {{ .User }}
   </p>
 
   <div
-  id="search-msg-body-{{ .User }}"
     class="{{ if .LastMessage.MessageContent }} flex justify-between {{ else }} text-3xl font-semibold text-red-400 lg:text-lg {{ end }}"
   >
     <!-- Message Content -->
     {{ if .LastMessage.MessageContent }}
-    <p class="text-2xl lg:text-base" id="search-msg-{{ .User }}">
+    <p class="pr-5 text-2xl lg:text-base text-ellipsis line-clamp-1">
       {{ .LastMessage.MessageContent }}
     </p>
 
     <!-- Message Status -->
     <p
       class="{{ if eq .LastMessage.Receiver .User }} text-xl lg:text-xs {{ else if eq .LastMessage.Status "Read" }} hidden {{ else }} text-xl font-medium text-green-400 lg:text-sm  {{ end }}"
-      id="search-msg-status-{{ .User }}"
+     
     >
       {{ if eq .LastMessage.Receiver .User }} {{ .LastMessage.Status }} {{ else
       }} New Msg {{ end }}

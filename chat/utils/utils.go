@@ -5,7 +5,10 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"strings"
 	"unicode"
+
+	"github.com/microcosm-cc/bluemonday"
 )
 
 func ClearScreen() {
@@ -59,4 +62,21 @@ func Contains(slice []string, item string) bool {
 		}
 	}
 	return false
+}
+
+func SanitizeMessage(message string) (string, bool) {
+	p := bluemonday.StrictPolicy()
+
+	// Sanitize the message
+	sanitized := p.Sanitize(message)
+
+	// Remove any remaining whitespace and newlines
+	sanitized = strings.TrimSpace(sanitized)
+	sanitized = strings.ReplaceAll(sanitized, "\n", " ")
+	sanitized = strings.ReplaceAll(sanitized, "\r", " ")
+
+	// Check if the sanitized message is different from the original
+	isMalicious := sanitized != message
+
+	return sanitized, isMalicious
 }

@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/MohitSilwal16/Nemuda/chat/utils"
 	"github.com/gorilla/websocket"
 )
 
@@ -38,12 +39,6 @@ func (client *Client) readMessages() {
 			return
 		}
 
-		isSessionTokenValid := isSessionTokenValid(client, wsMessage.SessionToken)
-
-		if !isSessionTokenValid {
-			return
-		}
-
 		if wsMessage.MessageType == "Read" {
 			if client.Username == wsMessage.Receiver {
 				continue
@@ -55,10 +50,24 @@ func (client *Client) readMessages() {
 			}
 			continue
 		}
-
 		if wsMessage.Message == "" {
+			client.SendMessage <- Message{
+				Error: "Empty Message",
+			}
 			continue
 		}
+
+		var isMalicious bool
+		wsMessage.Message, isMalicious = utils.SanitizeMessage(wsMessage.Message)
+
+		if isMalicious {
+			log.Println(wsMessage.Message)
+			client.SendMessage <- Message{
+				Error: "Whoops! Looks like someone tried to sprinkle some XSS magic. Nice attempt son",
+			}
+			continue
+		}
+
 		if len(wsMessage.Message) > 100 {
 			client.SendMessage <- Message{
 				Error: "Message should be less than 100 chars",

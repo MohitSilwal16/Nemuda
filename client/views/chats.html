@@ -12,7 +12,6 @@
     />
     <link rel="icon" type="image/x-icon" href="./static/images/favico.svg" />
     <link rel="stylesheet" href="./static/css/output.css" />
-    <script src="https://cdn.tailwindcss.com"></script>
     <script>
       // Function to scroll to the bottom of the message container
       function scrollToBottom(element) {
@@ -48,7 +47,7 @@
         Home
       </button>
       <button
-        class="px-5 m-4 text-3xl font-normal bg-blue-700 rounded-md lg:text-xl w-96 hover:bg-blue-800"
+        class="w-full px-5 m-4 text-3xl font-normal bg-blue-700 rounded-md lg:w-96 lg:text-xl hover:bg-blue-800"
         hx-delete="/login"
         hx-target="#chat-body"
         hx-swap="outerHTML"
@@ -176,10 +175,16 @@
     </div>
   </div>
 
+  <!-- Notification Audio Sound -->
+  <audio src="./static/audio/notification.mp3" id="notificationSound"></audio>
+
   <script>
     try {
       let sessionToken = getSessionToken();
-      var socket = new WebSocket("ws://nemuda.hopto.org:3000/ws/chat/" + sessionToken);
+      var socket = new WebSocket(
+        "ws://127.0.0.1:3000/ws/chat/" + sessionToken
+        // "ws://nemuda.hopto.org:3000/ws/chat/" + sessionToken
+      );
     } catch (e) {
       openAlert("WebSocket not Connected", "Try Refresing Browser");
     }
@@ -223,25 +228,6 @@
             messagesStatus[i].innerHTML = "Read";
           }
         }
-
-        // Update msg status to read in search chat cards
-        let searchUserCard = document.getElementById(
-          "search-user-" + responseData.sender
-        );
-
-        if (searchUserCard) {
-          let statusElement = document.getElementById(
-            "search-msg-status-" + responseData.sender
-          );
-
-          if (
-            (statusElement.innerText == "Sent" ||
-              statusElement.innerText == "Delivered") &&
-            !statusElement.classList.contains("hidden")
-          ) {
-            statusElement.innerText = "Read";
-          }
-        }
         return;
       }
 
@@ -260,7 +246,6 @@
             messagesStatus[i].innerHTML = "Delivered";
           }
         }
-
         // Update msg status in search chat cards
         let searchUserCard = document.getElementById(
           "search-user-" + responseData.sender
@@ -288,7 +273,6 @@
         !responseData.selfMessage &&
         responseData.messageContent != ""
       ) {
-        updateSearchUserCard(responseData);
         openNotification(responseData.sender, responseData.messageContent);
         return;
       }
@@ -297,8 +281,6 @@
       if (!responseData.selfMessage) {
         markMessageAsRead(responseData.sender);
       }
-
-      updateSearchUserCard(responseData);
 
       const messagesContainer = document.getElementById("messages");
       const messageCard = createMessageCard(responseData);
@@ -372,166 +354,57 @@
       return sessionToken;
     }
 
-    function updateSearchUserCard(responseData) {
-      let searchUserCard = document.getElementById(
-        "search-user-" + responseData.sender
-      );
-
-      // Update msg in search chat cards
-      if (!searchUserCard) {
-        return;
-      }
-      let searchMsgBody = document.getElementById(
-        "search-msg-body-" + responseData.sender
-      );
-
-      if (searchMsgBody.innerText == "No Messages") {
-        // Remove classes of No Messages
-        searchMsgBody.classList.remove("text-3xl");
-        searchMsgBody.classList.remove("font-semibold");
-        searchMsgBody.classList.remove("text-red-400");
-        searchMsgBody.classList.remove("lg:text-lg");
-
-        searchMsgBody.classList.add("flex");
-        searchMsgBody.classList.add("justify-between");
-
-        let searchMsgContent = document.createElement("p");
-        searchMsgContent.innerText = responseData.messageContent;
-        searchMsgContent.classList.add("text-2xl");
-        searchMsgContent.classList.add("lg:text-base");
-
-        let searchMsgStatus = document.createElement("p");
-        searchMsgStatus.innerText = responseData.status;
-
-        if (responseData.selfMessage) {
-          searchMsgBody.id = "search-msg-" + responseData.receiver;
-          searchMsgStatus.id = "search-msg-status-" + responseData.receiver;
-
-          searchMsgStatus.classList.add("text-xl");
-          searchMsgStatus.classList.add("lg:text-xs");
-        } else {
-          searchMsgBody.id = "search-msg-" + responseData.sender;
-          searchMsgStatus.id = "search-msg-status-" + responseData.sender;
-
-          if (responseData.status == "Read") {
-            searchMsgStatus.classList.add("hidden");
-          } else {
-            searchMsgStatus.innerText = "New Msg";
-            searchMsgStatus.classList.add("text-xl");
-            searchMsgStatus.classList.add("font-medium");
-            searchMsgStatus.classList.add("text-green-400");
-            searchMsgStatus.classList.add("lg:text-sm");
-          }
-        }
-
-        searchMsgBody.appendChild(searchMsgContent);
-        searchMsgBody.appendChild(searchMsgStatus);
-        return;
-      }
-
-      // There wasn't No Messages box
-      let searchMsgStatus;
-
-      if (responseData.selfMessage) {
-        document.getElementById(
-          "search-msg-" + responseData.receiver
-        ).innerText = responseData.messageContent;
-
-        searchMsgStatus = document.getElementById(
-          "search-msg-status-" + responseData.receiver
-        );
-      } else {
-        document.getElementById("search-msg-" + responseData.sender).innerText =
-          responseData.messageContent;
-
-        searchMsgStatus = document.getElementById(
-          "search-msg-status-" + responseData.sender
-        );
-      }
-
-      if (responseData.selfMessage) {
-        if (searchMsgStatus.classList.contains("hidden")) {
-          searchMsgStatus.classList.remove("hidden");
-        } else if (searchMsgStatus.classList.contains("text-green-400")) {
-          searchMsgStatus.classList.remove("font-medium");
-          searchMsgStatus.classList.remove("text-green-400");
-          searchMsgStatus.classList.remove("lg:text-sm");
-        }
-
-        searchMsgStatus.classList.add("text-xl");
-        searchMsgStatus.classList.add("lg:text-xs");
-        return;
-      }
-      // If Not SelfMessage
-      if (responseData.status == "Read") {
-        if (searchMsgStatus.classList.contains("text-green-400")) {
-          searchMsgStatus.classList.remove("text-xl");
-          searchMsgStatus.classList.remove("font-medium");
-          searchMsgStatus.classList.remove("text-green-400");
-          searchMsgStatus.classList.remove("lg:text-sm");
-        } else if (searchMsgStatus.classList.contains("lg:text-xs")) {
-          searchMsgStatus.classList.remove("text-xl");
-          searchMsgStatus.classList.remove("lg:text-xs");
-        }
-        searchMsgStatus.classList.add("hidden");
-      } else {
-        if (searchMsgStatus.classList.contains("lg:text-xs")) {
-          searchMsgStatus.classList.remove("text-xl");
-          searchMsgStatus.classList.remove("lg:text-xs");
-        } else if (searchMsgStatus.classList.contains("hidden")) {
-          searchMsgStatus.classList.remove("hidden");
-
-          searchMsgStatus.innerText = "New Msg";
-          searchMsgStatus.classList.add("text-xl");
-          searchMsgStatus.classList.add("font-medium");
-          searchMsgStatus.classList.add("text-green-400");
-          searchMsgStatus.classList.add("lg:text-sm");
-        }
-      }
-    }
-
     function createMessageCard(responseData) {
       // Create the main container div
       const messageContainer = document.createElement("div");
-      messageContainer.classList.add("flex", "mb-4");
+      messageContainer.classList.add("flex", "mb-4", "text-2xl", "lg:text-lg");
 
       // Create the inner message bubble div
       const messageBubble = document.createElement("div");
-      messageBubble.classList.add("p-3", "rounded-lg", "max-w-xs");
+      messageBubble.classList.add(
+        "p-3",
+        "rounded-lg",
+        "bg-blue-600",
+        "text-white"
+      );
 
       // Create the date-time element
       const dateTimeElement = document.createElement("div");
       dateTimeElement.classList.add("flex", "justify-between", "items-center");
       const dateTimeSpan = document.createElement("span");
-      dateTimeSpan.classList.add("text-xs");
-      dateTimeSpan.textContent = responseData.dateTime;
+      dateTimeSpan.classList.add("lg:text-sm","text-lg");
+      dateTimeSpan.innerHTML = responseData.dateTime;
       dateTimeElement.appendChild(dateTimeSpan);
 
       // Create the message content element
       const messageContent = document.createElement("p");
-      messageContent.classList.add("mt-1");
-      messageContent.textContent = responseData.messageContent;
+      messageContent.classList.add("mt-1", "font-semibold");
+      messageContent.innerHTML = responseData.messageContent;
 
       // Create the status element
       const statusElement = document.createElement("div");
-      statusElement.classList.add("mt-1", "text-right", "text-xs");
-      statusElement.textContent = responseData.status;
+      statusElement.classList.add(
+        "mt-1",
+        "text-right",
+        "text-gray-300",
+        "text-lg",
+        "lg:text-xs",
+        "message-status"
+      );
+      statusElement.innerHTML = responseData.status;
 
       // Append elements to message bubble
       messageBubble.appendChild(dateTimeElement);
       messageBubble.appendChild(messageContent);
-      messageBubble.appendChild(statusElement);
 
-      messageBubble.classList.add("bg-blue-600", "text-white");
-
-      // Conditionally style based on sender or receiver
+      // Conditionally append the status element and adjust container style
       if (responseData.selfMessage) {
         messageContainer.classList.add("justify-end");
-        statusElement.classList.add("text-gray-300");
-        statusElement.classList.add("message-status");
+        messageBubble.classList.add("max-w-md");
+        messageBubble.appendChild(statusElement);
       } else {
         messageContainer.classList.add("justify-start");
-        statusElement.classList.add("hidden");
+        messageBubble.classList.add("max-w-xs");
       }
 
       // Append the message bubble to the main container
@@ -556,6 +429,8 @@
 
       let notification = document.getElementById("notification");
       notification.style.display = "flex";
+
+      document.getElementById("notificationSound").play();
     }
 
     function onclickNotification() {

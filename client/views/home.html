@@ -21,7 +21,7 @@ class="flex flex-col h-screen pb-2 overflow-hidden text-3xl text-white lg:text-2
     <div class="w-4/6 py-6 mt-3 text-4xl text-center lg:text-2xl lg:mt-0" id="title-heading">{{ .RequestedTag }}</div>
     <img src="../static/images/message.png" alt="" class="h-16 mt-5 mr-10 cursor-pointer lg:h-12" hx-get="/chats" hx-swap="outerHTML" hx-target="#home-body" hx-push-url="/chats">
     <button
-      class="px-5 m-4 text-2xl font-normal bg-blue-700 rounded-md w-44 lg:w-36 hover:bg-blue-800"
+      class="px-5 m-4 text-2xl font-normal bg-blue-700 rounded-md w-60 lg:w-36 hover:bg-blue-800"
       hx-delete="/login"
       hx-target="#home-body"
       hx-swap="outerHTML"
