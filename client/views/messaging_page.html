@@ -15,64 +15,75 @@
   </div>
 </div>
 
-<!-- Messages -->
 <div
-  id="messages"
+  id="message-scroll"
   class="p-10 mt-3 overflow-y-auto text-3xl border border-white rounded-lg lg:text-xl h-9/10 scroll-bar"
 >
-  {{ if eq .Receiver "Nemu Chat" }}
-  <p class="text-center text-white lg:text-md">Welcome to Nemu Chat</p>
-  {{ else if not .Messages }}
-  <div class="p-8 text-center shadow-lg rounded-xl" id="noMsgBox">
-    <p class="text-white">
-      No Messages with
-      <span class="font-bold">{{ $.Receiver }}</span>
-    </p>
-  </div>
-  {{ end }} {{ range .Messages }}{{ if eq .Sender .Receiver}}
-  <!-- Self Message or DM -->
-  <div class="flex justify-end mb-4 text-2xl lg:text-lg">
-    <div class="max-w-xs p-3 text-white bg-blue-600 rounded-lg">
-      <div class="flex items-center justify-between">
-        <span class="text-lg lg:text-sm">{{ .DateTime }}</span>
-      </div>
-      <p class="mt-1 font-semibold">{{ .MessageContent }}</p>
-      <div
-        class="mt-1 text-lg text-right text-gray-300 lg:text-xs message-status"
-      >
-        {{ .Status }}
+  {{ if .Messages }}
+  <!-- Load Older Messages Button -->
+  <div
+    class="flex justify-center"
+    id="more-messages-btn"
+    hx-get="/message/{{ .Receiver }}?offset={{ .Offset }}"
+    hx-swap="outerHTML"
+    hx-trigger="intersect once"
+  ></div>
+  {{ end }}
+  <!-- Messages -->
+  <div id="messages">
+    {{ if eq .Receiver "Nemu Chat" }}
+    <p class="text-center text-white lg:text-md">Welcome to Nemu Chat</p>
+    {{ else if not .Messages }}
+    <div class="p-8 text-center shadow-lg rounded-xl" id="noMsgBox">
+      <p class="text-white">
+        No Messages with
+        <span class="font-bold">{{ $.Receiver }}</span>
+      </p>
+    </div>
+    {{ end }} {{ range .Messages }} {{ if eq .Sender .Receiver}}
+    <!-- Self Message or DM -->
+    <div class="flex justify-end mb-4 text-2xl lg:text-lg">
+      <div class="max-w-xs p-3 text-white bg-blue-600 rounded-lg">
+        <div class="flex items-center justify-between">
+          <span class="text-lg lg:text-sm">{{ .DateTime }}</span>
+        </div>
+        <p class="mt-1 font-semibold">{{ .MessageContent }}</p>
+        <div
+          class="mt-1 text-lg text-right text-gray-300 lg:text-xs message-status"
+        >
+          {{ .Status }}
+        </div>
       </div>
     </div>
-  </div>
 
-  {{ else if eq .Sender $.Receiver }}
-  <!-- Receiver Message -->
-  <div class="flex justify-start mb-4 text-2xl lg:text-lg">
-    <div class="max-w-xs p-3 text-white bg-blue-600 rounded-lg">
-      <div class="flex items-center justify-between">
-        <span class="text-lg lg:text-sm">{{ .DateTime }}</span>
-      </div>
-      <p class="mt-1 font-semibold">{{ .MessageContent }}</p>
-    </div>
-  </div>
-  {{ else }}
-  <!-- Sender Message -->
-  <div class="flex justify-end mb-4 text-2xl lg:text-lg">
-    <div class="max-w-md p-3 text-white bg-blue-600 rounded-lg">
-      <div class="flex items-center justify-between">
-        <span class="text-lg lg:text-xs">{{ .DateTime }}</span>
-      </div>
-      <p class="mt-1 font-semibold">{{ .MessageContent }}</p>
-      <div
-        class="mt-1 text-lg text-right text-gray-300 lg:text-xs message-status"
-      >
-        {{ .Status }}
+    {{ else if eq .Sender $.Receiver }}
+    <!-- Receiver Message -->
+    <div class="flex justify-start mb-4 text-2xl lg:text-lg">
+      <div class="max-w-xs p-3 text-white bg-blue-600 rounded-lg">
+        <div class="flex items-center justify-between">
+          <span class="text-lg lg:text-sm">{{ .DateTime }}</span>
+        </div>
+        <p class="mt-1 font-semibold">{{ .MessageContent }}</p>
       </div>
     </div>
+    {{ else }}
+    <!-- Sender Message -->
+    <div class="flex justify-end mb-4 text-2xl lg:text-lg">
+      <div class="max-w-md p-3 text-white bg-blue-600 rounded-lg">
+        <div class="flex items-center justify-between">
+          <span class="text-lg lg:text-xs">{{ .DateTime }}</span>
+        </div>
+        <p class="mt-1 font-semibold">{{ .MessageContent }}</p>
+        <div
+          class="mt-1 text-lg text-right text-gray-300 lg:text-xs message-status"
+        >
+          {{ .Status }}
+        </div>
+      </div>
+    </div>
+    {{ end }} {{ end }}
   </div>
-  {{ end }} {{ end }}
   <script>
-    var messagesContainer = document.getElementById("messages");
-    scrollToBottom(messagesContainer);
+    scrollToBottom(document.getElementById("message-scroll"));
   </script>
 </div>

@@ -525,3 +525,95 @@ func IsSessionTokenValid(ctx *gin.Context) (bool, error) {
 		return false, errors.New("INTERNAL SERVER ERROR")
 	}
 }
+
+func getMessages(ctx *gin.Context) {
+	// 200 => Messages returned
+	// 201 => No messages
+	// 202 => Invalid Session Token
+	// 203 => Invalid Receiver
+	// 500 => Internal Server Error
+
+	// Set the Content-Type header to "text/html"
+	ctx.Header("Content-Type", "text/html")
+
+	sessionToken := getSessionTokenFromCookie(ctx.Request)
+
+	receiverName := ctx.Param("user")
+
+	ctxTimeout, cancelFunc := context.WithTimeout(context.Background(), 3*time.Second)
+
+	defer cancelFunc()
+	serviceURL := SERVICE_BASE_URL + "messages/" + receiverName + "?sessionToken=" + sessionToken + "&offset=0"
+
+	// Create Request with Timeout
+	requestToBackend_Server, err := http.NewRequestWithContext(ctxTimeout, "GET", serviceURL, nil)
+
+	if err != nil {
+		log.Println("Error: ", err)
+		log.Println("Description: Cannot Create GET Request with Context")
+
+		fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
+		return
+	}
+
+	res, err := http.DefaultClient.Do(requestToBackend_Server)
+
+	if err != nil {
+		if ctxTimeout.Err() == context.DeadlineExceeded {
+			log.Println("Error: ", err)
+			log.Println("Description: Back-end server didn't responsed in given time")
+			fmt.Fprint(ctx.Writer, REQUEST_TIMED_OUT_MESSAGE)
+		} else {
+			log.Println("Error: ", err)
+			log.Println("Description: Cannot send GET request(with timeout(context)) to back-end server")
+			fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
+		}
+		return
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode == 200 {
+		responseJSONData, err := io.ReadAll(res.Body)
+
+		defer res.Body.Close()
+
+		if err != nil {
+			log.Println("Error: ", err)
+			log.Println("Decription: Cannot read body of response as JSON data")
+
+			fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
+			return
+		}
+
+		var responseDataStructure struct {
+			Messages   []models.Message
+			NextOffset string
+		}
+
+		err = json.Unmarshal(responseJSONData, &responseDataStructure)
+		if err != nil {
+			log.Println("Error: ", err)
+			log.Println("Decription: Cannot Unmarhsal JSON data")
+
+			fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
+			return
+		}
+
+		RenderMessageBodyContainer(ctx, responseDataStructure.Messages, receiverName, responseDataStructure.NextOffset)
+	} else if res.StatusCode == 201 {
+		RenderMessageBodyContainer(ctx, nil, receiverName, "-2")
+	} else if res.StatusCode == 202 {
+		fmt.Fprint(ctx.Writer, "<script>location.href='login';</script>")
+	} else if res.StatusCode == 203 {
+		log.Println("Error: Invalid Receiver")
+		fmt.Fprint(ctx.Writer, "<script>alert('User Not Found');</script>")
+	} else if res.StatusCode == 500 {
+		log.Println("Error: Back-end server has Internal Server Error")
+
+		fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
+	} else {
+		log.Println("Bug: Unexpected Status Code ", res.StatusCode)
+
+		fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
+	}
+}

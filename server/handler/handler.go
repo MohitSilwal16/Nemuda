@@ -22,6 +22,7 @@ import (
 var tagsList = []string{"Political", "Technical", "Educational", "Geographical", "Programming", "Other"}
 
 const BLOG_LIMIT = 3
+const MESSAGE_LIMIT = 9
 
 func VerifySessionToken(ctx *gin.Context) {
 	// 200 => Session Token is Valid
@@ -1524,89 +1525,6 @@ func GetMessages(ctx *gin.Context) {
 	ctx.JSON(200, messages)
 }
 
-func AddMessage(ctx *gin.Context) {
-	// 200 => Messages added
-	// 201 => Message data isn't in proper format(JSON)
-	// 202 => Invalid Session Token
-	// 203 => Invalid Receiver
-	// 500 => Internal Server Error
-
-	// Set the Content-Type header to "application/json"
-	ctx.Header("Content-Type", "application/json")
-
-	sessionToken := ctx.Query("sessionToken")
-
-	if sessionToken == "" {
-		ctx.JSON(202, gin.H{
-			"message": "Invalid Session Token",
-		})
-		return
-	}
-
-	isSessionTokenValid, err := db.IsSessionTokenValid(sessionToken)
-
-	if err != nil {
-		log.Println("Error:", err)
-		log.Println("Description: Cannot validate session token")
-		ctx.JSON(500, gin.H{
-			"message": "Internal Server Error",
-		})
-		return
-	}
-
-	if !isSessionTokenValid {
-		ctx.JSON(202, gin.H{
-			"message": "Invalid Session Token",
-		})
-		return
-	}
-
-	var message models.Message
-	err = json.NewDecoder(ctx.Request.Body).Decode(&message)
-
-	if err != nil {
-		log.Println("Error: ", err)
-		log.Println("Description: Cannot read json data")
-
-		ctx.JSON(201, gin.H{
-			"message": "Provided data is not in correct format(JSON).",
-		})
-		return
-	}
-
-	doesReceiverExists, err := db.DoesUserExists(message.Receiver)
-
-	if err != nil {
-		ctx.JSON(500, gin.H{
-			"message": "Internal Server Error",
-		})
-		return
-	}
-
-	if !doesReceiverExists {
-		ctx.JSON(203, gin.H{
-			"message": "Invalid Receiver",
-		})
-		return
-	}
-
-	err = db.AddMessage(message)
-
-	if err != nil {
-		log.Println("Error:", err)
-		log.Println("Description: Cannot validate session token")
-
-		ctx.JSON(500, gin.H{
-			"message": "Internal Server Error",
-		})
-		return
-	}
-
-	ctx.JSON(200, gin.H{
-		"message": "Message Added",
-	})
-}
-
 func SearchUsersByPattern(ctx *gin.Context) {
 	// 200 => Users found
 	// 201 => No users found
@@ -1692,18 +1610,38 @@ func SearchUsersByPattern(ctx *gin.Context) {
 	ctx.JSON(200, users_And_LastMessage)
 }
 
-// User can revert the status of message
-func ChangeStatusOfMessage(ctx *gin.Context) {
-	// 200 => Status Changed
-	// 201 => NOTHING
+func GetMessagesWithOffset(ctx *gin.Context) {
+	// AVOID USING 204 BECAUSE IT DOESN'T SEND ANY CONTENT OR BODY
+
+	// 200 => Messages returned
+	// 201 => No more messages available
 	// 202 => Invalid Session Token
-	// 203 => Invalid Status
+	// 203 => Invalid Offset
+	// 205 => Invalid Receiver
 	// 500 => Internal Server Error
 
 	// Set the Content-Type header to "application/json"
 	ctx.Header("Content-Type", "application/json")
 
-	sessionToken := ctx.Param("sessionToken")
+	offsetString := ctx.Query("offset")
+
+	offsetInt, err := strconv.Atoi(offsetString)
+
+	if err != nil {
+		ctx.JSON(203, gin.H{
+			"message": "Offset shouldn't be negative integer",
+		})
+		return
+	}
+
+	if offsetInt < 0 {
+		ctx.JSON(203, gin.H{
+			"message": "Offset shouldn't be negative integer",
+		})
+		return
+	}
+
+	sessionToken := ctx.Query("sessionToken")
 
 	if sessionToken == "" {
 		ctx.JSON(202, gin.H{
@@ -1711,6 +1649,8 @@ func ChangeStatusOfMessage(ctx *gin.Context) {
 		})
 		return
 	}
+
+	receiver := ctx.Param("user")
 
 	sender, err := db.GetUsernameBySessionToken(sessionToken)
 
@@ -1730,22 +1670,27 @@ func ChangeStatusOfMessage(ctx *gin.Context) {
 		return
 	}
 
-	newStatus := ctx.Query("newStatus")
+	isReceiverValid, err := db.DoesUserExists(receiver)
 
-	if newStatus != "Read" && newStatus != "Delivered" {
-		ctx.JSON(203, gin.H{
-			"message": "New Status must be either Delivered or Read",
+	if err != nil {
+		ctx.JSON(500, gin.H{
+			"message": "Internal Server Error",
 		})
 		return
 	}
 
-	receiver := ctx.Query("receiver")
+	if !isReceiverValid {
+		ctx.JSON(205, gin.H{
+			"message": "Invalid Receiver",
+		})
+		return
+	}
 
-	err = db.ChangeStatusOfMessage(sender, receiver, newStatus)
+	messages, err := db.GetMessagesWithOffset(sender, receiver, offsetInt, MESSAGE_LIMIT)
 
 	if err != nil {
-		log.Println("Error:", err)
-		log.Println("Description: Cannot Change Status of Message")
+		log.Println("Error: ", err)
+		log.Println("Description: Error while fetching messages")
 
 		ctx.JSON(500, gin.H{
 			"message": "Internal Server Error",
@@ -1753,7 +1698,36 @@ func ChangeStatusOfMessage(ctx *gin.Context) {
 		return
 	}
 
+	if messages == nil {
+		ctx.JSON(201, gin.H{
+			"message": "No more messages with " + receiver,
+		})
+		return
+	}
+
+	lenMessages := len(messages)
+
+	// Fetching all messages of receiver indirectly means I read 'em so I should mark 'em as read
+	for i := lenMessages - 1; i >= 0; i-- {
+		if messages[i].Sender == receiver {
+			if messages[i].Status == "Read" {
+				break
+			}
+			db.ChangeStatusOfMessage(messages[i].Sender, messages[i].Receiver, "Read")
+			messages[i].Status = "Read"
+		}
+	}
+
+	if len(messages) < MESSAGE_LIMIT {
+		ctx.JSON(200, gin.H{
+			"messages":   messages,
+			"nextOffset": "-1",
+		})
+		return
+	}
+
 	ctx.JSON(200, gin.H{
-		"message": "Status Updated",
+		"messages":   messages,
+		"nextOffset": strconv.Itoa(offsetInt + MESSAGE_LIMIT),
 	})
 }

@@ -28,7 +28,7 @@ func Init_MariaDB() error {
 	dbPort := os.Getenv("sqlDBPort")
 
 	if dbUser == "" || dbName == "" || dbPass == "" {
-		return errors.New("DATABASE NAME, USER NOT SPECIFIED IN .ENV FILE")
+		return errors.New("DATABASE NAME, USER & PASS NOT SPECIFIED IN .ENV FILE")
 	}
 
 	// On port 3306 MYSQL is running
@@ -252,23 +252,6 @@ func GetMessages(sender string, receiver string) ([]models.Message, error) {
 	return messages, nil
 }
 
-func AddMessage(message models.Message) error {
-	tableName := "messages_" + message.Receiver
-	// Tablename can't be used as placeholder
-	stmt, err := sqlDB.Prepare("INSERT INTO " + tableName + " (Sender, Receiver, MessageContent, Status, DateTime) VALUE (? , ? , ?, ?, ?);")
-
-	if err != nil {
-		return err
-	}
-
-	_, err = stmt.Exec(message.Sender, message.Receiver, message.MessageContent, message.Status, message.DateTime)
-
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 // Return users whose name starts with searchString
 func SearchUsersByPattern(searchString string) ([]string, error) {
 	searchString += "%"
@@ -338,4 +321,29 @@ func FetchLastMessage(sender string, receiver string) (models.Message, error) {
 		return lastMessage, nil
 	}
 	return lastMessage, nil
+}
+
+func GetMessagesWithOffset(sender string, receiver string, offset int, limit int) ([]models.Message, error) {
+	tableSender := "messages_" + sender
+	tableReceiver := "messages_" + receiver
+
+	rows, err := sqlDB.Query("(SELECT * FROM "+tableSender+" WHERE Sender = ? UNION SELECT * FROM "+tableReceiver+" WHERE Sender = ? ORDER BY DateTime DESC LIMIT ? OFFSET ?)ORDER BY DateTime;", receiver, sender, limit, offset)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var messages []models.Message
+	for rows.Next() {
+		var message models.Message
+
+		if err = rows.Scan(&message.Sender, &message.Receiver, &message.MessageContent, &message.Status, &message.DateTime); err != nil {
+			return nil, err
+		}
+		messages = append(messages, message)
+	}
+
+	return messages, nil
 }

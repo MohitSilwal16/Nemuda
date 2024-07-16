@@ -232,6 +232,7 @@ func RenderChatPage(ctx *gin.Context) {
 		"Messages": nil,
 		"Receiver": "Nemu Chat",
 		"Users":    nil,
+		"Offset":   "0",
 	}
 
 	if err != nil {
@@ -244,7 +245,7 @@ func RenderChatPage(ctx *gin.Context) {
 	tmpl.Execute(ctx.Writer, data)
 }
 
-func RenderMessageBodyContainer(ctx *gin.Context, messages []models.Message, receiver string) {
+func RenderMessageBodyContainer(ctx *gin.Context, messages []models.Message, receiver string, nextOffset string) {
 	// Set the Content-Type header to "text/html"
 	ctx.Header("Content-Type", "text/html")
 
@@ -253,6 +254,7 @@ func RenderMessageBodyContainer(ctx *gin.Context, messages []models.Message, rec
 	data := map[string]interface{}{
 		"Messages": messages,
 		"Receiver": receiver,
+		"Offset":   nextOffset,
 	}
 
 	if err != nil {
@@ -280,6 +282,24 @@ func RenderSearchUsersContainer(ctx *gin.Context, usersAndLastMessage []models.U
 		log.Println("Description: Error in tmpl.Execute() in RenderChatPage()")
 
 		fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
+	}
+
+	tmpl.Execute(ctx.Writer, data)
+}
+
+func RenderOlderMessage(ctx *gin.Context, offset string, messages []models.Message, receiver string) {
+	tmpl, err := template.ParseFiles("./views/message.html")
+	if err != nil {
+		log.Println("Error:", err)
+		log.Println("Description: Error in tmpl.Execute() in GetMessagesWithOffset() for message.html")
+
+		return
+	}
+
+	data := map[string]interface{}{
+		"Messages": messages,
+		"Offset":   offset,
+		"Receiver": receiver,
 	}
 
 	tmpl.Execute(ctx.Writer, data)

@@ -39,6 +39,8 @@ func (client *Client) readMessages() {
 			return
 		}
 
+		isSessionTokenValid(client)
+
 		if wsMessage.MessageType == "Read" {
 			if client.Username == wsMessage.Receiver {
 				continue

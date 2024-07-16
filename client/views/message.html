@@ -1,0 +1,64 @@
+{{ if .Messages }}
+<!-- Load Older Messages Button -->
+<div
+  id="more-messages-btn"
+  class="flex justify-center"
+  hx-get="/message/{{ .Receiver }}?offset={{ .Offset }}"
+  hx-swap="outerHTML"
+  hx-trigger="intersect once"
+>
+</div>
+{{ else }}
+<!-- No More Messages Container -->
+<div class="flex items-center justify-center cursor-not-allowed">
+  <div class="px-6 py-4 text-center bg-blue-600 rounded-lg shadow-md">
+    <p class="text-lg font-semibold text-gray-100">No more messages</p>
+  </div>
+</div>
+{{ end }}
+
+<!-- Older messages -->
+<div id="messages" hx-swap-oob="afterbegin">
+  {{ range .Messages }} {{ if eq .Sender .Receiver}}
+  <!-- Self Message or DM -->
+  <div class="flex justify-end mb-4 text-2xl lg:text-lg">
+    <div class="max-w-xs p-3 text-white bg-blue-600 rounded-lg">
+      <div class="flex items-center justify-between">
+        <span class="text-lg lg:text-sm">{{ .DateTime }}</span>
+      </div>
+      <p class="mt-1 font-semibold">{{ .MessageContent }}</p>
+      <div
+        class="mt-1 text-lg text-right text-gray-300 lg:text-xs message-status"
+      >
+        {{ .Status }}
+      </div>
+    </div>
+  </div>
+
+  {{ else if eq .Sender $.Receiver }}
+  <!-- Receiver Message -->
+  <div class="flex justify-start mb-4 text-2xl lg:text-lg">
+    <div class="max-w-xs p-3 text-white bg-blue-600 rounded-lg">
+      <div class="flex items-center justify-between">
+        <span class="text-lg lg:text-sm">{{ .DateTime }}</span>
+      </div>
+      <p class="mt-1 font-semibold">{{ .MessageContent }}</p>
+    </div>
+  </div>
+  {{ else }}
+  <!-- Sender Message -->
+  <div class="flex justify-end mb-4 text-2xl lg:text-lg">
+    <div class="max-w-md p-3 text-white bg-blue-600 rounded-lg">
+      <div class="flex items-center justify-between">
+        <span class="text-lg lg:text-xs">{{ .DateTime }}</span>
+      </div>
+      <p class="mt-1 font-semibold">{{ .MessageContent }}</p>
+      <div
+        class="mt-1 text-lg text-right text-gray-300 lg:text-xs message-status"
+      >
+        {{ .Status }}
+      </div>
+    </div>
+  </div>
+  {{ end }} {{ end }}
+</div>

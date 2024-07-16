@@ -1388,25 +1388,45 @@ func GetMoreBlogsByTagWithOffset(ctx *gin.Context) {
 	}
 }
 
-func GetMessages(ctx *gin.Context) {
+func GetMessagesWithOffset(ctx *gin.Context) {
+	// AVOID USING 204 BECAUSE IT DOESN'T SEND ANY CONTENT OR BODY
+
 	// 200 => Messages returned
-	// 201 => No messages
+	// 201 => No more messages available
 	// 202 => Invalid Session Token
-	// 203 => Invalid Receiver
+	// 203 => Invalid Offset
+	// 205 => Invalid Receiver
 	// 500 => Internal Server Error
 
 	// Set the Content-Type header to "text/html"
 	ctx.Header("Content-Type", "text/html")
 
-	sessionToken := getSessionTokenFromCookie(ctx.Request)
-
 	receiverName := ctx.Param("user")
+	offset := ctx.Query("offset")
+
+	if offset == "0" {
+		getMessages(ctx)
+		return
+	}
+
+	offsetInt, err := strconv.Atoi(offset)
+	if err != nil {
+		log.Println("Error:", err)
+		fmt.Fprint(ctx.Writer, "<script>alert('Offset must be non negative integer');</script>")
+		return
+	}
+	if offsetInt < 0 {
+		RenderOlderMessage(ctx, "-1", nil, receiverName)
+		return
+	}
+
+	sessionToken := getSessionTokenFromCookie(ctx.Request)
 
 	ctxTimeout, cancelFunc := context.WithTimeout(context.Background(), 3*time.Second)
 
 	defer cancelFunc()
 
-	serviceURL := SERVICE_BASE_URL + "messages/" + receiverName + "?sessionToken=" + sessionToken
+	serviceURL := SERVICE_BASE_URL + "messages/" + receiverName + "?sessionToken=" + sessionToken + "&offset=" + offset
 
 	// Create Request with Timeout
 	requestToBackend_Server, err := http.NewRequestWithContext(ctxTimeout, "GET", serviceURL, nil)
@@ -1448,22 +1468,29 @@ func GetMessages(ctx *gin.Context) {
 			return
 		}
 
-		var messages []models.Message
-		err = json.Unmarshal(responseJSONData, &messages)
+		var responseDataStructure struct {
+			Messages   []models.Message
+			NextOffset string
+		}
+
+		err = json.Unmarshal(responseJSONData, &responseDataStructure)
 		if err != nil {
 			log.Println("Error: ", err)
-			log.Println("Decription: Cannot read body of response as JSON data")
+			log.Println("Decription: Cannot Unmarhsal JSON data")
 
 			fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
 			return
 		}
 
-		RenderMessageBodyContainer(ctx, messages, receiverName)
+		RenderOlderMessage(ctx, responseDataStructure.NextOffset, responseDataStructure.Messages, receiverName)
 	} else if res.StatusCode == 201 {
-		RenderMessageBodyContainer(ctx, nil, receiverName)
+		RenderOlderMessage(ctx, "-1", nil, receiverName)
 	} else if res.StatusCode == 202 {
 		fmt.Fprint(ctx.Writer, "<script>location.href='login';</script>")
 	} else if res.StatusCode == 203 {
+		log.Println("Error: Invalid Offset")
+		fmt.Fprint(ctx.Writer, "<script>alert('Offset should be non negative integer');</script>")
+	} else if res.StatusCode == 205 {
 		log.Println("Error: Invalid Receiver")
 		fmt.Fprint(ctx.Writer, "<script>alert('User Not Found');</script>")
 	} else if res.StatusCode == 500 {

@@ -66,7 +66,7 @@ func main() {
 
 	r.GET("/chats", controller.RenderChatPage)
 
-	r.GET("/message/:user", controller.GetMessages)
+	r.GET("/message/:user", controller.GetMessagesWithOffset)
 
 	r.GET("/search-users", controller.SearchUsersByPattern)
 

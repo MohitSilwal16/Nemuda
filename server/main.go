@@ -66,9 +66,7 @@ func main() {
 
 	r.GET("/blogs/comment/:comment", handler.AddComment)
 
-	r.POST("/messages", handler.AddMessage)
-	r.GET("/messages/:user", handler.GetMessages)
-	r.PUT("/messages/:sessionToken", handler.ChangeStatusOfMessage)
+	r.GET("/messages/:user", handler.GetMessagesWithOffset)
 
 	r.GET("/search-users", handler.SearchUsersByPattern)
 

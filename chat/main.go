@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"os"
 
 	"github.com/MohitSilwal16/Nemuda/chat/chatwebsocket"
 	"github.com/MohitSilwal16/Nemuda/chat/constants"
@@ -11,6 +12,13 @@ import (
 const BASE_URL = constants.BASE_URL
 
 func main() {
+	err := chatwebsocket.Init_MariaDB()
+
+	if err != nil {
+		log.Print(err)
+		os.Exit(1)
+	}
+
 	// Set Gin to release mode
 	gin.SetMode(gin.ReleaseMode)
 
@@ -27,8 +35,8 @@ func main() {
 	r.GET("/ws/chat/:sessionToken", router.ServeWS)
 
 	log.Println("Running Messaging Server on", BASE_URL)
-	
-	err := r.Run(BASE_URL)
+
+	err = r.Run(BASE_URL)
 
 	if err != nil {
 		log.Println("Error:", err)

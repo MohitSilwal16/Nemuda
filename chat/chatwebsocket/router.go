@@ -106,7 +106,7 @@ func (router *Router) Run() {
 				}
 			}
 			// Change status of messages which're sent to this user
-			changeStatusOfMessage(client, "Delivered", "")
+			changeStatusOfMessage(client, client.Username, "", "Delivered")
 
 			router.UsersWhoAreWaiting[client.Username] = []string{}
 
@@ -156,7 +156,7 @@ func (router *Router) Run() {
 				router.Unlock()
 
 				if okSender {
-					changeStatusOfMessage(sender, "Read", msg.Receiver)
+					changeStatusOfMessage(sender, sender.Username, msg.Receiver, "Read")
 				}
 
 				continue
