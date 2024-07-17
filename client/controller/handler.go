@@ -529,6 +529,7 @@ func PostBlog(ctx *gin.Context) {
 	// 202 => Title is already used
 	// 203 => Invalid Session Token
 	// 205 => Image is not in proper format
+	// 206 => XSS attempt
 	// 500 => Internal Server Error
 
 	// Set the Content-Type header to "text/html"
@@ -578,8 +579,6 @@ func PostBlog(ctx *gin.Context) {
 			RenderPostBlogPage(ctx, "Image size exceeds 2 MB")
 			return
 		}
-
-		blog.ImagePath = "./static/images/blogs/" + blog.Title + ".png"
 
 		blog.Comments = []models.Comment{}
 
@@ -689,6 +688,8 @@ func PostBlog(ctx *gin.Context) {
 				log.Println("Key: ", k)
 				log.Println("Val: ", v)
 			}
+		} else if res.StatusCode == 206 {
+			fmt.Fprintf(ctx.Writer, "<script>alert('Whoops! Looks like someone tried to sprinkle some XSS magic. Nice attempt son');</script>")
 		} else if res.StatusCode == 500 {
 			log.Println("Error: Back-end server has Internal Server Error")
 			RenderPostBlogPage(ctx, "Internal Server Error")
@@ -832,10 +833,13 @@ func DislikeBlog(ctx *gin.Context) {
 }
 
 func AddComment(ctx *gin.Context) {
+	// AVOID USING 204 BECAUSE IT DOESN'T SEND ANY CONTENT OR BODY
+
 	// 200 => Comment Added
 	// 201 => Comment Description or Title is Empty
 	// 202 => Blog not found
 	// 203 => Invalid Session Token
+	// 205 => XSS attempt
 	// 500 => Internal Server Error
 
 	// Set the Content-Type header to "text/html"
@@ -866,7 +870,7 @@ func AddComment(ctx *gin.Context) {
 		return
 	}
 
-	serviceURL := SERVICE_BASE_URL + "blogs/comment/" + commentDescription + "?sessionToken=" + sessionToken + "&title=" + title
+	serviceURL := SERVICE_BASE_URL + "blogs/comment?comment=" + commentDescription + "&sessionToken=" + sessionToken + "&title=" + title
 
 	serviceURL = strings.Replace(serviceURL, " ", "%20", -1)
 
@@ -903,6 +907,8 @@ func AddComment(ctx *gin.Context) {
 		fmt.Fprint(ctx.Writer, BLOG_NOT_FOUND_MESSAGE)
 	} else if res.StatusCode == 203 {
 		RenderLoginPage(ctx, "Session Timed Out")
+	} else if res.StatusCode == 205 {
+		fmt.Fprintf(ctx.Writer, "<script>alert('Whoops! Looks like someone tried to sprinkle some XSS magic. Nice attempt son');</script>")
 	} else if res.StatusCode == 500 {
 		fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
 	} else {
@@ -921,6 +927,8 @@ func UpdateBlog(ctx *gin.Context) {
 	// 205 => Invalid Session Token
 	// 206 => Blog Title is already used
 	// 207 => Image is not in proper format
+	// 208 => XSS attempt
+
 	// 500 => Internal Server Error
 
 	// Set the Content-Type header to "text/html"
@@ -973,7 +981,7 @@ func UpdateBlog(ctx *gin.Context) {
 			return
 		}
 
-		blog.ImagePath = "./static/images/blogs/" + blog.Title + ".png"
+		blog.ImagePath = "https://nemuda.s3.eu-north-1.amazonaws.com/" + oldTitle + ".png"
 
 		blog.Comments = []models.Comment{}
 
@@ -1086,6 +1094,8 @@ func UpdateBlog(ctx *gin.Context) {
 			RenderLoginPage(ctx, "Session Timed Out")
 		} else if res.StatusCode == 206 {
 			RenderUpdateBlogPage(ctx, blog, "Title already used")
+		} else if res.StatusCode == 208 {
+			fmt.Fprintf(ctx.Writer, "<script>alert('Whoops! Looks like someone tried to sprinkle some XSS magic. Nice attempt son');</script>")
 		} else if res.StatusCode == 500 {
 			log.Println("Error: Back-end server has Internal Server Error")
 			RenderUpdateBlogPage(ctx, blog, "Internal Server Error")
@@ -1313,21 +1323,15 @@ func GetMoreBlogsByTagWithOffset(ctx *gin.Context) {
 
 		fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
 	} else if res.StatusCode == 203 {
-		data := map[string]interface{}{
-			"Blogs":        nil,
-			"RequestedTag": tag,
-			"Offset":       "-2",
-		}
-
-		tmpl := template.Must(template.ParseFiles("./views/blog.html"))
-		err = tmpl.Execute(ctx.Writer, data)
-
-		if err != nil {
-			log.Println("Error: ", err)
-			log.Println("Description: Error in tmpl.Execute() in GetMoreBlogsByTagWithOffset()")
-
-			fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
-		}
+		html := `
+		<!-- No More Blogs Container -->
+		<div class="flex items-center justify-center cursor-not-allowed">
+		<div class="px-6 py-4 text-center bg-blue-600 rounded-lg shadow-md">
+			<p class="text-lg font-semibold text-gray-100">No more Blogs</p>
+		</div>
+		</div>
+	`
+		fmt.Fprint(ctx.Writer, html)
 	} else {
 		log.Println("Bug: Unexpected Status Code ", res.StatusCode)
 

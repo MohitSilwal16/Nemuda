@@ -360,6 +360,7 @@ func PostBlog(ctx *gin.Context) {
 	// 202 => Title is already used
 	// 203 => Invalid Session Token
 	// 205 => Image is not in proper format
+	// 206 => XSS attempt
 	// 500 => Internal Server Error
 
 	// Set the Content-Type header to "application/json"
@@ -395,7 +396,6 @@ func PostBlog(ctx *gin.Context) {
 		ctx.JSON(205, gin.H{"error": "File too large"})
 		return
 	}
-	// log.Printf("Multipart form files: %#v", ctx.Request.MultipartForm.File)
 
 	// Retrieve the JSON data from form data
 	data := ctx.Request.FormValue("data")
@@ -440,6 +440,19 @@ func PostBlog(ctx *gin.Context) {
 			"message": response},
 		)
 	} else {
+		var isMalicious bool
+		blog.Description, isMalicious = utils.SanitizeMessage(blog.Description)
+
+		if isMalicious {
+			// If it's empty message then it can't be sanitized & definitely mallicious
+			if blog.Description == "" {
+				ctx.JSON(206, gin.H{
+					"message": "Whoops! Looks like someone tried to sprinkle some XSS magic. Nice attempt son",
+				})
+				return
+			}
+		}
+
 		image, _, err := ctx.Request.FormFile("file")
 		if err != nil {
 			log.Println("Error: ", err)
@@ -796,10 +809,13 @@ func DislikeBlog(ctx *gin.Context) {
 }
 
 func AddComment(ctx *gin.Context) {
+	// AVOID USING 204 BECAUSE IT DOESN'T SEND ANY CONTENT OR BODY
+
 	// 200 => Comment Added
 	// 201 => Comment Description or Title is Empty
 	// 202 => Blog not found
 	// 203 => Invalid Session Token
+	// 205 => XSS attempt
 	// 500 => Internal Server Error
 
 	// Set the Content-Type header to "application/json"
@@ -840,7 +856,7 @@ func AddComment(ctx *gin.Context) {
 		return
 	}
 
-	commentDescription := ctx.Param("comment")
+	commentDescription := ctx.Query("comment")
 
 	if commentDescription == "" {
 		ctx.JSON(201, gin.H{
@@ -854,6 +870,18 @@ func AddComment(ctx *gin.Context) {
 			"message": "Comment: Min 5 & Max 50 letters",
 		})
 		return
+	}
+
+	var isMalicious bool
+	commentDescription, isMalicious = utils.SanitizeMessage(commentDescription)
+
+	if isMalicious {
+		if commentDescription == "" {
+			ctx.JSON(205, gin.H{
+				"message": "Whoops! Looks like someone tried to sprinkle some XSS magic. Nice attempt son",
+			})
+			return
+		}
 	}
 
 	comment := models.Comment{
@@ -893,6 +921,7 @@ func UpdateBlog(ctx *gin.Context) {
 	// 205 => Invalid Session Token
 	// 206 => Blog Title is already used
 	// 207 => Image is not in proper format
+	// 208 => XSS attempt
 	// 500 => Internal Server Error
 
 	// Set the Content-Type header to "application/json"
@@ -979,6 +1008,19 @@ func UpdateBlog(ctx *gin.Context) {
 			"message": response,
 		})
 	} else {
+		var isMalicious bool
+		blog.Description, isMalicious = utils.SanitizeMessage(blog.Description)
+
+		if isMalicious {
+			// If it's empty message then it can't be sanitized & definitely mallicious
+			if blog.Description == "" {
+				ctx.JSON(208, gin.H{
+					"message": "Whoops! Looks like someone tried to sprinkle some XSS magic. Nice attempt son",
+				})
+				return
+			}
+		}
+
 		doesBlogExists, err := db.SearchBlogByTitle(blog.Title)
 
 		if err != nil {

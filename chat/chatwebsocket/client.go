@@ -52,6 +52,7 @@ func (client *Client) readMessages() {
 			}
 			continue
 		}
+
 		if wsMessage.Message == "" {
 			client.SendMessage <- Message{
 				Error: "Empty Message",
@@ -63,11 +64,14 @@ func (client *Client) readMessages() {
 		wsMessage.Message, isMalicious = utils.SanitizeMessage(wsMessage.Message)
 
 		if isMalicious {
-			log.Println(wsMessage.Message)
-			client.SendMessage <- Message{
-				Error: "Whoops! Looks like someone tried to sprinkle some XSS magic. Nice attempt son",
+			// If it's empty message then it can't be sanitized & definitely mallicious
+			if wsMessage.Message == "" {
+				log.Println(wsMessage.Message)
+				client.SendMessage <- Message{
+					Error: "Whoops! Looks like someone tried to sprinkle some XSS magic. Nice attempt son",
+				}
+				continue
 			}
-			continue
 		}
 
 		if len(wsMessage.Message) > 100 {

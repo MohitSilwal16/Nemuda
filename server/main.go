@@ -69,7 +69,7 @@ func main() {
 	r.GET("/blogs/like/:title", handler.IsBlogLikedByUser)
 	r.DELETE("/blogs/like/:title", handler.DislikeBlog)
 
-	r.GET("/blogs/comment/:comment", handler.AddComment)
+	r.GET("/blogs/comment", handler.AddComment)
 
 	r.GET("/messages/:user", handler.GetMessagesWithOffset)
 
