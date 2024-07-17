@@ -9,7 +9,6 @@ import (
 	"log"
 	"mime/multipart"
 	"net/http"
-	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -634,7 +633,7 @@ func PostBlog(ctx *gin.Context) {
 		writer.Close()
 
 		// Create a request with a timeout context
-		ctxTimeout, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		ctxTimeout, cancel := context.WithTimeout(context.Background(), 8*time.Second)
 		defer cancel()
 
 		client := &http.Client{}
@@ -668,15 +667,6 @@ func PostBlog(ctx *gin.Context) {
 		defer res.Body.Close()
 
 		if res.StatusCode == 200 {
-			err = ctx.SaveUploadedFile(image, blog.ImagePath)
-
-			if err != nil {
-				log.Println("Error: ", err)
-				log.Println("Description: Cannot save image of blog")
-
-				fmt.Fprint(ctx.Writer, "Image of blog cannot be saved")
-			}
-
 			sessionToken := getSessionTokenFromCookie(ctx.Request)
 			fetchBlogsByTag(ctx, "All", "0", sessionToken)
 		} else if res.StatusCode == 201 {
@@ -1037,7 +1027,7 @@ func UpdateBlog(ctx *gin.Context) {
 		writer.Close()
 
 		// Create a request with a timeout context
-		ctxTimeout, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		ctxTimeout, cancel := context.WithTimeout(context.Background(), 8*time.Second)
 		defer cancel()
 
 		serviceURL := SERVICE_BASE_URL + "blogs?sessionToken=" + sessionToken + "&title=" + oldTitle
@@ -1085,26 +1075,6 @@ func UpdateBlog(ctx *gin.Context) {
 		defer res.Body.Close()
 
 		if res.StatusCode == 200 {
-			err = ctx.SaveUploadedFile(image, blog.ImagePath)
-
-			if err != nil {
-				log.Println("Error: ", err)
-				log.Println("Description: Cannot save image of blog")
-
-				fmt.Fprint(ctx.Writer, "Image of blog cannot be saved")
-			}
-			oldImagePath := "./static/images/blogs/" + oldTitle + ".png"
-
-			err = os.Remove(oldImagePath)
-
-			if err != nil {
-				if !os.IsNotExist(err) {
-					log.Println("Error: ", err)
-					log.Println("Description: Cannot delete ", oldImagePath)
-				}
-				// No need to return
-			}
-
 			fetchBlogsByTag(ctx, "All", "0", sessionToken)
 		} else if res.StatusCode == 201 {
 			RenderUpdateBlogPage(ctx, blog, "Title, Description, Tag is not in format")
@@ -1185,17 +1155,6 @@ func DeleteBlog(ctx *gin.Context) {
 	defer res.Body.Close()
 
 	if res.StatusCode == 200 {
-		imagePath := "./static/images/blogs/" + title + ".png"
-		err = os.Remove(imagePath)
-
-		if err != nil {
-			if !os.IsNotExist(err) {
-				log.Println("Error: ", err)
-				log.Println("Description: Cannot delete ", imagePath)
-			}
-			// No need to return
-		}
-
 		fetchBlogsByTag(ctx, "All", "0", sessionToken)
 	} else if res.StatusCode == 201 {
 		getBlogByTitle(ctx, title, "")

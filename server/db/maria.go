@@ -16,7 +16,7 @@ import (
 var sqlDB *sql.DB
 
 func Init_MariaDB() error {
-	err := godotenv.Load()
+	err := godotenv.Load("main.env")
 
 	if err != nil {
 		return err

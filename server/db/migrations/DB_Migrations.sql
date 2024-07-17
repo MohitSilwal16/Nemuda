@@ -35,8 +35,7 @@ CREATE TABLE IF NOT EXISTS `messages_aayush` (
 -- Dumping data for table nemuda.messages_aayush: ~1 rows (approximately)
 DELETE FROM `messages_aayush`;
 INSERT INTO `messages_aayush` (`Sender`, `Receiver`, `MessageContent`, `Status`, `DateTime`) VALUES
-	('Nimesh', 'Aayush', 'Hey Aayush, all good here. What about you?', 'Read', '2024-07-08 10:16:12'),
-	('Nimesh', 'Aayush', 'e', 'Sent', '2024-07-13 23:28:18');
+	('Nimesh', 'Aayush', 'Hey Aayush, all good here. What about you?', 'Read', '2024-07-08 10:16:12');
 
 -- Dumping structure for table nemuda.messages_konark
 CREATE TABLE IF NOT EXISTS `messages_konark` (
@@ -57,66 +56,7 @@ INSERT INTO `messages_konark` (`Sender`, `Receiver`, `MessageContent`, `Status`,
 	('Nimesh', 'Konark', 'Yo Kon', 'Read', '2024-07-07 20:32:25'),
 	('Nimesh', 'Konark', 'Nothing', 'Read', '2024-07-07 20:38:41'),
 	('Palash', 'Konark', 'Hey Konark, todo bien por aquí. ¿Y tú?', 'Read', '2024-07-08 10:19:45'),
-	('Nimesh', 'Konark', 'Wbu ?', 'Read', '2024-07-08 19:10:25'),
-	('Nimesh', 'Konark', 'How\'s your internship going ?', 'Read', '2024-07-13 12:36:31'),
-	('Nimesh', 'Konark', 'Today is the last day of the internship', 'Read', '2024-07-13 12:38:31'),
-	('Nimesh', 'Konark', 'Yep finally I\'ll be free from this headache', 'Read', '2024-07-13 12:39:14'),
-	('Nimesh', 'Konark', 'What\'re you future plans ?', 'Read', '2024-07-13 12:39:38'),
-	('Nimesh', 'Konark', 'Oh', 'Read', '2024-07-13 12:40:22'),
-	('Nimesh', 'Konark', 'Yea', 'Read', '2024-07-13 12:40:52'),
-	('Nimesh', 'Konark', 'Wyd ?', 'Read', '2024-07-13 16:56:17'),
-	('Nimesh', 'Konark', 'Yo', 'Read', '2024-07-13 17:00:50'),
-	('Nimesh', 'Konark', 'Hello', 'Read', '2024-07-13 17:08:39'),
-	('Nimesh', 'Konark', 'Konark ?', 'Read', '2024-07-13 17:15:31'),
-	('Nimesh', 'Konark', 'Nothing', 'Read', '2024-07-13 17:29:32'),
-	('Nimesh', 'Konark', 'Wbu ?', 'Read', '2024-07-13 17:30:36'),
-	('Nimesh', 'Konark', 'Yp', 'Read', '2024-07-13 17:53:39'),
-	('Nimesh', 'Konark', 'Yo', 'Read', '2024-07-13 18:43:30'),
-	('Nimesh', 'Konark', 'Wyd ?', 'Read', '2024-07-13 18:49:42'),
-	('Nimesh', 'Konark', 'Konark ?', 'Read', '2024-07-13 18:50:45'),
-	('Nimesh', 'Konark', 'Hello', 'Read', '2024-07-13 18:51:29'),
-	('Nimesh', 'Konark', 'Hello', 'Read', '2024-07-13 18:54:22'),
-	('Nimesh', 'Konark', 'Yo', 'Read', '2024-07-13 18:56:42'),
-	('Nimesh', 'Konark', 'Hello', 'Read', '2024-07-13 18:57:24'),
-	('Nimesh', 'Konark', 'Yo Konark', 'Read', '2024-07-13 19:26:05'),
-	('Nimesh', 'Konark', 'Hello', 'Read', '2024-07-13 19:41:52'),
-	('Nimesh', 'Konark', 'Wyd ?', 'Read', '2024-07-13 19:42:36'),
-	('Nimesh', 'Konark', 'Hello', 'Read', '2024-07-13 19:43:34'),
-	('Nimesh', 'Konark', 'Yo', 'Read', '2024-07-13 19:45:33'),
-	('Nimesh', 'Konark', 'Hello', 'Read', '2024-07-13 19:46:26'),
-	('Nimesh', 'Konark', 'Wyd ?', 'Read', '2024-07-13 19:47:23'),
-	('Nimesh', 'Konark', 'Nothing', 'Read', '2024-07-13 19:52:48'),
-	('Nimesh', 'Konark', 'Yo', 'Read', '2024-07-13 20:27:53'),
-	('Nimesh', 'Konark', 'Hi', 'Read', '2024-07-13 20:56:33'),
-	('Nimesh', 'Konark', 'Yo', 'Read', '2024-07-13 20:58:20'),
-	('Nimesh', 'Konark', 'Hello', 'Read', '2024-07-13 21:17:52'),
-	('Nimesh', 'Konark', 'Wyd ?', 'Read', '2024-07-13 21:18:07'),
-	('Nimesh', 'Konark', 'Oh', 'Read', '2024-07-13 21:18:28'),
-	('Nimesh', 'Konark', 'Nothing', 'Read', '2024-07-13 21:18:33'),
-	('Nimesh', 'Konark', 'Oh', 'Read', '2024-07-13 21:18:35'),
-	('Nimesh', 'Konark', 'Sounds good', 'Read', '2024-07-13 21:18:40'),
-	('Nimesh', 'Konark', 'Yo', 'Read', '2024-07-13 21:36:11'),
-	('Nimesh', 'Konark', 'Nothing', 'Read', '2024-07-13 21:36:32'),
-	('Nimesh', 'Konark', 'Hello', 'Read', '2024-07-13 21:40:28'),
-	('Nimesh', 'Konark', 'E', 'Read', '2024-07-13 21:40:43'),
-	('Nimesh', 'Konark', 'Yo', 'Read', '2024-07-13 21:42:19'),
-	('Nimesh', 'Konark', 'Yo', 'Read', '2024-07-13 21:43:42'),
-	('Nimesh', 'Konark', 'Yo', 'Read', '2024-07-13 21:51:45'),
-	('Nimesh', 'Konark', 'Hello', 'Read', '2024-07-13 21:52:40'),
-	('Nimesh', 'Konark', 'Wyd ?', 'Read', '2024-07-13 21:52:49'),
-	('Nimesh', 'Konark', 'Nothing man', 'Read', '2024-07-13 21:52:59'),
-	('Nimesh', 'Konark', 'Yea', 'Read', '2024-07-13 21:53:24'),
-	('Nimesh', 'Konark', 'Yo', 'Read', '2024-07-13 22:14:13'),
-	('Nimesh', 'Konark', 'Wyd ?', 'Read', '2024-07-13 22:16:27'),
-	('Nimesh', 'Konark', 'Yea', 'Read', '2024-07-13 22:16:37'),
-	('Konark', 'Konark', 'Ho', 'Read', '2024-07-13 22:17:25'),
-	('Nimesh', 'Konark', 'Nothing man wbu ?', 'Read', '2024-07-13 22:19:08'),
-	('Nimesh', 'Konark', 'Yea bro', 'Read', '2024-07-13 22:19:27'),
-	('Nimesh', 'Konark', 'W', 'Read', '2024-07-13 22:19:41'),
-	('Nimesh', 'Konark', 'Hello', 'Read', '2024-07-13 22:20:18'),
-	('Nimesh', 'Konark', 'Yo', 'Read', '2024-07-13 22:59:42'),
-	('Nimesh', 'Konark', 'Yes', 'Read', '2024-07-13 22:59:57'),
-	('Nimesh', 'Konark', 'Yo', 'Read', '2024-07-13 23:00:20');
+	('Nimesh', 'Konark', 'Wbu ?', 'Read', '2024-07-08 19:10:25');
 
 -- Dumping structure for table nemuda.messages_krish
 CREATE TABLE IF NOT EXISTS `messages_krish` (
@@ -157,36 +97,7 @@ INSERT INTO `messages_nimesh` (`Sender`, `Receiver`, `MessageContent`, `Status`,
 	('Konark', 'Nimesh', 'Wyd Nimesh', 'Read', '2024-07-07 20:37:18'),
 	('Konark', 'Nimesh', 'Nimesh ??', 'Read', '2024-07-07 20:37:24'),
 	('Aayush', 'Nimesh', 'Hello Nimesh! How\'s it going?', 'Read', '2024-07-08 10:15:00'),
-	('Prachin', 'Nimesh', 'Hi Nimesh, what\'s up?', 'Read', '2024-07-08 10:21:10'),
-	('Konark', 'Nimesh', 'Nothing', 'Read', '2024-07-08 19:10:42'),
-	('Konark', 'Nimesh', 'Oh sounds good then', 'Read', '2024-07-13 12:38:53'),
-	('Konark', 'Nimesh', 'Idk what I\'m gonna do in these 2 weeks', 'Read', '2024-07-13 12:40:12'),
-	('Konark', 'Nimesh', 'Nemu chat is going good for now', 'Read', '2024-07-13 12:40:50'),
-	('Konark', 'Nimesh', 'Yo', 'Read', '2024-07-13 17:17:46'),
-	('Konark', 'Nimesh', 'Wyd ?', 'Read', '2024-07-13 17:17:57'),
-	('Konark', 'Nimesh', 'Yes sirrr', 'Read', '2024-07-13 19:26:27'),
-	('Nimesh', 'Nimesh', 'Aiyo', 'Read', '2024-07-13 19:43:28'),
-	('Konark', 'Nimesh', 'Hello', 'Read', '2024-07-13 19:50:08'),
-	('Konark', 'Nimesh', 'Wyd ?', 'Read', '2024-07-13 19:52:00'),
-	('Konark', 'Nimesh', 'Hello', 'Read', '2024-07-13 20:56:24'),
-	('Konark', 'Nimesh', 'Nothing man', 'Read', '2024-07-13 21:18:20'),
-	('Konark', 'Nimesh', 'Wbu >', 'Read', '2024-07-13 21:18:30'),
-	('Konark', 'Nimesh', 'Yess sirrr', 'Read', '2024-07-13 21:18:47'),
-	('Konark', 'Nimesh', 'Wyd ?', 'Read', '2024-07-13 21:36:26'),
-	('Konark', 'Nimesh', 'Yo', 'Read', '2024-07-13 21:36:58'),
-	('Konark', 'Nimesh', 'Hello', 'Read', '2024-07-13 21:42:33'),
-	('Konark', 'Nimesh', 'Oh', 'Read', '2024-07-13 21:53:14'),
-	('Konark', 'Nimesh', 'Nothing', 'Read', '2024-07-13 22:16:31'),
-	('Konark', 'Nimesh', 'Oh', 'Read', '2024-07-13 22:16:34'),
-	('Konark', 'Nimesh', 'Yo', 'Read', '2024-07-13 22:16:47'),
-	('Konark', 'Nimesh', 'Hello', 'Read', '2024-07-13 22:17:12'),
-	('Konark', 'Nimesh', 'Hello', 'Read', '2024-07-13 22:17:35'),
-	('Konark', 'Nimesh', 'Wyd ?', 'Read', '2024-07-13 22:18:57'),
-	('Konark', 'Nimesh', 'Nothing', 'Read', '2024-07-13 22:19:13'),
-	('Konark', 'Nimesh', 'Oh', 'Read', '2024-07-13 22:19:14'),
-	('Konark', 'Nimesh', 'Sound good', 'Read', '2024-07-13 22:19:17'),
-	('Konark', 'Nimesh', 'Oh', 'Read', '2024-07-13 22:19:37'),
-	('Konark', 'Nimesh', 'Hello', 'Read', '2024-07-13 23:00:01');
+	('Prachin', 'Nimesh', 'Hi Nimesh, what\'s up?', 'Read', '2024-07-08 10:21:10');
 
 -- Dumping structure for table nemuda.messages_palash
 CREATE TABLE IF NOT EXISTS `messages_palash` (
@@ -204,8 +115,7 @@ CREATE TABLE IF NOT EXISTS `messages_palash` (
 -- Dumping data for table nemuda.messages_palash: ~1 rows (approximately)
 DELETE FROM `messages_palash`;
 INSERT INTO `messages_palash` (`Sender`, `Receiver`, `MessageContent`, `Status`, `DateTime`) VALUES
-	('Konark', 'Palash', 'Hola Palash! Qué tal?', 'Read', '2024-07-08 10:18:30'),
-	('Nimesh', 'Palash', 'Aiyo', 'Sent', '2024-07-13 20:29:04');
+	('Konark', 'Palash', 'Hola Palash! Qué tal?', 'Read', '2024-07-08 10:18:30');
 
 -- Dumping structure for table nemuda.messages_parth
 CREATE TABLE IF NOT EXISTS `messages_parth` (

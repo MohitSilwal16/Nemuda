@@ -17,7 +17,7 @@ import (
 var mongoDBCollection *mongo.Collection
 
 func Init_Mongo() error {
-	err := godotenv.Load()
+	err := godotenv.Load("main.env")
 
 	if err != nil {
 		return err

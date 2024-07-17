@@ -24,6 +24,12 @@ func init() {
 		log.Print(err)
 		os.Exit(1)
 	}
+
+	err = db.Init_S3()
+	if err != nil {
+		log.Print(err)
+		os.Exit(1)
+	}
 }
 
 func main() {
@@ -36,8 +42,7 @@ func main() {
 	// Add Logger and Recovery middleware
 	r.Use(gin.Logger(), gin.Recovery())
 
-	// Serve static files from the "static" directory
-	r.Static("/static", "./static")
+	r.MaxMultipartMemory = 8 << 20 // 8 MiB
 
 	r.GET("/:sessionToken", handler.VerifySessionToken)
 

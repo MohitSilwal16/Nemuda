@@ -21,6 +21,8 @@ func main() {
 	// Add Logger and Recovery middleware
 	r.Use(gin.Logger(), gin.Recovery())
 
+	r.MaxMultipartMemory = 8 << 20 // 8 MiB
+
 	// Serve static files from the "static" directory
 	r.Static("/static", "./static")
 

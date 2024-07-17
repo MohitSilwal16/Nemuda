@@ -3,10 +3,8 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
-	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -442,7 +440,7 @@ func PostBlog(ctx *gin.Context) {
 			"message": response},
 		)
 	} else {
-		image, header, err := ctx.Request.FormFile("file")
+		image, _, err := ctx.Request.FormFile("file")
 		if err != nil {
 			log.Println("Error: ", err)
 			log.Println("Description: Cannot fetch image from user")
@@ -452,11 +450,6 @@ func PostBlog(ctx *gin.Context) {
 			})
 			return
 		}
-
-		// For example, save the file and log the additional data
-		filename := header.Filename
-		// Save the file or process it as needed
-		fmt.Printf("Received file: %s\n", filename)
 
 		// Read the first 512 bytes of the file
 		buffer := make([]byte, 512)
@@ -470,7 +463,6 @@ func PostBlog(ctx *gin.Context) {
 		image.Seek(0, 0)
 
 		contentType := http.DetectContentType(buffer)
-		log.Println("Detected Content Type:", contentType)
 
 		// Check if the content type is an allowed image type
 		allowedTypes := map[string]bool{
@@ -494,17 +486,20 @@ func PostBlog(ctx *gin.Context) {
 			return
 		}
 
-		out, err := os.Create(blog.ImagePath)
-		if err != nil {
-			ctx.JSON(500, gin.H{"error": "Unable to save the file"})
-			return
-		}
-		defer out.Close()
+		filename := blog.Title + ".png"
+		// Save file in S3 Bucket
+		imagePath, err := db.UploadImageToAWS(image, filename)
 
-		if _, err := io.Copy(out, image); err != nil {
-			ctx.JSON(500, gin.H{"error": "Unable to copy the file"})
+		if err != nil {
+			log.Println("Error:", err)
+			log.Println("Description: Cannot upload images to S3")
+			ctx.JSON(500, gin.H{
+				"message": "Internal Server Error",
+			})
 			return
 		}
+
+		blog.ImagePath = imagePath
 
 		err = db.AddBlog(blog)
 
@@ -1003,7 +998,7 @@ func UpdateBlog(ctx *gin.Context) {
 			return
 		}
 
-		image, header, err := ctx.Request.FormFile("file")
+		image, _, err := ctx.Request.FormFile("file")
 		if err != nil {
 			log.Println("Error: ", err)
 			log.Println("Description: Cannot fetch image from user")
@@ -1013,11 +1008,6 @@ func UpdateBlog(ctx *gin.Context) {
 			})
 			return
 		}
-
-		// For example, save the file and log the additional data
-		filename := header.Filename
-		// Save the file or process it as needed
-		fmt.Printf("Received file: %s\n", filename)
 
 		// Read the first 512 bytes of the file
 		buffer := make([]byte, 512)
@@ -1031,7 +1021,6 @@ func UpdateBlog(ctx *gin.Context) {
 		image.Seek(0, 0)
 
 		contentType := http.DetectContentType(buffer)
-		log.Println("Detected Content Type:", contentType)
 
 		// Check if the content type is an allowed image type
 		allowedTypes := map[string]bool{
@@ -1055,19 +1044,27 @@ func UpdateBlog(ctx *gin.Context) {
 			return
 		}
 
-		out, err := os.Create(blog.ImagePath)
+		err = db.DeleteImageFromAWS(oldTitle + ".png")
+
 		if err != nil {
-			ctx.JSON(500, gin.H{"error": "Unable to save the file"})
-			return
-		}
-		defer out.Close()
-
-		if _, err := io.Copy(out, image); err != nil {
-			ctx.JSON(500, gin.H{"error": "Unable to copy the file"})
-			return
+			log.Println("Error: ", err)
+			log.Println("Description: Cannot Delete Blog Image")
+			ctx.JSON(500, gin.H{
+				"message": "Internal Server Error",
+			})
 		}
 
-		err = db.UpdateBlog(oldTitle, username, blog.Title, blog.Description, blog.ImagePath, blog.Tag)
+		newImagePath, err := db.UploadImageToAWS(image, blog.Title+".png")
+
+		if err != nil {
+			log.Println("Error: ", err)
+			log.Println("Description: Cannot Upload Blog Image")
+			ctx.JSON(500, gin.H{
+				"message": "Internal Server Error",
+			})
+		}
+
+		err = db.UpdateBlog(oldTitle, username, blog.Title, blog.Description, newImagePath, blog.Tag)
 
 		if err != nil {
 			if err.Error() == "USER CANNOT UPDATE THIS BLOG" {
@@ -1086,25 +1083,6 @@ func UpdateBlog(ctx *gin.Context) {
 				})
 			}
 			return
-		}
-		err = ctx.SaveUploadedFile(header, blog.ImagePath)
-
-		if err != nil {
-			log.Println("Error: ", err)
-			log.Println("Description: Cannot save image of blog")
-
-			fmt.Fprint(ctx.Writer, "Image of blog cannot be saved")
-		}
-		oldImagePath := "./static/images/blogs/" + oldTitle + ".png"
-
-		err = os.Remove(oldImagePath)
-
-		if err != nil {
-			if !os.IsNotExist(err) {
-				log.Println("Error: ", err)
-				log.Println("Description: Cannot delete ", oldImagePath)
-			}
-			// No need to return
 		}
 
 		ctx.JSON(200, gin.H{
@@ -1200,16 +1178,14 @@ func DeleteBlog(ctx *gin.Context) {
 		return
 	}
 
-	imagePath := "./static/images/blogs/" + title + ".png"
-
-	err = os.Remove(imagePath)
+	err = db.DeleteImageFromAWS(title + ".png")
 
 	if err != nil {
-		if !os.IsNotExist(err) {
-			log.Println("Error: ", err)
-			log.Println("Description: Cannot delete ", imagePath)
-		}
-		// No need to return
+		log.Println("Error: ", err)
+		log.Println("Description: Cannot Delete Blog Image")
+		ctx.JSON(500, gin.H{
+			"message": "Internal Server Error",
+		})
 	}
 
 	ctx.JSON(200, gin.H{

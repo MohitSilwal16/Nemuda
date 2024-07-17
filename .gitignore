@@ -1,6 +1,7 @@
 TODO.txt
 
 server/.env
+server/main.env
 server/tmp
 
 client/tmp
