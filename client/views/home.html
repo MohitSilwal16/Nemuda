@@ -40,8 +40,16 @@ class="flex flex-col h-screen pb-2 overflow-hidden text-3xl text-white lg:text-2
       <div class="h-10 lg:hidden"></div>
       {{ end }}
     </nav>
-    <main class="w-screen mx-3 mb-5 overflow-y-auto lg:mx-0 lg:w-5/6 scroll-bar" id="blogs">
-     {{ template "blog.html" . }}
+    <main class="w-screen mx-3 mb-5 overflow-y-auto lg:mx-0 lg:w-5/6 scroll-bar">    
+      {{ template "blog.html" . }}
+
+    {{ if .Blogs }}
+    <div class="justify-center" id="load-more-blogs"   hx-get="/blogs/{{ $.RequestedTag }}?offset={{ $.Offset }}"
+    hx-swap="outerHTML"
+    hx-trigger="intersect once"
+    >
+    </div>
+    {{ end }}
     </main>
     <img src="../static/images/add_post.png" class="absolute cursor-pointer h-28 lg:h-16 right-10 bottom-10 hover:opacity-70" hx-get="/post-blog"  hx-target="#home-body" hx-swap="outerHTML" hx-push-url="/post-blog"></img>
   </div>
@@ -56,15 +64,6 @@ class="flex flex-col h-screen pb-2 overflow-hidden text-3xl text-white lg:text-2
         return;
       }
       navBar.classList.add("hidden");
-    
-    });
-
-    document.addEventListener("htmx:afterRequest",function(){
-      const loadMores = document.getElementsByClassName("load-more");
-
-      for (let i = 0 ; i < loadMores.length - 1 ; ++i){
-        loadMores[i].classList.add("hidden");
-      }
     });
   </script>
 </div>

@@ -1211,28 +1211,16 @@ func GetMoreBlogsByTagWithOffset(ctx *gin.Context) {
 		return
 	}
 
-	if offsetInt == -1 {
-		data := map[string]interface{}{
-			"Blogs":        nil,
-			"RequestedTag": tag,
-			"Offset":       "-2",
-		}
-
-		tmpl := template.Must(template.ParseFiles("./views/blog.html"))
-		err = tmpl.Execute(ctx.Writer, data)
-
-		if err != nil {
-			log.Println("Error: ", err)
-			log.Println("Description: Error in tmpl.Execute() in GetMoreBlogsByTagWithOffset()")
-
-			fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
-		}
-		return
-	}
-
-	if offsetInt == -2 {
-		// No changes're made HTML
-		ctx.Status(http.StatusNoContent)
+	if offsetInt < 0 {
+		html := `
+			<!-- No More Blogs Container -->
+			<div class="flex items-center justify-center cursor-not-allowed">
+			<div class="px-6 py-4 text-center bg-blue-600 rounded-lg shadow-md">
+				<p class="text-lg font-semibold text-gray-100">No more Blogs</p>
+			</div>
+			</div>
+		`
+		fmt.Fprint(ctx.Writer, html)
 		return
 	}
 
@@ -1303,7 +1291,7 @@ func GetMoreBlogsByTagWithOffset(ctx *gin.Context) {
 			"Offset":       responseDataStructure.NextOffset,
 		}
 
-		tmpl := template.Must(template.ParseFiles("./views/blog.html"))
+		tmpl := template.Must(template.ParseFiles("./views/more_blogs.html"))
 		err = tmpl.Execute(ctx.Writer, data)
 
 		if err != nil {

@@ -1,13 +1,5 @@
-<!DOCTYPE html>
-<div id="blogs">
-  {{ if not .Blogs}}
-  <div class="p-8 text-center shadow-lg rounded-xl">
-    <p class="text-3xl text-white">
-      No Blogs found for
-      <span class="font-bold">{{ .RequestedTag }}</span> tag 😢
-    </p>
-  </div>
-  {{ end }} {{ range .Blogs }}
+<div id="blogs" hx-swap-oob="beforeend">
+  {{ range .Blogs }}
   <div
     class="grid grid-flow-col grid-cols-3 mx-10 my-10 overflow-hidden border shadow-xl cursor-pointer rounded-xl lg:mx-24 hover:border-2 hover:border-white"
     hx-get="/blogs/title/{{ .Title }}"
@@ -36,3 +28,20 @@
   </div>
   {{ end }}
 </div>
+
+{{ if .Blogs }}
+<div
+  class="flex justify-center"
+  id="load-more-blogs"
+  hx-get="/blogs/{{ $.RequestedTag }}?offset={{ $.Offset }}"
+  hx-swap="outerHTML"
+  hx-trigger="intersect once"
+></div>
+{{ else }}
+<!-- No More Blogs Container -->
+<div class="flex items-center justify-center cursor-not-allowed">
+  <div class="px-6 py-4 text-center bg-blue-600 rounded-lg shadow-md">
+    <p class="text-lg font-semibold text-gray-100">No more Blogs</p>
+  </div>
+</div>
+{{ end }}
