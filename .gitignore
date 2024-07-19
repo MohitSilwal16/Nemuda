@@ -7,3 +7,4 @@ server/tmp
 client/tmp
 
 chat/tmp
+chat/.env
