@@ -2,11 +2,14 @@ package main
 
 import (
 	"log"
+	"net"
 	"os"
 
 	"github.com/MohitSilwal16/Nemuda/server/db"
 	"github.com/MohitSilwal16/Nemuda/server/handler"
-	"github.com/gin-gonic/gin"
+	pb "github.com/MohitSilwal16/Nemuda/server/pb"
+	"github.com/MohitSilwal16/Nemuda/server/utils"
+	"google.golang.org/grpc"
 )
 
 const BASE_URL = "0.0.0.0:8080"
@@ -33,53 +36,26 @@ func init() {
 }
 
 func main() {
-	// Set Gin to release mode
-	gin.SetMode(gin.ReleaseMode)
-
-	// Create a new Gin engine without the default middleware
-	r := gin.New()
-
-	// Add Logger and Recovery middleware
-	r.Use(gin.Logger(), gin.Recovery())
-
-	r.MaxMultipartMemory = 8 << 20 // 8 MiB
-
-	r.GET("/:sessionToken", handler.VerifySessionToken)
-
-	r.POST("/register", handler.Register)
-
-	r.POST("/login", handler.Login)
-
-	r.DELETE("/login/:sessionToken", handler.Logout)
-
-	r.GET("/users/:username", handler.SearchUser)
-
-	r.GET("/get-users-by-sessionToken/:sessionToken", handler.GetUsernameBySessionToken)
-
-	r.GET("/blogs/title/:title", handler.SearchBlogByTitle)
-
-	r.GET("/blogs/updatable_deletable", handler.CanUserUpdate_DeleteBlog)
-
-	r.GET("/blogs/:tag", handler.GetBlogsByTag)
-	r.POST("/blogs", handler.PostBlog)
-	r.PUT("/blogs", handler.UpdateBlog)
-	r.DELETE("/blogs", handler.DeleteBlog)
-
-	r.POST("/blogs/like/:title", handler.LikeBlog)
-	r.GET("/blogs/like/:title", handler.IsBlogLikedByUser)
-	r.DELETE("/blogs/like/:title", handler.DislikeBlog)
-
-	r.GET("/blogs/comment", handler.AddComment)
-
-	r.GET("/messages/:user", handler.GetMessagesWithOffset)
-
-	r.GET("/search-users", handler.SearchUsersByPattern)
-
-	log.Println("Running Back-end Server on", BASE_URL)
-
-	err := r.Run(BASE_URL)
+	lis, err := net.Listen("tcp", BASE_URL)
 
 	if err != nil {
 		log.Println("Error:", err)
+		log.Println("Description: Cannot Listen TCP at 8080 PORT")
+		return
+	}
+	s := grpc.NewServer(
+		grpc.UnaryInterceptor(utils.StructuredLoggerInterceptor()),
+	)
+
+	pb.RegisterAuthServiceServer(s, &handler.AuthServer{})
+	pb.RegisterUserServiceServer(s, &handler.UserServer{})
+	pb.RegisterBlogsServiceServer(s, &handler.BlogsServer{})
+
+	log.Println("Running GRPC Server on", lis.Addr())
+
+	if err := s.Serve(lis); err != nil {
+		log.Println("Error:", err)
+		log.Println("Description: Cannot Serve at 8080 PORT")
+		return
 	}
 }

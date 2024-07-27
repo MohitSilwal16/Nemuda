@@ -6,12 +6,13 @@ import (
 	"log"
 	"os"
 
-	"github.com/MohitSilwal16/Nemuda/server/models"
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+
+	pb "github.com/MohitSilwal16/Nemuda/server/pb"
 )
 
 var mongoDBCollection *mongo.Collection
@@ -51,40 +52,12 @@ func Init_Mongo() error {
 	return nil
 }
 
-func GetBlogsByTag(tag string) ([]models.Blog, error) {
-	var filter primitive.M
-	if tag == "All" {
-		filter = bson.M{}
-	} else {
-		filter = bson.M{"tag": tag}
-	}
-
-	cursor, err := mongoDBCollection.Find(context.Background(), filter)
-
-	if err != nil {
-		return nil, err
-	}
-	defer cursor.Close(context.Background())
-
-	var blogs []models.Blog
-
-	for cursor.Next(context.Background()) {
-		var blog models.Blog
-
-		if err = cursor.Decode(&blog); err != nil {
-			return nil, err
-		}
-		blogs = append(blogs, blog)
-	}
-	return blogs, nil
-}
-
-func GetBlogByTitle(title string) (models.Blog, error) {
+func GetBlogByTitle(title string) (*pb.Blog, error) {
 	filter := bson.M{"title": title}
 
 	result := mongoDBCollection.FindOne(context.Background(), filter)
 
-	var blog models.Blog
+	var blog *pb.Blog
 	err := result.Decode(&blog)
 
 	if err != nil {
@@ -99,7 +72,7 @@ func SearchBlogByTitle(title string) (bool, error) {
 
 	result := mongoDBCollection.FindOne(context.Background(), filter)
 
-	var blog models.Blog
+	var blog pb.Blog
 	err := result.Decode(&blog)
 
 	if err == nil {
@@ -112,7 +85,7 @@ func SearchBlogByTitle(title string) (bool, error) {
 	return false, err
 }
 
-func AddBlog(blog models.Blog) error {
+func AddBlog(blog *pb.Blog) error {
 	blogTitleFound, err := SearchBlogByTitle(blog.Title)
 	if err != nil {
 		return err
@@ -132,13 +105,13 @@ func AddBlog(blog models.Blog) error {
 	return nil
 }
 
-func IsBlogLikedByUser(title string, username string) (bool, error) {
+func isBlogLikedByUser(title string, username string) (bool, error) {
 	filter := bson.M{
 		"title":         title,
 		"likedUsername": bson.M{"$in": []string{username}},
 	}
 
-	var blog models.Blog
+	var blog pb.Blog
 	err := mongoDBCollection.FindOne(context.Background(), filter).Decode(&blog)
 
 	if err == nil {
@@ -161,7 +134,7 @@ func LikeBlog(title string, username string) error {
 		return errors.New("BLOG NOT FOUND")
 	}
 
-	isBlogAlreadyLiked, err := IsBlogLikedByUser(title, username)
+	isBlogAlreadyLiked, err := isBlogLikedByUser(title, username)
 
 	if err != nil {
 		return err
@@ -201,7 +174,7 @@ func DislikeBlog(title string, username string) error {
 		return errors.New("BLOG NOT FOUND")
 	}
 
-	isBlogAlreadyLiked, err := IsBlogLikedByUser(title, username)
+	isBlogAlreadyLiked, err := isBlogLikedByUser(title, username)
 
 	if err != nil {
 		return err
@@ -230,7 +203,7 @@ func DislikeBlog(title string, username string) error {
 	return nil
 }
 
-func AddComment(title string, comment models.Comment) error {
+func AddComment(title string, comment *pb.Comment) error {
 	filter := bson.M{
 		"title": title,
 	}
@@ -254,37 +227,8 @@ func AddComment(title string, comment models.Comment) error {
 	return nil
 }
 
-func IsBlogUpdatable_Deletable(title string, username string) (bool, error) {
-	doesBlogExists, err := SearchBlogByTitle(title)
-
-	if err != nil {
-		return false, err
-	}
-
-	if !doesBlogExists {
-		return false, errors.New("BLOG NOT FOUND")
-	}
-
-	filter := bson.M{
-		"title":    title,
-		"username": username,
-	}
-
-	var blog models.Blog
-	err = mongoDBCollection.FindOne(context.Background(), filter).Decode(&blog)
-
-	if err != nil {
-		if err.Error() == mongo.ErrNoDocuments.Error() {
-			return false, nil
-		}
-		return false, err
-	}
-
-	return true, nil
-}
-
-func UpdateBlog(title string, username string, newTitle string, newDescription string, newImagePath string, newTag string) error {
-	doesBlogExists, err := SearchBlogByTitle(title)
+func UpdateBlog(oldTitle string, username string, newTitle string, newDescription string, newImagePath string, newTag string) error {
+	doesBlogExists, err := SearchBlogByTitle(oldTitle)
 
 	if err != nil {
 		return err
@@ -296,7 +240,7 @@ func UpdateBlog(title string, username string, newTitle string, newDescription s
 
 	filter := bson.M{
 		"username": username,
-		"title":    title,
+		"title":    oldTitle,
 	}
 
 	updated := bson.M{
@@ -350,7 +294,7 @@ func DeleteBlog(title string, username string) error {
 	return nil
 }
 
-func GetBlogsByTagWithOffset(tag string, offset int, limit int) ([]models.Blog, error) {
+func GetBlogsByTagWithOffset(tag string, offset int, limit int) ([]*pb.Blog, error) {
 	var filter primitive.M
 	if tag == "All" {
 		filter = bson.M{}
@@ -367,17 +311,17 @@ func GetBlogsByTagWithOffset(tag string, offset int, limit int) ([]models.Blog, 
 	}
 	defer cursor.Close(context.Background())
 
-	var blogs []models.Blog
+	var blogs []*pb.Blog
 
 	defer cursor.Close(context.Background())
 
 	for cursor.Next(context.Background()) {
-		var blog models.Blog
+		var blog pb.Blog
 
 		if err = cursor.Decode(&blog); err != nil {
 			return nil, err
 		}
-		blogs = append(blogs, blog)
+		blogs = append(blogs, &blog)
 	}
 	return blogs, nil
 }

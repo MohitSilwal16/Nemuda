@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+package proto;
+option go_package = "./pb";
+
+service UserService {
+    rpc DoesUserExists (UserExistsRequest) returns (UserExistsResponse) {}
+    rpc SearchUsersByStartingPattern (SearchUsersByStartingPatternRequest) returns (SearchUsersByStartingPatternResponse) {}
+    rpc GetMessagesWithPagination (GetMessagesRequest) returns (GetMessagesResponse) {}
+}
+
+message UserExistsRequest {
+    string username = 1;
+}
+
+message UserExistsResponse {
+    bool doesUserExists = 1;
+}
+
+message Message {
+	string sender = 1;     
+	string receiver = 2;     
+	string messageContent = 3;
+	string status = 4;
+	string dateTime = 5;
+}
+
+message UserAndLastMessage {
+    string username = 1;
+    Message lastMessage = 2;
+}
+
+message SearchUsersByStartingPatternRequest {
+    string sessionToken = 1;
+    string searchPattern = 2;
+}
+
+message SearchUsersByStartingPatternResponse {
+    repeated UserAndLastMessage usersAndLastMessage = 1;
+}
+
+message GetMessagesRequest {
+    string sessionToken = 1;
+    int32 offset = 2;
+    string user1 = 3;
+}
+
+message GetMessagesResponse {
+    repeated Message messages = 1;
+    int32 nextOffset = 2;
+}
+
+// Only for bundling data together
+message User {
+    string username = 1;
+    string password = 2;
+    string token = 3;
+}

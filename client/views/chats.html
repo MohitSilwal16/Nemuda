@@ -38,11 +38,11 @@
       <div class="w-full"></div>
       <button
         class="px-8 m-4 text-3xl font-normal bg-blue-700 rounded-md lg:text-xl hover:bg-blue-800"
-        hx-get="/blogs/All?offset=0"
+        hx-get="/blogs/All"
         hx-target="#chat-body"
         hx-swap="outerHTML"
         onclick="socket.close()"
-        hx-push-url="/home"
+        hx-push-url="/home/All"
       >
         Home
       </button>

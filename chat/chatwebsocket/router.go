@@ -60,7 +60,7 @@ func (router *Router) Run() {
 			}
 			router.Lock()
 
-			// If user is connecting same account from two devices, tabs or windows disconnect both accounts
+			// If user is connecting same account from two devices, tabs or windows then disconnect both accounts
 			if oldClient, ok := router.ClientsMap[client.Username]; ok {
 				close(oldClient.SendMessage)
 				if oldClient.Connection != nil {

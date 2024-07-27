@@ -1,13 +1,13 @@
 {{ range .Users }}
 <div
   class="px-5 py-8 mb-8 mr-5 bg-blue-700 rounded-lg cursor-pointer lg:py-5 lg:mb-5"
-  hx-get="/message/{{ .User }}?offset=0"
+  hx-get="/message/{{ .Username }}?offset=0"
   hx-target="#message-body"
-  onclick="onUserClick('{{ .User }}')"
+  onclick="onUserClick('{{ .Username }}')"
 >
   <!-- Username -->
   <p class="mb-5 font-semibold lg:mb-0" >
-    {{ .User }}
+    {{ .Username }}
   </p>
 
   <div
@@ -21,10 +21,10 @@
 
     <!-- Message Status -->
     <p
-      class="{{ if eq .LastMessage.Receiver .User }} text-xl lg:text-xs {{ else if eq .LastMessage.Status "Read" }} hidden {{ else }} text-xl font-medium text-green-400 lg:text-sm  {{ end }}"
+      class="{{ if eq .LastMessage.Receiver .Username }} text-xl lg:text-xs {{ else if eq .LastMessage.Status "Read" }} hidden {{ else }} text-xl font-medium text-green-400 lg:text-sm  {{ end }}"
      
     >
-      {{ if eq .LastMessage.Receiver .User }} {{ .LastMessage.Status }} {{ else
+      {{ if eq .LastMessage.Receiver .Username }} {{ .LastMessage.Status }} {{ else
       }} New Msg {{ end }}
     </p>
     {{ else }} No Messages {{ end }}

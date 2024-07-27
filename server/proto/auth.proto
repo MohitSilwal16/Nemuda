@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package proto;
+option go_package = "./pb";
+
+service AuthService {
+    rpc Login (AuthRequest) returns (AuthResponse) {}
+    rpc Logout (LogoutRequest) returns (LogoutResponse) {}
+    rpc Register (AuthRequest) returns (AuthResponse) {}
+    rpc VerifySessionToken (ValidationRequest) returns (ValidationResponse) {}
+}
+
+message AuthRequest {
+    string username = 1;
+    string password = 2;
+}
+
+message AuthResponse {
+    string sessionToken = 1;
+}
+
+message ValidationRequest {
+    string sessionToken = 1;
+}
+
+message ValidationResponse {
+    bool isUserVerified = 1;
+}
+
+message LogoutRequest {
+    string sessionToken = 1;
+}
+
+message LogoutResponse {
+    bool isUserLoggedOut = 1;
+}

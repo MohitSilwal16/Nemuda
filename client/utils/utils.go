@@ -1,10 +1,14 @@
 package utils
 
 import (
+	"bytes"
+	"io"
 	"log"
+	"mime/multipart"
 	"os"
 	"os/exec"
 	"runtime"
+	"strings"
 	"unicode"
 )
 
@@ -59,4 +63,37 @@ func Contains(slice []string, item string) bool {
 		}
 	}
 	return false
+}
+
+func TrimGrpcErrorMessage(errMsg string) string {
+	// Split the error message
+	parts := strings.Split(errMsg, "desc = ")
+	if len(parts) > 1 {
+		// Return the part after "desc = "
+		return parts[1]
+	}
+	// Return the original error message if "desc = " is not found
+	return errMsg
+}
+
+func ReturnAlertMessage(msg string) string {
+	return "<script>alert('" + TrimGrpcErrorMessage(msg) + "')</script>"
+}
+
+// FileHeaderToBytes converts a *multipart.FileHeader to a byte slice.
+func FileHeaderToBytes(fileHeader *multipart.FileHeader) ([]byte, error) {
+	// Open the uploaded file
+	file, err := fileHeader.Open()
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	// Read the file content into a buffer
+	var buf bytes.Buffer
+	if _, err := io.Copy(&buf, file); err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
 }

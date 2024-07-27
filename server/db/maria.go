@@ -7,7 +7,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/MohitSilwal16/Nemuda/server/models"
+	pb "github.com/MohitSilwal16/Nemuda/server/pb"
 	"github.com/MohitSilwal16/Nemuda/server/utils"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
@@ -54,6 +54,11 @@ func Init_MariaDB() error {
 
 // Helper methods
 func IsSessionTokenValid(token string) (bool, error) {
+	// If a user logs outs then his cookie's value is set as empty string ""
+	if token == "" {
+		return false, nil
+	}
+
 	rows, err := sqlDB.Query("SELECT 1 from users WHERE Token = ?;", token)
 
 	if err != nil {
@@ -129,7 +134,7 @@ func DoesUserExists(username string) (bool, error) {
 	return rows.Next(), nil
 }
 
-func AddUser(user models.User) error {
+func AddUser(user *pb.User) error {
 	userAlreadyExists, err := DoesUserExists(user.Username)
 
 	if err != nil {
@@ -179,7 +184,7 @@ func AddUser(user models.User) error {
 	return nil
 }
 
-func VerifyIdPass(user models.User) (bool, error) {
+func VerifyIdPass(user *pb.User) (bool, error) {
 	doesUserExists, err := DoesUserExists(user.Username)
 
 	if err != nil {
@@ -227,31 +232,6 @@ func GetUsernameBySessionToken(sessionToken string) (string, error) {
 	}
 }
 
-func GetMessages(sender string, receiver string) ([]models.Message, error) {
-	tableSender := "messages_" + sender
-	tableReceiver := "messages_" + receiver
-
-	rows, err := sqlDB.Query("SELECT * FROM "+tableSender+" WHERE Sender = ? UNION SELECT * FROM "+tableReceiver+" WHERE Sender = ? ORDER BY DateTime;", receiver, sender)
-
-	if err != nil {
-		return nil, err
-	}
-
-	defer rows.Close()
-
-	var messages []models.Message
-	for rows.Next() {
-		var message models.Message
-
-		if err = rows.Scan(&message.Sender, &message.Receiver, &message.MessageContent, &message.Status, &message.DateTime); err != nil {
-			return nil, err
-		}
-		messages = append(messages, message)
-	}
-
-	return messages, nil
-}
-
 // Return users whose name starts with searchString
 func SearchUsersByPattern(searchString string) ([]string, error) {
 	searchString += "%"
@@ -294,11 +274,11 @@ func ChangeStatusOfMessage(sender string, receiver string, newStatus string) err
 	return nil
 }
 
-func FetchLastMessage(sender string, receiver string) (models.Message, error) {
+func FetchLastMessage(sender string, receiver string) (*pb.Message, error) {
 	tableSender := "messages_" + sender
 	tableReceiver := "messages_" + receiver
 
-	var lastMessage models.Message
+	var lastMessage pb.Message
 	query := `
 		SELECT * FROM (
 			SELECT * FROM ` + tableSender + ` WHERE Sender = ? 
@@ -310,20 +290,20 @@ func FetchLastMessage(sender string, receiver string) (models.Message, error) {
 
 	rows, err := sqlDB.Query(query, receiver, sender)
 	if err != nil {
-		return lastMessage, err
+		return &lastMessage, err
 	}
 	defer rows.Close()
 
 	if rows.Next() {
 		if err = rows.Scan(&lastMessage.Sender, &lastMessage.Receiver, &lastMessage.MessageContent, &lastMessage.Status, &lastMessage.DateTime); err != nil {
-			return lastMessage, err
+			return &lastMessage, err
 		}
-		return lastMessage, nil
+		return &lastMessage, nil
 	}
-	return lastMessage, nil
+	return &lastMessage, nil
 }
 
-func GetMessagesWithOffset(sender string, receiver string, offset int, limit int) ([]models.Message, error) {
+func GetMessagesWithOffset(sender string, receiver string, offset int, limit int) ([]*pb.Message, error) {
 	tableSender := "messages_" + sender
 	tableReceiver := "messages_" + receiver
 
@@ -335,14 +315,14 @@ func GetMessagesWithOffset(sender string, receiver string, offset int, limit int
 
 	defer rows.Close()
 
-	var messages []models.Message
+	var messages []*pb.Message
 	for rows.Next() {
-		var message models.Message
+		var message pb.Message
 
 		if err = rows.Scan(&message.Sender, &message.Receiver, &message.MessageContent, &message.Status, &message.DateTime); err != nil {
 			return nil, err
 		}
-		messages = append(messages, message)
+		messages = append(messages, &message)
 	}
 
 	return messages, nil
