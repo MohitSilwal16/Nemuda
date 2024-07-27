@@ -3,26 +3,22 @@
     "$oid": "669785c7f784eeb779e00d63"
   },
   "username": "Nimesh",
-  "title": "I like Hitler's wife",
+  "title": "I love Hitler's wife",
   "tag": "Political",
-  "description": "I am Nimesh Gadhvi, owner of Gadhvi Airlines",
+  "description": "I'm Nimesh Gadhvi, owner of Gadhvi Airlines.",
   "likes": 3,
   "likedusername": [],
   "comments": [
     {
       "username": "Konark",
       "description": "Dammm bruhh"
-    },
-    {
-      "username": "Nimesh",
-      "description": "Pyarr kiya to darna kya"
     }
   ],
-  "imagepath": "https://nemuda.s3.eu-north-1.amazonaws.com/I%20like%20Hitler%27s%20wife.png",
+  "imagepath": "https://nemuda.s3.eu-north-1.amazonaws.com/I%20love%20Hitler%27s%20wife.png",
   "likedUsername": [
+    "Nimesh",
     "Konark",
-    "Palash",
-    "Nimesh"
+    "Palash"
   ]
 },
 {
@@ -30,9 +26,9 @@
     "$oid": "6697865ff784eeb779e00d64"
   },
   "username": "Palash",
-  "title": "JS Frameworks're best",
-  "tag": "Programming",
-  "description": "I love JS Frameworks. Node modules&#39;re so light",
+  "title": "I love JS Frameworks",
+  "tag": "Educational",
+  "description": "I love JS Frameworks.\r\nNode modules're so light",
   "likes": 2,
   "likedusername": [],
   "comments": [
@@ -49,7 +45,7 @@
       "description": "Development mai paisa nahi h"
     }
   ],
-  "imagepath": "https://nemuda.s3.eu-north-1.amazonaws.com/JS%20Frameworks%27re%20best.png",
+  "imagepath": "https://nemuda.s3.eu-north-1.amazonaws.com/I%20love%20JS%20Frameworks.png",
   "likedUsername": [
     "Konark",
     "Prachin"
@@ -114,23 +110,16 @@
     "$oid": "6697884880d6eb4d126ae3f2"
   },
   "username": "Nimesh",
-  "title": "Hello there",
+  "title": "Hello",
   "tag": "Other",
-  "description": "I&#39;m Nimesh Gadhvi, owner of Gadhvi Airlines",
-  "likes": 0,
+  "description": "I'm Nimesh Gadhvi, owner of Gadhvi Airlines",
+  "likes": 1,
   "likedusername": [],
-  "comments": [
-    {
-      "username": "Nimesh",
-      "description": "Hello 1"
-    },
-    {
-      "username": "Nimesh",
-      "description": "Hello 2"
-    }
-  ],
-  "imagepath": "https://nemuda.s3.eu-north-1.amazonaws.com/Hello%20there.png",
-  "likedUsername": []
+  "comments": [],
+  "imagepath": "https://nemuda.s3.eu-north-1.amazonaws.com/Hello.png",
+  "likedUsername": [
+    "Nimesh"
+  ]
 },
 {
   "_id": {
@@ -172,17 +161,4 @@
   "likedUsername": [
     "Parth"
   ]
-},
-{
-  "_id": {
-    "$oid": "66a46d8163742f73ed7f25f4"
-  },
-  "username": "Robin",
-  "title": "Aspas & Tex're on Fire",
-  "tag": "Other",
-  "description": "Aspas &amp; Tex both were on fire against Kru",
-  "likes": 0,
-  "likedusername": [],
-  "comments": [],
-  "imagepath": "https://nemuda.s3.eu-north-1.amazonaws.com/Aspas%20%26%20Tex%27re%20on%20Fire.png"
 }]

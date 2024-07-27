@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	pb "github.com/MohitSilwal16/Nemuda/server/pb"
 	"github.com/MohitSilwal16/Nemuda/server/utils"
@@ -33,7 +34,6 @@ func Init_MariaDB() error {
 
 	// On port 3306 MYSQL is running
 	// username:password@tcp(localhost:3306)/mydb
-
 	dbURL := fmt.Sprintf("%s:%s@tcp(localhost:%s)/%s", dbUser, dbPass, dbPort, dbName)
 
 	sqlDB, err = sql.Open("mysql", dbURL)
@@ -55,6 +55,7 @@ func Init_MariaDB() error {
 // Helper methods
 func IsSessionTokenValid(token string) (bool, error) {
 	// If a user logs outs then his cookie's value is set as empty string ""
+	// So "" is always Invalid Token
 	if token == "" {
 		return false, nil
 	}
@@ -72,7 +73,6 @@ func IsSessionTokenValid(token string) (bool, error) {
 }
 
 func UpdateTokenInDBAndReturn(username string) (string, error) {
-	// Generate session token
 	sessionToken := utils.TokenGenerator()
 
 	// Checking whether the generated session token is already used or not
@@ -157,6 +157,7 @@ func AddUser(user *pb.User) error {
 		return err
 	}
 
+	user.Username = strings.ToLower(user.Username)
 	tableName := "messages_" + user.Username
 
 	sqlQuery := `CREATE TABLE ` + tableName + ` (
@@ -169,7 +170,6 @@ func AddUser(user *pb.User) error {
         FOREIGN KEY (Receiver) REFERENCES users (Username)
     )`
 
-	// Prepare the SQL statement
 	stmt, err = sqlDB.Prepare(sqlQuery)
 	if err != nil {
 		return err
@@ -257,13 +257,16 @@ func SearchUsersByPattern(searchString string) ([]string, error) {
 	return usernames, nil
 }
 
-func ChangeStatusOfMessage(sender string, receiver string, newStatus string) error {
+func ChangeStatusOfMessage(user string, user1 string, newStatus string) error {
+	user = strings.ToLower(user)
+	user1 = strings.ToLower(user1)
+
 	var err error
 	if newStatus == "Read" {
-		tableName := "messages_" + sender
-		_, err = sqlDB.Exec("UPDATE "+tableName+" SET Status = 'Read' WHERE Sender = ?;", receiver)
+		tableName := "messages_" + user
+		_, err = sqlDB.Exec("UPDATE "+tableName+" SET Status = 'Read' WHERE Sender = ?;", user1)
 	} else if newStatus == "Delivered" {
-		tableName := "messages_" + sender
+		tableName := "messages_" + user
 		_, err = sqlDB.Exec("UPDATE " + tableName + " SET Status = 'Delivered' WHERE Status = 'Sent';")
 	}
 
@@ -274,9 +277,12 @@ func ChangeStatusOfMessage(sender string, receiver string, newStatus string) err
 	return nil
 }
 
-func FetchLastMessage(sender string, receiver string) (*pb.Message, error) {
-	tableSender := "messages_" + sender
-	tableReceiver := "messages_" + receiver
+func FetchLastMessage(user string, user1 string) (*pb.Message, error) {
+	user = strings.ToLower(user)
+	user1 = strings.ToLower(user1)
+
+	tableSender := "messages_" + user
+	tableReceiver := "messages_" + user1
 
 	var lastMessage pb.Message
 	query := `
@@ -288,7 +294,7 @@ func FetchLastMessage(sender string, receiver string) (*pb.Message, error) {
 		ORDER BY DateTime DESC LIMIT 1;
 	`
 
-	rows, err := sqlDB.Query(query, receiver, sender)
+	rows, err := sqlDB.Query(query, user1, user)
 	if err != nil {
 		return &lastMessage, err
 	}
@@ -303,11 +309,14 @@ func FetchLastMessage(sender string, receiver string) (*pb.Message, error) {
 	return &lastMessage, nil
 }
 
-func GetMessagesWithOffset(sender string, receiver string, offset int, limit int) ([]*pb.Message, error) {
-	tableSender := "messages_" + sender
-	tableReceiver := "messages_" + receiver
+func GetMessagesWithOffset(user string, user1 string, offset int, limit int) ([]*pb.Message, error) {
+	user = strings.ToLower(user)
+	user1 = strings.ToLower(user1)
 
-	rows, err := sqlDB.Query("(SELECT * FROM "+tableSender+" WHERE Sender = ? UNION SELECT * FROM "+tableReceiver+" WHERE Sender = ? ORDER BY DateTime DESC LIMIT ? OFFSET ?)ORDER BY DateTime;", receiver, sender, limit, offset)
+	tableSender := "messages_" + user
+	tableReceiver := "messages_" + user1
+
+	rows, err := sqlDB.Query("(SELECT * FROM "+tableSender+" WHERE Sender = ? UNION SELECT * FROM "+tableReceiver+" WHERE Sender = ? ORDER BY DateTime DESC LIMIT ? OFFSET ?)ORDER BY DateTime;", user1, user, limit, offset)
 
 	if err != nil {
 		return nil, err
@@ -327,3 +336,4 @@ func GetMessagesWithOffset(sender string, receiver string, offset int, limit int
 
 	return messages, nil
 }
+
