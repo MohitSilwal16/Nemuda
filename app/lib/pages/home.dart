@@ -115,12 +115,11 @@ class _HomePageState extends State<HomePage> {
           height: size.height,
           decoration: const BoxDecoration(
             image: DecorationImage(
-              image: AssetImage("assets/background-home.jpg"),
+              image: AssetImage("assets/home_bg.jpg"),
               fit: BoxFit.cover,
             ),
           ),
           child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
             child: blogs.isNotEmpty
                 ? Column(
                     children: List.generate(
@@ -160,12 +159,8 @@ class _HomePageState extends State<HomePage> {
                         }
 
                         return BlogCard(
+                          blog: blogs[index],
                           size: size,
-                          imagePath: blogs[index].imagePath,
-                          description: blogs[index].description,
-                          tag: blogs[index].tag,
-                          title: blogs[index].title,
-                          username: blogs[index].username,
                         );
                       },
                     ),
@@ -212,7 +207,7 @@ class _HomePageState extends State<HomePage> {
       child: Container(
         decoration: const BoxDecoration(
           image: DecorationImage(
-            image: AssetImage("assets/background-home.jpg"),
+            image: AssetImage("assets/home_bg.jpg"),
             fit: BoxFit.fill,
           ),
         ),

@@ -26,7 +26,6 @@ void main() async {
   // Init GRPC Clients & Hivebox
   await Clients().init();
 
-
   runApp(const MyApp());
 }
 
@@ -52,7 +51,7 @@ class MyApp extends StatelessWidget {
       ),
       debugShowCheckedModeBanner: false,
       routes: {
-        "home":(context) => const HomePage(),
+        "home": (context) => const HomePage(),
         "login": (context) => LoginPage(),
         "register": (context) => RegisterPage(),
       },
