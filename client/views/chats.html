@@ -38,7 +38,7 @@
       <div class="w-full"></div>
       <button
         class="px-8 m-4 text-3xl font-normal bg-blue-700 rounded-md lg:text-xl hover:bg-blue-800"
-        hx-get="/blogs/All"
+        hx-get="/home/All"
         hx-target="#chat-body"
         hx-swap="outerHTML"
         onclick="socket.close()"
@@ -182,8 +182,8 @@
     try {
       let sessionToken = getSessionToken();
       var socket = new WebSocket(
-        "ws://127.0.0.1:3000/ws/chat/" + sessionToken
-        // "ws://nemuda.hopto.org:3000/ws/chat/" + sessionToken
+        // "ws://127.0.0.1:3000/ws/chat/" + sessionToken
+        "ws://nemuda.hopto.org:3000/ws/chat/" + sessionToken
       );
     } catch (e) {
       openAlert("WebSocket not Connected", "Try Refresing Browser");
@@ -202,7 +202,6 @@
 
     // Listen for messages
     socket.addEventListener("message", function (event) {
-      console.log(event.data);
       const responseData = JSON.parse(event.data);
       const titleUser = document.getElementById("title").innerText;
 
@@ -323,7 +322,6 @@
 
       socket.send(JSON.stringify(jsonData));
       messageInput.value = "";
-      console.log("Message sent:" + JSON.stringify(jsonData));
     }
 
     function markMessageAsRead(receiver) {
@@ -334,7 +332,6 @@
       };
 
       socket.send(JSON.stringify(jsonData));
-      console.log("Message sent:" + JSON.stringify(jsonData));
     }
 
     function getSessionToken() {

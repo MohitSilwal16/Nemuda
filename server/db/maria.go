@@ -52,7 +52,6 @@ func Init_MariaDB() error {
 	return nil
 }
 
-// Helper methods
 func IsSessionTokenValid(token string) (bool, error) {
 	// If a user logs outs then his cookie's value is set as empty string ""
 	// So "" is always Invalid Token
@@ -236,7 +235,7 @@ func GetUsernameBySessionToken(sessionToken string) (string, error) {
 func SearchUsersByPattern(searchString string) ([]string, error) {
 	searchString += "%"
 
-	rows, err := sqlDB.Query("SELECT Username FROM users WHERE Username LIKE ?;", searchString)
+	rows, err := sqlDB.Query("SELECT Username FROM users WHERE Username LIKE ? LIMIT 10;", searchString)
 
 	if err != nil {
 		return nil, err
@@ -336,4 +335,3 @@ func GetMessagesWithOffset(user string, user1 string, offset int, limit int) ([]
 
 	return messages, nil
 }
-

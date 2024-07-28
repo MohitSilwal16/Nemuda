@@ -50,16 +50,10 @@ func (s *BlogsServer) PostBlog(ctx context.Context, req *pb.PostBlogRequest) (*p
 		return nil, ErrInvalidBlogDescriptionFormat
 	}
 
-	var isMalicious bool
-	req.Description, isMalicious = utils.SanitizeMessage(req.Description)
+	isMalicious := utils.IsMessageMalicious(req.Description)
 
 	if isMalicious {
-		// If it's empty message then it can't be sanitized & definitely mallicious
-		// User may even add XSS after a message for eg. "Hello <script>alert('Hello')</script>"
-		// In this case it won't be detected & it's gonna filter out bad message to "Hello" only
-		if req.Description == "" {
-			return nil, ErrXSSDetected
-		}
+		return nil, ErrXSSDetected
 	}
 
 	image := req.GetImageData()
@@ -210,16 +204,10 @@ func (s *BlogsServer) UpdateBlog(ctx context.Context, req *pb.UpdateBlogRequest)
 		return nil, ErrInvalidBlogDescriptionFormat
 	}
 
-	var isMalicious bool
-	req.NewDescription, isMalicious = utils.SanitizeMessage(req.NewDescription)
+	isMalicious := utils.IsMessageMalicious(req.NewDescription)
 
 	if isMalicious {
-		// If it's empty message then it can't be sanitized & definitely mallicious
-		// User may even add XSS after a message for eg. "Hello <script>alert('Hello')</script>"
-		// In this case it won't be detected & it's gonna filter out bad message to "Hello" only
-		if req.NewDescription == "" {
-			return nil, ErrXSSDetected
-		}
+		return nil, ErrXSSDetected
 	}
 
 	image := req.GetNewImageData()

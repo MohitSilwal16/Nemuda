@@ -41,7 +41,6 @@ func (s *UserServer) SearchUsersByStartingPattern(ctx context.Context, req *pb.S
 	// INTERNAL SERVER ERROR
 
 	username, err := db.GetUsernameBySessionToken(req.SessionToken)
-
 	if err != nil {
 		if err.Error() == "INVALID SESSION TOKEN" {
 			return nil, ErrInvalidSessionToken
@@ -53,7 +52,6 @@ func (s *UserServer) SearchUsersByStartingPattern(ctx context.Context, req *pb.S
 	}
 
 	users, err := db.SearchUsersByPattern(req.SearchPattern)
-
 	if err != nil {
 		log.Println("Error:", err)
 		log.Println("Description: Cannot Search Users with some pattern\nSource: SearchUsersByStartingPattern()")

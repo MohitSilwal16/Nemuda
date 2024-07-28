@@ -17,14 +17,14 @@ var (
 	ErrInvalidOffset       = errors.New("INVALID OFFSET") // Used in Messages & Blogs Pagination
 
 	// Blogs
-	ErrInvalidBlogTag                      = errors.New("INVALID BLOG TAG")
-	ErrInvalidBlogTitleFormat              = errors.New("TITLE MUST BE B'TWIN 5-20 CHARS & ALPHANUMERIC")
-	ErrInvalidBlogDescriptionFormat        = errors.New("DESCRIPTION MUST BE B'TWIN 4-50 CHARS")
-	ErrInvalidBlogCommentDescriptionFormat = errors.New("COMMENT MUST BE B'TWIN 4-50 CHARS")
-	ErrInvalidBlogImageFileType            = errors.New("INVALID FILE TYPE, ONLY JPG, JPEG & PNG ARE ACCEPTED")
-	ErrInvalidBlogImageSize                = errors.New("IMAGE SIZE EXCEEDS 2 MB")
-	ErrInvalidBlogTitleAlreadyUsed         = errors.New("BLOG TITLE IS ALREADY USED")
-	ErrBlogNotFound                        = errors.New("BLOG NOT FOUND")
+	ErrInvalidBlogTag               = errors.New("INVALID BLOG TAG")
+	ErrInvalidBlogTitleFormat       = errors.New("TITLE MUST BE B'TWIN 5-20 CHARS & ALPHANUMERIC")
+	ErrInvalidBlogDescriptionFormat = errors.New("DESCRIPTION MUST BE B'TWIN 4-50 CHARS")
+	ErrInvalidBlogImageFileType     = errors.New("INVALID FILE TYPE, ONLY JPG, JPEG & PNG ARE ACCEPTED")
+	ErrInvalidBlogImageSize         = errors.New("IMAGE SIZE EXCEEDS 2 MB")
+	ErrInvalidBlogTitleAlreadyUsed  = errors.New("BLOG TITLE IS ALREADY USED")
+	ErrBlogNotFound                 = errors.New("BLOG NOT FOUND")
+	ErrInvalidBlogCommentFormat     = errors.New("COMMENT MUST BE B'TWIN 4-50 CHARS")
 )
 
 const (

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 import 'package:double_back_to_close_app/double_back_to_close_app.dart';
 
+import 'package:app/utils/components/username_textfield.dart';
+import 'package:app/services/auth.dart';
+import 'package:app/utils/utils.dart';
 import 'package:app/utils/components/snackbar.dart';
-import 'package:app/pages/login.dart';
 import 'package:app/utils/components/welcome_to_nemuda.dart';
 import 'package:app/utils/components/register_login_text_button.dart';
 import 'package:app/utils/components/button.dart';
@@ -17,23 +20,25 @@ class RegisterPage extends StatelessWidget {
   final controllerUsername = TextEditingController();
   final controllerPassword = TextEditingController();
 
-  register() {
-    // TODO: Add Registration Logic
-
-    if (formKey.currentState!.validate()) {
-      print(controllerUsername.text);
-      print(controllerPassword.text);
-      print("Form Validated");
+  onSubmit(BuildContext context) {
+    if (!formKey.currentState!.validate()) {
+      return;
     }
+
+    final response = register(controllerUsername.text, controllerPassword.text);
+
+    response.then((responseData) {
+      Hive.box("session").put("sessionToken", responseData.sessionToken);
+
+      Navigator.pushReplacementNamed(context, "home");
+    }).catchError((error) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(returnSnackbar(trimGrpcErrorMessage(error.toString())));
+    });
   }
 
   redirectToLoginPage(BuildContext context) {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => LoginPage(),
-      ),
-    );
+    Navigator.pushReplacementNamed(context, "login");
   }
 
   @override
@@ -55,20 +60,21 @@ class RegisterPage extends StatelessWidget {
             ),
             child: SingleChildScrollView(
               child: Form(
+                autovalidateMode: AutovalidateMode.onUserInteraction,
                 key: formKey,
                 child: Column(
                   children: [
                     SizedBox(
                       height: size.height * .1,
                     ),
-        
+
                     // Welcome to Nemu 2.0
                     const WelcomeToNemudaText(),
-        
+
                     SizedBox(
                       height: size.height * .05,
                     ),
-        
+
                     // Register Text
                     const Text(
                       "Register",
@@ -77,22 +83,15 @@ class RegisterPage extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-        
+
                     SizedBox(
                       height: size.height * .05,
                     ),
-        
+
                     // Username textfield
-                    MyTextField(
-                      controller: controllerUsername,
-                      hintText: "Username",
-                      obscureText: false,
-                      validator: Validators.validateUsername,
-                      keyboardType: TextInputType.name,
-                      suffixIconData: Icons.person,
-                    ),
-        
-                    // // Password Textfield
+                    MyUsernameTextField(controller: controllerUsername),
+
+                    // Password Textfield
                     MyTextField(
                       hintText: "Password",
                       obscureText: true,
@@ -101,25 +100,28 @@ class RegisterPage extends StatelessWidget {
                       keyboardType: TextInputType.visiblePassword,
                       suffixIconData: Icons.visibility,
                     ),
-        
+
                     SizedBox(height: size.height * .05),
-        
+
                     // Register Button
                     MyButton(
                       text: "Register",
-                      onPressed: register,
+                      onPressed: () => onSubmit(context),
                       size: size,
+                      heightWRTScreen: .07,
+                      widthWRTScreen: .85,
+                      fontSize: 18,
                     ),
-        
+
                     SizedBox(height: size.height * .05),
-        
+
                     // Redirect to Register Page
                     RegisterLoginTextButton(
                       text: "Have an Account ?",
                       buttonText: "Login",
-                      onTap:()=> redirectToLoginPage(context),
+                      onTap: () => redirectToLoginPage(context),
                     ),
-        
+
                     // End
                   ],
                 ),

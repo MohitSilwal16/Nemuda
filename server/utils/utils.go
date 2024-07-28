@@ -9,12 +9,11 @@ import (
 	"mime/multipart"
 	"os"
 	"os/exec"
+	"regexp"
 	"runtime"
-	"strings"
 	"time"
 	"unicode"
 
-	"github.com/microcosm-cc/bluemonday"
 	"google.golang.org/grpc"
 )
 
@@ -85,21 +84,34 @@ func Contains(slice []string, item string) bool {
 	return false
 }
 
-func SanitizeMessage(message string) (string, bool) {
-	p := bluemonday.StrictPolicy()
+func IsMessageMalicious(message string) bool {
+	// List of potentially dangerous patterns
+	dangerousPatterns := []string{
+		`(?i)<script.*?>`,
+		`(?i)javascript:`,
+		`(?i)on\w+\s*=`,
+		`(?i)data:`,
+		`(?i)vbscript:`,
+		`(?i)<iframe`,
+		`(?i)<embed`,
+		`(?i)<object`,
+		`(?i)<img.*?onerror`,
+		`(?i)<[^>]*on\w+\s*=`,
+		`(?i)data:[^,]*;base64,`,
+		`(?i)<marquee`,
+		`(?i)<blink`,
+		`(?i)<svg`,
+		`(?i)<xml`,
+		`<[^>]*>`,
+	}
 
-	// Sanitize the message
-	sanitized := p.Sanitize(message)
-
-	// Remove any remaining whitespace and newlines
-	sanitized = strings.TrimSpace(sanitized)
-	sanitized = strings.ReplaceAll(sanitized, "\n", " ")
-	sanitized = strings.ReplaceAll(sanitized, "\r", " ")
-
-	// Check if the sanitized message is different from the original
-	isMalicious := sanitized != message
-
-	return sanitized, isMalicious
+	// Check for dangerous patterns
+	for _, pattern := range dangerousPatterns {
+		if matched, _ := regexp.MatchString(pattern, message); matched {
+			return true
+		}
+	}
+	return false
 }
 
 func BytesToMultipartFile(fileBytes []byte, fileName string) multipart.File {

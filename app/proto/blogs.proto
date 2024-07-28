@@ -1,0 +1,129 @@
+syntax = "proto3";
+
+package proto;
+option go_package = "./pb";
+
+service BlogsService {
+    // CRUD Operations on Blogs
+    rpc GetBlogsByTagWithPagination (GetBlogsRequest) returns (GetBlogsResponse) {}
+    rpc PostBlog (PostBlogRequest) returns (PostBlogResponse) {}
+    rpc UpdateBlog (UpdateBlogRequest) returns (UpdateBlogResponse) {}
+    rpc DeleteBlog (DeleteBlogRequest) returns (DeleteBlogResponse) {}
+
+    // Other Operations on Blogs
+    rpc GetBlogByTitle (GetBlogRequest) returns (GetBlogResponse) {}
+    rpc LikeBlog (LikeBlogRequest) returns (LikeBlogResponse) {}
+    rpc DislikeBlog (DislikeBlogRequest) returns (DislikeBlogResponse) {}
+    rpc AddComment (AddCommentRequest) returns (AddCommentResponse) {}
+    rpc SearchBlogByTitle (SearchBlogRequest) returns (SearchBlogResponse) {}
+}
+
+message Comment {
+	string username = 1;
+    string description = 2;
+}
+
+message Blog {
+	string username = 1;
+	string title = 2;
+	string tag = 3;
+	string description = 4;
+	uint32 likes = 5;
+	repeated string likedUsername = 6;
+	repeated Comment comments = 7;
+	string imagePath = 8;
+}
+
+message GetBlogsRequest {
+    string sessionToken = 1;
+    int32 offset = 2;
+    string tag = 3;
+}
+
+message GetBlogsResponse {
+    repeated Blog blogs = 1;
+    int32 nextOffset = 2;
+}
+
+message PostBlogRequest {
+    string sessionToken = 1;
+    string title = 2;
+    string tag = 3;
+    string description = 4;
+    bytes imageData = 5;
+}
+
+message PostBlogResponse {
+    bool isBlogAdded = 1;
+}
+
+message UpdateBlogRequest {
+    string sessionToken = 1;
+    string oldTitle = 2;
+    string newTitle = 3;
+    string newTag = 4;
+    string newDescription = 5;
+    bytes newImageData = 6;
+}
+
+message UpdateBlogResponse {
+    bool isBlogUpdated = 1;
+}
+
+message DeleteBlogRequest {
+    string sessionToken = 1;
+    string title = 2;
+}
+
+message DeleteBlogResponse {
+    bool isBlogDeleted = 1;
+}
+
+// Other Operations on Blogs
+message GetBlogRequest {
+    string sessionToken = 1;
+    string title = 2;
+}
+
+message GetBlogResponse {
+    Blog blog = 1;
+    bool isBlogLiked = 2;
+    bool isBlogUpdatableDeletable = 3;
+}
+
+message LikeBlogRequest {
+    string sessionToken = 1;
+    string title = 2;
+}
+
+message LikeBlogResponse {
+    bool isBlogLiked = 1;
+}
+
+message DislikeBlogRequest {
+    string sessionToken = 1;
+    string title = 2;
+}
+
+message DislikeBlogResponse {
+    bool isBlogDisliked = 1;
+}
+
+message AddCommentRequest {
+    string sessionToken = 1;
+    string title = 2;
+    string commentDescription = 3;
+}
+
+message AddCommentResponse {
+    bool isCommentAdded = 1;
+}
+
+message SearchBlogRequest {
+    string sessionToken = 1;
+    string title = 2;
+}
+
+message SearchBlogResponse {
+    bool doesBlogExists = 1;
+}

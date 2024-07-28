@@ -8,18 +8,24 @@ class MyButton extends StatelessWidget {
     required this.size,
     required this.text,
     required this.onPressed,
+    required this.heightWRTScreen,
+    required this.widthWRTScreen,
+    required this.fontSize,
   });
 
   final Size size;
   final String text;
   final void Function()? onPressed;
+  final double widthWRTScreen;
+  final double heightWRTScreen;
+  final double fontSize;
 
   @override
   Widget build(BuildContext context) {
     return ElevatedButton(
       style: ButtonStyle(
         fixedSize: WidgetStateProperty.all(
-          Size(size.width * .85, size.height * .07),
+          Size(size.width * widthWRTScreen, size.height * heightWRTScreen),
         ),
         backgroundColor: WidgetStatePropertyAll(MyColors.primaryColor),
         shape: WidgetStateProperty.all<RoundedRectangleBorder>(
@@ -33,10 +39,10 @@ class MyButton extends StatelessWidget {
       onPressed: onPressed,
       child: Text(
         text,
-        style: const TextStyle(
+        style: TextStyle(
           color: Colors.white,
           fontWeight: FontWeight.w600,
-          fontSize: 20,
+          fontSize: fontSize,
         ),
       ),
     );

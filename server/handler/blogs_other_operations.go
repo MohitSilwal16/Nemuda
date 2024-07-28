@@ -145,16 +145,12 @@ func (s *BlogsServer) AddComment(ctx context.Context, req *pb.AddCommentRequest)
 	}
 
 	if len(req.CommentDescription) < 5 || len(req.CommentDescription) > 50 {
-		return nil, ErrInvalidBlogCommentDescriptionFormat
+		return nil, ErrInvalidBlogCommentFormat
 	}
-
-	var isMalicious bool
-	req.CommentDescription, isMalicious = utils.SanitizeMessage(req.CommentDescription)
+	isMalicious := utils.IsMessageMalicious(req.CommentDescription)
 
 	if isMalicious {
-		if req.CommentDescription == "" {
-			return nil, ErrXSSDetected
-		}
+		return nil, ErrXSSDetected
 	}
 
 	comment := &pb.Comment{

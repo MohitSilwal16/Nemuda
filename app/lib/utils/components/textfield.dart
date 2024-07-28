@@ -24,7 +24,6 @@ class MyTextField extends StatefulWidget {
 
 class _MyTextFieldState extends State<MyTextField> {
   bool isHidden = true;
-  String? errorText;
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +35,6 @@ class _MyTextFieldState extends State<MyTextField> {
           border: const OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(10)),
           ),
-          errorText: errorText,
           hintText: widget.hintText,
           hintStyle: const TextStyle(color: Colors.white),
           counterStyle: const TextStyle(color: Colors.white),
@@ -61,13 +59,6 @@ class _MyTextFieldState extends State<MyTextField> {
         maxLength: 20,
         validator: widget.validator,
         obscureText: widget.obscureText && isHidden,
-        onChanged: (value) {
-          if (widget.validator != null){
-            setState(() {
-              errorText = widget.validator!(value);
-            });
-          }
-        },
       ),
     );
   }

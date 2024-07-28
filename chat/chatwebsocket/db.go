@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
@@ -123,6 +124,9 @@ func changeStatusOfMessage(client *Client, sender string, receiver string, newSt
 		log.Println("Null client\nSource: changeStatusOfMessage()")
 		return
 	}
+
+	sender = strings.ToLower(sender)
+	receiver = strings.ToLower(receiver)
 
 	var err error
 	if newStatus == "Read" {

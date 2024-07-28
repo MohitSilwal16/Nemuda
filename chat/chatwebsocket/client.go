@@ -60,18 +60,12 @@ func (client *Client) readMessages() {
 			continue
 		}
 
-		var isMalicious bool
-		wsMessage.Message, isMalicious = utils.SanitizeMessage(wsMessage.Message)
-
+		isMalicious := utils.IsMessageMalicious(wsMessage.Message)
 		if isMalicious {
-			// If it's empty message then it can't be sanitized & definitely mallicious
-			if wsMessage.Message == "" {
-				log.Println(wsMessage.Message)
-				client.SendMessage <- Message{
-					Error: "Whoops! Looks like someone tried to sprinkle some XSS magic. Nice attempt son",
-				}
-				continue
+			client.SendMessage <- Message{
+				Error: "Whoops! Looks like someone tried to sprinkle some XSS magic. Nice attempt son",
 			}
+			continue
 		}
 
 		if len(wsMessage.Message) > 100 {

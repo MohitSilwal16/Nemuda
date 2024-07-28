@@ -1,13 +1,17 @@
 import 'regex.dart';
 
 class Validators {
-  static String? validateUsername(String? value) {
+  static String? validateUsername(String? value, String? errorMessage) {
     if (value == null || value.isEmpty) {
       return 'This field is mandatory';
     }
 
     if (!RegexConstants.usernameRegex.hasMatch(value)) {
       return 'Alphanumeric & b\'twin 5-20 chars';
+    }
+
+    if (errorMessage != null ){
+      return errorMessage;
     }
 
     return null; // Return null if input is valid
