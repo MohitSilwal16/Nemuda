@@ -3,4 +3,6 @@ class RegexConstants {
 
   static final RegExp passwordRegex =
       RegExp(r'^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[!@#\$&*~]).{8,}$');
+
+  static final titleRegex = RegExp(r"^[a-zA-Z0-9 ,'&]*$");
 }

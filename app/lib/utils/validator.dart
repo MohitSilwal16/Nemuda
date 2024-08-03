@@ -28,4 +28,28 @@ class Validators {
 
     return null; // Return null if input is valid
   }
+
+  static String? validateTitle(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'This field is mandatory';
+    }
+
+    if (!RegexConstants.titleRegex.hasMatch(value)) {
+      return 'Min 5 & Max 20 chars';
+    }
+
+    return null; // Return null if input is valid
+  }
+
+  static String? validateDescription(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'This field is mandatory';
+    }
+
+    if (value.length < 5 || value.length > 50) {
+      return 'Min 5 & Max 50 chars';
+    }
+
+    return null; // Return null if input is valid
+  }
 }

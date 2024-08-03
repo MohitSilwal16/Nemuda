@@ -7,8 +7,10 @@ class MyTextField extends StatefulWidget {
     required this.obscureText,
     required this.validator,
     required this.controller,
-    required this.keyboardType,
-    required this.suffixIconData,
+    this.keyboardType,
+    this.suffixIconData,
+    this.maxLength = 20,
+    this.maxLines = 1,
   });
 
   final TextEditingController controller;
@@ -16,7 +18,9 @@ class MyTextField extends StatefulWidget {
   final bool obscureText;
   final String? Function(String?)? validator;
   final TextInputType? keyboardType;
-  final IconData suffixIconData;
+  final IconData? suffixIconData;
+  final int maxLength;
+  final int maxLines;
 
   @override
   State<MyTextField> createState() => _MyTextFieldState();
@@ -56,7 +60,8 @@ class _MyTextFieldState extends State<MyTextField> {
           ),
         ),
         keyboardType: widget.keyboardType,
-        maxLength: 20,
+        maxLength: widget.maxLength,
+        maxLines: widget.maxLines,
         validator: widget.validator,
         obscureText: widget.obscureText && isHidden,
       ),

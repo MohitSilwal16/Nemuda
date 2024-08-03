@@ -25,15 +25,7 @@ class _HomePageState extends State<HomePage> {
   late int offset = 0;
   var title = "All";
 
-  final tags = [
-    "All",
-    "Political",
-    "Technical",
-    "Educational",
-    "Geographical",
-    "Programming",
-    "Other"
-  ];
+  final tags = tagsListHomePage;
 
   @override
   void initState() {
@@ -54,6 +46,26 @@ class _HomePageState extends State<HomePage> {
     });
 
     super.initState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    getBlogsWithPagination("All", 0).then((res) {
+      setState(() {
+        blogs = res.blogs;
+        offset = res.nextOffset;
+      });
+    }).catchError((err) {
+      final trimmedGrpcError = trimGrpcErrorMessage(err.toString());
+
+      ScaffoldMessenger.of(context)
+          .showSnackBar(returnSnackbar(trimmedGrpcError));
+
+      if (trimmedGrpcError == "INVALID SESSION TOKEN") {
+        Navigator.pushReplacementNamed(context, "login");
+      }
+    });
+    super.didChangeDependencies();
   }
 
   @override
@@ -99,7 +111,9 @@ class _HomePageState extends State<HomePage> {
         backgroundColor: MyColors.primaryColor,
         radius: 35,
         child: IconButton(
-          onPressed: () {},
+          onPressed: () {
+            Navigator.pushNamed(context, "post_blog");
+          },
           icon: const Icon(
             Icons.post_add_rounded,
             size: 45,

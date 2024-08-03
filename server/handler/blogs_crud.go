@@ -193,6 +193,18 @@ func (s *BlogsServer) UpdateBlog(ctx context.Context, req *pb.UpdateBlogRequest)
 		return nil, ErrInternalServerError
 	}
 
+	isNewBlogTitleAlreadyUsed, err := db.SearchBlogByTitle(req.NewTitle)
+	if err != nil {
+		log.Println("Error:", err)
+		log.Println("Description: Cannot Check whether new blog title was already used or not\nSource: UpdateBlog()")
+
+		return nil, ErrInternalServerError
+	}
+
+	if isNewBlogTitleAlreadyUsed {
+		return nil, ErrInvalidBlogTitleAlreadyUsed
+	}
+
 	isTagValid := utils.Contains(tagsList, req.NewTag)
 	if !isTagValid {
 		return nil, ErrInvalidBlogTag

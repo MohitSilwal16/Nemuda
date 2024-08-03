@@ -1,3 +1,4 @@
+import 'package:app/pages/update_blog.dart';
 import 'package:flutter/material.dart';
 
 import 'package:app/pages/home.dart';
@@ -33,6 +34,17 @@ class _ViewBlogPageState extends State<ViewBlogPage>
   final controllerComment = TextEditingController();
 
   bool _isKeyboardVisible = false;
+
+  onDeleteBlog() {
+    deleteBlog(widget.title).then((res) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(returnSnackbar("Blog Deleted"));
+      Navigator.pop(context);
+    }).catchError((err) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(returnSnackbar(trimGrpcErrorMessage(err.toString())));
+    });
+  }
 
   likeDislikeBlog() {
     if (isBlogLiked) {
@@ -144,6 +156,15 @@ class _ViewBlogPageState extends State<ViewBlogPage>
     return;
   }
 
+  navigateToUpdateBlogPage() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => UpdateBlogPage(blog: blog),
+      ),
+    );
+  }
+
   futureFunction() async {
     final res = await getBlogByTitle(widget.title);
     blog = res.blog;
@@ -188,6 +209,7 @@ class _ViewBlogPageState extends State<ViewBlogPage>
         if (snapshot.hasError) {
           // Returning login page when session token is invalid doesn't works when textfield is opened
           return const HomePage();
+          // TODO: Set this to Login Page
         }
 
         return viewBlogPage(context, size);
@@ -401,7 +423,7 @@ class _ViewBlogPageState extends State<ViewBlogPage>
                         backgroundColor: MyColors.primaryColor,
                         radius: 30,
                         child: IconButton(
-                          onPressed: () {},
+                          onPressed: onDeleteBlog,
                           icon: const Icon(
                             Icons.delete_forever,
                             size: 40,
@@ -421,7 +443,7 @@ class _ViewBlogPageState extends State<ViewBlogPage>
                         backgroundColor: MyColors.primaryColor,
                         radius: 30,
                         child: IconButton(
-                          onPressed: () {},
+                          onPressed: navigateToUpdateBlogPage,
                           icon: const Icon(
                             Icons.update,
                             size: 40,

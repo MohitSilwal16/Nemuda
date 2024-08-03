@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'package:app/pages/init_page.dart';
+import 'package:app/pages/post_blog.dart';
 import 'package:app/services/service_init.dart';
 import 'package:app/pages/home.dart';
 import 'package:app/pages/login.dart';
@@ -18,10 +19,6 @@ void main() async {
   final documentsDir = await getApplicationDocumentsDirectory();
   Hive.init(documentsDir.path);
   await Hive.openBox("session");
-  // .then((box) {
-  //   // box.delete("sessionToken");
-  //   print(box.get("sessionToken"));
-  // });
 
   // Init GRPC Clients & Hivebox
   await Clients().init();
@@ -54,6 +51,7 @@ class MyApp extends StatelessWidget {
         "home": (context) => const HomePage(),
         "login": (context) => LoginPage(),
         "register": (context) => RegisterPage(),
+        "post_blog": (context) => const PostBlogPage(),
       },
       home: const InitPage(),
     );
