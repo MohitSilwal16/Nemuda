@@ -29,13 +29,17 @@ class Validators {
     return null; // Return null if input is valid
   }
 
-  static String? validateTitle(String? value) {
+  static String? validateTitle(String? value, String? errorMessage) {
     if (value == null || value.isEmpty) {
       return 'This field is mandatory';
     }
 
     if (!RegexConstants.titleRegex.hasMatch(value)) {
       return 'Min 5 & Max 20 chars';
+    }
+
+     if (errorMessage != "" ){
+      return errorMessage;
     }
 
     return null; // Return null if input is valid

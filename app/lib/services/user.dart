@@ -8,8 +8,8 @@ Future<UserExistsResponse> doesUserExists(String username) async {
   final request = UserExistsRequest(username: username);
   final response = await Clients()
       .userClient
-      .doesUserExists(request)
-      .timeout(contextTimeout);
+      .doesUserExists(request);
+      // .timeout(contextTimeout);
   return response;
 }
 

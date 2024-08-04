@@ -5,7 +5,7 @@ class MyTextField extends StatefulWidget {
     super.key,
     required this.hintText,
     required this.obscureText,
-    required this.validator,
+    this.validator,
     required this.controller,
     this.keyboardType,
     this.suffixIconData,

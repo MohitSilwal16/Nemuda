@@ -12,7 +12,6 @@ final tagsListHomePage = [
 ];
 
 final tagsListPostUpdateBlog = [
-  "All",
   "Political",
   "Technical",
   "Educational",
@@ -31,7 +30,6 @@ String trimGrpcErrorMessage(String errorMessage) {
   // If a match is found, return the captured group; otherwise, return the original message
   return match != null ? match.group(1) ?? errorMessage : errorMessage;
 }
-
 
 // Function to convert File to bytes
 Future<Uint8List> fileToBytes(File file) async {

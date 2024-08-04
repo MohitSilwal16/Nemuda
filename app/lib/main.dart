@@ -3,9 +3,10 @@ import 'package:hive/hive.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 
+import 'package:app/services/service_init.dart';
+import 'package:app/pages/chat_home.dart';
 import 'package:app/pages/init_page.dart';
 import 'package:app/pages/post_blog.dart';
-import 'package:app/services/service_init.dart';
 import 'package:app/pages/home.dart';
 import 'package:app/pages/login.dart';
 import 'package:app/pages/register.dart';
@@ -52,6 +53,7 @@ class MyApp extends StatelessWidget {
         "login": (context) => LoginPage(),
         "register": (context) => RegisterPage(),
         "post_blog": (context) => const PostBlogPage(),
+        "chat_home": (context) => const ChatHomePage(),
       },
       home: const InitPage(),
     );

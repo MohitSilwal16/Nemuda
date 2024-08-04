@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:app/services/blog.dart';
 import 'package:app/pb/blogs.pb.dart';
+import 'package:app/utils/components/title_textfield.dart';
 import 'package:app/utils/components/snackbar.dart';
 import 'package:app/utils/components/button.dart';
 import 'package:app/utils/components/textfield.dart';
@@ -64,8 +65,13 @@ class _UpdateBlogPageState extends State<UpdateBlogPage> {
           ..pop()
           ..pop();
       }).catchError((err) {
+        final trimmedGrpcError = trimGrpcErrorMessage(err.toString());
         ScaffoldMessenger.of(context)
-            .showSnackBar(returnSnackbar(trimGrpcErrorMessage(err.toString())));
+            .showSnackBar(returnSnackbar(trimmedGrpcError));
+
+        if (trimmedGrpcError == "INVALID SESSION TOKEN") {
+          Navigator.pushReplacementNamed(context, "login");
+        }
       });
     }).catchError((err) {
       ScaffoldMessenger.of(context)
@@ -120,7 +126,7 @@ class _UpdateBlogPageState extends State<UpdateBlogPage> {
                           ),
                         ),
 
-                        SizedBox(width: size.width * .18),
+                        SizedBox(width: size.width * .14),
                         const Text(
                           "Update Blog",
                           style: TextStyle(
@@ -135,12 +141,9 @@ class _UpdateBlogPageState extends State<UpdateBlogPage> {
                   SizedBox(height: size.height * .05),
 
                   // Title
-                  MyTextField(
-                    hintText: "Title",
-                    obscureText: false,
-                    validator: Validators.validateTitle,
+                  MyBlogTitleTextField(
                     controller: controllerTitle,
-                    keyboardType: TextInputType.text,
+                    errorText: "Title is already used",
                   ),
 
                   // Description
@@ -188,46 +191,42 @@ class _UpdateBlogPageState extends State<UpdateBlogPage> {
 
                   const SizedBox(height: 40),
 
-                  // Image Picker
-                  SizedBox(
-                    height: size.width * .45,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        // Image
-                        ClipRRect(
-                          borderRadius: const BorderRadius.all(
-                            Radius.circular(20),
-                          ),
-                          child: Image.network(
-                            widget.blog.imagePath,
-                            height: size.width * .45,
-                          ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      // Image
+                      ClipRRect(
+                        borderRadius: const BorderRadius.all(
+                          Radius.circular(20),
                         ),
+                        child: Image.network(
+                          widget.blog.imagePath,
+                          width: size.width * .45,
+                        ),
+                      ),
 
-                        // Image Picker
-                        selectedFile == null
-                            ? GestureDetector(
-                                onTap: pickImageFromGallery,
-                                child: Icon(
-                                  Icons.photo,
-                                  size: size.width * .45,
+                      // Image Picker
+                      selectedFile == null
+                          ? GestureDetector(
+                              onTap: pickImageFromGallery,
+                              child: Icon(
+                                Icons.photo,
+                                size: size.width * .45,
+                              ),
+                            )
+                          : GestureDetector(
+                              onTap: pickImageFromGallery,
+                              child: ClipRRect(
+                                borderRadius: const BorderRadius.all(
+                                  Radius.circular(20),
                                 ),
-                              )
-                            : GestureDetector(
-                                onTap: pickImageFromGallery,
-                                child: ClipRRect(
-                                  borderRadius: const BorderRadius.all(
-                                    Radius.circular(20),
-                                  ),
-                                  child: Image.file(
-                                    selectedFile!,
-                                    height: size.width * .45,
-                                  ),
+                                child: Image.file(
+                                  selectedFile!,
+                                  width: size.width * .45,
                                 ),
                               ),
-                      ],
-                    ),
+                            ),
+                    ],
                   ),
 
                   const SizedBox(height: 30),

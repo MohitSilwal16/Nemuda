@@ -1,12 +1,12 @@
-import 'package:app/pages/update_blog.dart';
 import 'package:flutter/material.dart';
 
+import 'package:app/pb/blogs.pb.dart';
+import 'package:app/pages/update_blog.dart';
 import 'package:app/pages/home.dart';
 import 'package:app/services/blog.dart';
 import 'package:app/utils/components/loading.dart';
 import 'package:app/utils/components/snackbar.dart';
 import 'package:app/utils/utils.dart';
-import 'package:app/pb/blogs.pb.dart';
 import 'package:app/utils/colors.dart';
 import 'package:app/utils/size.dart';
 
@@ -41,8 +41,13 @@ class _ViewBlogPageState extends State<ViewBlogPage>
           .showSnackBar(returnSnackbar("Blog Deleted"));
       Navigator.pop(context);
     }).catchError((err) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(returnSnackbar(trimGrpcErrorMessage(err.toString())));
+       final trimmedGrpcError = trimGrpcErrorMessage(err.toString());
+        ScaffoldMessenger.of(context)
+            .showSnackBar(returnSnackbar(trimmedGrpcError));
+
+        if (trimmedGrpcError == "INVALID SESSION TOKEN") {
+          Navigator.pushReplacementNamed(context, "login");
+        }
     });
   }
 

@@ -11,8 +11,8 @@ Future<GetBlogsResponse> getBlogsWithPagination(String tag, int offset) async {
       GetBlogsRequest(sessionToken: sessionToken, tag: tag, offset: offset);
   final response = await Clients()
       .blogClient
-      .getBlogsByTagWithPagination(request)
-      .timeout(contextTimeout);
+      .getBlogsByTagWithPagination(request);
+      // .timeout(contextTimeout);
   return response;
 }
 
@@ -30,6 +30,7 @@ Future<UpdateBlogResponse> updateBlog(String oldTitle, String newTitle,
   );
 
   final response = await Clients().blogClient.updateBlog(request);
+  // .timeout(longContextTimeout);
   return response;
 }
 
@@ -46,6 +47,7 @@ Future<PostBlogResponse> postBlog(
   );
 
   final response = await Clients().blogClient.postBlog(request);
+  // .timeout(longContextTimeout);
   return response;
 }
 
@@ -64,7 +66,8 @@ Future<LikeBlogResponse> likeBlog(String title) async {
 
   final request = LikeBlogRequest(sessionToken: sessionToken, title: title);
   final response =
-      await Clients().blogClient.likeBlog(request).timeout(contextTimeout);
+      await Clients().blogClient.likeBlog(request);
+      // .timeout(contextTimeout);
   return response;
 }
 
@@ -73,7 +76,8 @@ Future<DislikeBlogResponse> dislikeBlog(String title) async {
 
   final request = DislikeBlogRequest(sessionToken: sessionToken, title: title);
   final response =
-      await Clients().blogClient.dislikeBlog(request).timeout(contextTimeout);
+      await Clients().blogClient.dislikeBlog(request);
+      // .timeout(contextTimeout);
   return response;
 }
 
@@ -84,6 +88,7 @@ Future<AddCommentResponse> addComment(String title, String comment) async {
       sessionToken: sessionToken, title: title, commentDescription: comment);
 
   final respone = await Clients().blogClient.addComment(request);
+  // .timeout(contextTimeout);
   return respone;
 }
 
@@ -93,6 +98,7 @@ Future<SearchBlogResponse> searchBlog(String title) async {
   final request = SearchBlogRequest(sessionToken: sessionToken, title: title);
 
   final response = await Clients().blogClient.searchBlogByTitle(request);
+  // .timeout(shortContextTimeout);
   return response;
 }
 
@@ -102,5 +108,6 @@ Future<GetBlogResponse> getBlogByTitle(String title) async {
   final request = GetBlogRequest(sessionToken: sessionToken, title: title);
 
   final response = await Clients().blogClient.getBlogByTitle(request);
+  // .timeout(contextTimeout);
   return response;
 }

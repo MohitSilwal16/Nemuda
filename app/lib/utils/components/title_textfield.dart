@@ -1,22 +1,30 @@
 import 'package:flutter/material.dart';
 
-import 'package:app/services/user.dart';
+import 'package:app/services/blog.dart';
 import 'package:app/utils/validator.dart';
 
-class MyUsernameTextField extends StatefulWidget {
-  const MyUsernameTextField({
+class MyBlogTitleTextField extends StatefulWidget {
+  const MyBlogTitleTextField({
     super.key,
     required this.controller,
+    this.errorText,
   });
 
   final TextEditingController controller;
+  final String? errorText;
 
   @override
-  State<MyUsernameTextField> createState() => _MyUsernameTextFieldState();
+  State<MyBlogTitleTextField> createState() => _MyBlogTitleTextFieldState();
 }
 
-class _MyUsernameTextFieldState extends State<MyUsernameTextField> {
+class _MyBlogTitleTextFieldState extends State<MyBlogTitleTextField> {
   String? errorText;
+
+  @override
+  void initState() {
+    errorText = widget.errorText;
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,21 +37,20 @@ class _MyUsernameTextFieldState extends State<MyUsernameTextField> {
             borderRadius: BorderRadius.all(Radius.circular(10)),
           ),
           errorText: errorText,
-          hintText: "Username",
+          hintText: "Title",
           hintStyle: const TextStyle(color: Colors.white),
           counterStyle: const TextStyle(color: Colors.white),
           filled: true,
           fillColor: Colors.black,
-          suffixIcon: const Icon(Icons.person),
         ),
         keyboardType: TextInputType.name,
         maxLength: 20,
-        validator: (val) => Validators.validateUsername(val, errorText),
+        validator: (val) => Validators.validateTitle(val, errorText),
         onChanged: (value) async {
-          final res = await doesUserExists(value);
+          final res = await searchBlog(value);
           setState(() {
-            if (res.doesUserExists) {
-              errorText = "Username is already used";
+            if (res.doesBlogExists) {
+              errorText = "Title is already used";
             } else {
               errorText = "";
             }

@@ -1,8 +1,9 @@
-import 'package:app/services/blog.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
+import 'package:app/services/blog.dart';
+import 'package:app/utils/components/title_textfield.dart';
 import 'package:app/utils/components/snackbar.dart';
 import 'package:app/utils/components/button.dart';
 import 'package:app/utils/components/textfield.dart';
@@ -27,10 +28,14 @@ class _PostBlogPageState extends State<PostBlogPage> {
   File? selectedFile;
 
   Future pickImageFromGallery() async {
-    final image = await ImagePicker().pickImage(source: ImageSource.gallery);
-    setState(() {
-      selectedFile = File(image!.path);
-    });
+    try {
+      final image = await ImagePicker().pickImage(source: ImageSource.gallery);
+      setState(() {
+        selectedFile = File(image!.path);
+      });
+    } catch (e) {
+      // No need to catch
+    }
   }
 
   onSubmit() {
@@ -38,7 +43,8 @@ class _PostBlogPageState extends State<PostBlogPage> {
       return;
     }
     if (selectedFile == null) {
-      ScaffoldMessenger.of(context).showSnackBar(returnSnackbar("Please Select an Image"));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(returnSnackbar("Please Select an Image"));
       return;
     }
 
@@ -53,8 +59,13 @@ class _PostBlogPageState extends State<PostBlogPage> {
             .showSnackBar(returnSnackbar("Blog Added"));
         Navigator.pop(context);
       }).catchError((err) {
+        final trimmedGrpcError = trimGrpcErrorMessage(err.toString());
         ScaffoldMessenger.of(context)
-            .showSnackBar(returnSnackbar(trimGrpcErrorMessage(err.toString())));
+            .showSnackBar(returnSnackbar(trimmedGrpcError));
+
+        if (trimmedGrpcError == "INVALID SESSION TOKEN") {
+          Navigator.pushReplacementNamed(context, "login");
+        }
       });
     }).catchError((err) {
       ScaffoldMessenger.of(context)
@@ -82,6 +93,8 @@ class _PostBlogPageState extends State<PostBlogPage> {
             autovalidateMode: AutovalidateMode.onUserInteraction,
             child: SingleChildScrollView(
               child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   SizedBox(height: size.height * .02),
 
@@ -115,12 +128,8 @@ class _PostBlogPageState extends State<PostBlogPage> {
                   SizedBox(height: size.height * .05),
 
                   // Title
-                  MyTextField(
-                    hintText: "Title",
-                    obscureText: false,
-                    validator: Validators.validateTitle,
+                  MyBlogTitleTextField(
                     controller: controllerTitle,
-                    keyboardType: TextInputType.text,
                   ),
 
                   // Description
@@ -170,15 +179,18 @@ class _PostBlogPageState extends State<PostBlogPage> {
 
                   // Image Picker
                   SizedBox(
-                    height: size.width * .45,
+                    height: size.height * .2,
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 30),
                       child: selectedFile == null
                           ? GestureDetector(
                               onTap: pickImageFromGallery,
-                              child: Icon(
-                                Icons.photo,
-                                size: size.width * .45,
+                              child: SizedBox(
+                                height: size.height * .2,
+                                child: Icon(
+                                  Icons.photo,
+                                  size: size.height * .2,
+                                ),
                               ),
                             )
                           : GestureDetector(
@@ -188,7 +200,7 @@ class _PostBlogPageState extends State<PostBlogPage> {
                                     const BorderRadius.all(Radius.circular(20)),
                                 child: Image.file(
                                   selectedFile!,
-                                  height: size.width * .45,
+                                  height: size.height * .2,
                                 ),
                               ),
                             ),

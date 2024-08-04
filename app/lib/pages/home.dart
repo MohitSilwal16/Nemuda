@@ -48,24 +48,40 @@ class _HomePageState extends State<HomePage> {
     super.initState();
   }
 
-  @override
-  void didChangeDependencies() {
-    getBlogsWithPagination("All", 0).then((res) {
-      setState(() {
-        blogs = res.blogs;
-        offset = res.nextOffset;
-      });
-    }).catchError((err) {
-      final trimmedGrpcError = trimGrpcErrorMessage(err.toString());
+  loadMoreBlogs(int index, Size size) {
+    if (index == blogs.length) {
+      return VisibilityDetector(
+        key: const Key("Load-More-Blogs"),
+        child: noMoreBlogsContainer(),
+        onVisibilityChanged: (VisibilityInfo info) {
+          if (info.visibleFraction > 0) {
+            if (offset == -1) {
+              return;
+            }
+            getBlogsWithPagination(title, offset).then((res) {
+              setState(() {
+                blogs += res.blogs;
+                offset = res.nextOffset;
+              });
+            }).catchError((err) {
+              final trimmedGrpcError = trimGrpcErrorMessage(err.toString());
 
-      ScaffoldMessenger.of(context)
-          .showSnackBar(returnSnackbar(trimmedGrpcError));
+              ScaffoldMessenger.of(context)
+                  .showSnackBar(returnSnackbar(trimmedGrpcError));
 
-      if (trimmedGrpcError == "INVALID SESSION TOKEN") {
-        Navigator.pushReplacementNamed(context, "login");
-      }
-    });
-    super.didChangeDependencies();
+              if (trimmedGrpcError == "INVALID SESSION TOKEN") {
+                Navigator.pushReplacementNamed(context, "login");
+              }
+            });
+          }
+        },
+      );
+    }
+
+    return BlogCard(
+      blog: blogs[index],
+      size: size,
+    );
   }
 
   @override
@@ -138,45 +154,7 @@ class _HomePageState extends State<HomePage> {
                 ? Column(
                     children: List.generate(
                       blogs.length + 1,
-                      (index) {
-                        if (index == blogs.length) {
-                          return VisibilityDetector(
-                            key: const Key("load-more"),
-                            child: noMoreBlogsContainer(),
-                            onVisibilityChanged: (VisibilityInfo info) {
-                              if (info.visibleFraction > 0) {
-                                if (offset == -1) {
-                                  return;
-                                }
-                                getBlogsWithPagination(title, offset)
-                                    .then((res) {
-                                  setState(() {
-                                    blogs += res.blogs;
-                                    offset = res.nextOffset;
-                                  });
-                                }).catchError((err) {
-                                  final trimmedGrpcError =
-                                      trimGrpcErrorMessage(err.toString());
-
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                      returnSnackbar(trimmedGrpcError));
-
-                                  if (trimmedGrpcError ==
-                                      "INVALID SESSION TOKEN") {
-                                    Navigator.pushReplacementNamed(
-                                        context, "login");
-                                  }
-                                });
-                              }
-                            },
-                          );
-                        }
-
-                        return BlogCard(
-                          blog: blogs[index],
-                          size: size,
-                        );
-                      },
+                      (index) => loadMoreBlogs(index, size),
                     ),
                   )
                 : Padding(
@@ -242,7 +220,7 @@ class _HomePageState extends State<HomePage> {
 
                   // Message Icon
                   IconButton(
-                    onPressed: () {},
+                    onPressed: () => Navigator.pushNamed(context, "chat_home"),
                     icon: const Icon(Icons.message_outlined),
                   ),
                 ],
@@ -368,7 +346,7 @@ class _HomePageState extends State<HomePage> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           decoration: BoxDecoration(
-            color: Colors.blue.shade600,
+            color: MyColors.primaryColor,
             borderRadius: BorderRadius.circular(10),
             boxShadow: [
               BoxShadow(
@@ -379,7 +357,7 @@ class _HomePageState extends State<HomePage> {
             ],
           ),
           child: Text(
-            'No more Blogs',
+            offset == -1 ? "No more Blogs" : "Loading ...",
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.bold,
