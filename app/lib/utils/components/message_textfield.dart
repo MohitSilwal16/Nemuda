@@ -4,9 +4,11 @@ class MyMessageTextField extends StatefulWidget {
   const MyMessageTextField({
     super.key,
     required this.controller,
+    required this.sendMessage,
   });
 
   final TextEditingController controller;
+  final Function sendMessage;
 
   @override
   State<MyMessageTextField> createState() => _MyMessageTextFieldState();
@@ -36,7 +38,7 @@ class _MyMessageTextFieldState extends State<MyMessageTextField> {
           filled: true,
           fillColor: Colors.black,
           suffixIcon: IconButton(
-            onPressed: () {},
+            onPressed: () => widget.sendMessage(widget.controller.text),
             icon: const Icon(Icons.send),
           ),
         ),

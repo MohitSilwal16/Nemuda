@@ -13,6 +13,7 @@ import 'package:app/pages/register.dart';
 
 const serviceURL = "nemuda.hopto.org";
 const servicePort = 8080;
+const wsPort = 3000;
 
 void main() async {
   // Init Hive

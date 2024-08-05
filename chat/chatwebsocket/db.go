@@ -92,6 +92,7 @@ func addMessageInDB(client *Client, message Message) {
 		return
 	}
 
+	message.Receiver = strings.ToLower(message.Receiver)
 	tableName := "messages_" + message.Receiver
 	// Tablename can't be used as placeholder
 	stmt, err := sqlDB.Prepare("INSERT INTO " + tableName + " (Sender, Receiver, MessageContent, Status, DateTime) VALUE (? , ? , ?, ?, ?);")

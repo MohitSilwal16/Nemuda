@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:visibility_detector/visibility_detector.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
+import 'dart:convert';
 
 import 'package:app/pb/user.pb.dart';
 import 'package:app/pages/login.dart';
+import 'package:app/models/message.dart';
+import 'package:app/services/service_init.dart';
 import 'package:app/services/user.dart';
 import 'package:app/utils/colors.dart';
 import 'package:app/utils/components/snackbar.dart';
@@ -15,9 +19,11 @@ class ChatUserPage extends StatefulWidget {
   const ChatUserPage({
     super.key,
     required this.user,
+    required this.channel,
   });
 
   final String user;
+  final WebSocketChannel channel;
 
   @override
   State<ChatUserPage> createState() => _ChatUserPageState();
@@ -27,6 +33,7 @@ class _ChatUserPageState extends State<ChatUserPage> {
   final controllerMessage = TextEditingController();
   final ScrollController controllerScroll = ScrollController();
   late Future<void> finalFutureFunc;
+  late final String sessionToken;
 
   late List<Message> messages;
   late int offset;
@@ -76,9 +83,35 @@ class _ChatUserPageState extends State<ChatUserPage> {
     );
   }
 
+  sendMessage(String message) {
+    widget.channel.sink.add(
+      jsonEncode(
+        ModelWSMessage(
+          message: message,
+          receiver: widget.user,
+          sessionToken: sessionToken,
+          messageType: "Message",
+        ).toJson(),
+      ),
+    );
+  }
+
   @override
   void initState() {
     finalFutureFunc = futureFunction();
+
+    sessionToken = Clients().hiveBox.get("sessionToken");
+    widget.channel.sink.add(
+      jsonEncode(
+        ModelWSMessage(
+          message: "",
+          receiver: widget.user,
+          sessionToken: sessionToken,
+          messageType: "Read",
+        ).toJson(),
+      ),
+    );
+
     super.initState();
   }
 
@@ -157,10 +190,10 @@ class _ChatUserPageState extends State<ChatUserPage> {
             ),
 
             const SizedBox(height: 25),
-            const Spacer(),
 
             MyMessageTextField(
               controller: controllerMessage,
+              sendMessage: sendMessage,
             ),
 
             // END

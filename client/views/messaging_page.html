@@ -47,7 +47,7 @@
         <div class="flex items-center justify-between">
           <span class="text-lg lg:text-sm">{{ .DateTime }}</span>
         </div>
-        <p class="mt-1 font-semibold">{{ .MessageContent }}</p>
+        <p class="mt-1 font-semibold break-words">{{ .MessageContent }}</p>
         <div
           class="mt-1 text-lg text-right text-gray-300 lg:text-xs message-status"
         >
@@ -63,7 +63,7 @@
         <div class="flex items-center justify-between">
           <span class="text-lg lg:text-sm">{{ .DateTime }}</span>
         </div>
-        <p class="mt-1 font-semibold">{{ .MessageContent }}</p>
+        <p class="mt-1 font-semibold break-words">{{ .MessageContent }}</p>
       </div>
     </div>
     {{ else }}
@@ -73,7 +73,7 @@
         <div class="flex items-center justify-between">
           <span class="text-lg lg:text-xs">{{ .DateTime }}</span>
         </div>
-        <p class="mt-1 font-semibold">{{ .MessageContent }}</p>
+        <p class="mt-1 font-semibold break-words">{{ .MessageContent }}</p>
         <div
           class="mt-1 text-lg text-right text-gray-300 lg:text-xs message-status"
         >
