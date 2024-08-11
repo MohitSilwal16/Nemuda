@@ -11,14 +11,14 @@ const shortContextTimeout = Duration(seconds: 3);
 const contextTimeout = Duration(seconds: 5);
 const longContextTimeout = Duration(seconds: 10);
 
-class Clients {
-  static final Clients _instance = Clients._internal();
+class ServiceManager {
+  static final ServiceManager _instance = ServiceManager._internal();
 
-  factory Clients() {
+  factory ServiceManager() {
     return _instance;
   }
 
-  Clients._internal();
+  ServiceManager._internal();
 
   late ClientChannel _channel;
   late AuthServiceClient authClient;

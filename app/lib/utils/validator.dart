@@ -35,7 +35,7 @@ class Validators {
     }
 
     if (!RegexConstants.titleRegex.hasMatch(value)) {
-      return 'Min 5 & Max 20 chars';
+      return 'Min 5 & Max 25 chars';
     }
 
      if (errorMessage != "" ){

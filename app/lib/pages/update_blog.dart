@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'dart:async';
 import 'dart:io';
 
 import 'package:app/services/blog.dart';
 import 'package:app/pb/blogs.pb.dart';
+import 'package:app/utils/components/alert_dialogue.dart';
+import 'package:app/utils/components/error.dart';
 import 'package:app/utils/components/title_textfield.dart';
 import 'package:app/utils/components/snackbar.dart';
 import 'package:app/utils/components/button.dart';
@@ -34,10 +37,23 @@ class _UpdateBlogPageState extends State<UpdateBlogPage> {
   File? selectedFile;
 
   Future pickImageFromGallery() async {
-    final image = await ImagePicker().pickImage(source: ImageSource.gallery);
-    setState(() {
-      selectedFile = File(image!.path);
-    });
+    try {
+      const maxFileSizeInBytes = 2 * 1024 * 1024; // 2MB
+      final image = await ImagePicker().pickImage(source: ImageSource.gallery);
+      var imagePath = await image!.readAsBytes();
+
+      var fileSize = imagePath.length;
+      if (fileSize > maxFileSizeInBytes) {
+        showErrorDialog(context, "Image should not exceed 2 MB");
+        return;
+      }
+
+      setState(() {
+        selectedFile = File(image.path);
+      });
+    } catch (e) {
+      // No need to catch
+    }
   }
 
   onSubmit() {
@@ -45,8 +61,7 @@ class _UpdateBlogPageState extends State<UpdateBlogPage> {
       return;
     }
     if (selectedFile == null) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(returnSnackbar("Please Select an Image"));
+      showErrorDialog(context, "Please Select an Image");
       return;
     }
 
@@ -65,17 +80,18 @@ class _UpdateBlogPageState extends State<UpdateBlogPage> {
           ..pop()
           ..pop();
       }).catchError((err) {
-        final trimmedGrpcError = trimGrpcErrorMessage(err.toString());
-        ScaffoldMessenger.of(context)
-            .showSnackBar(returnSnackbar(trimmedGrpcError));
+        final trimmedGRPCError = trimGrpcErrorMessage(err.toString());
 
-        if (trimmedGrpcError == "INVALID SESSION TOKEN") {
-          Navigator.pushReplacementNamed(context, "login");
+        if (trimmedGRPCError == "IMAGE SIZE EXCEEDS 2 MB") {
+          showErrorDialog(context, "Image Size Exceeds 2 MB");
+        } else if (trimmedGRPCError == "USER CANNOT UPDATE THIS BLOG") {
+          showErrorDialog(context, "User Cannot Update this Blog");
+        } else {
+          handleErrors(context, err);
         }
       });
     }).catchError((err) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(returnSnackbar("Failed to Convert Images into Bytes"));
+      showErrorDialog(context, "Failed to Convert Images into Bytes");
     });
   }
 

@@ -6,6 +6,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+// Message received from Users
 type WSMessage struct {
 	Message      string `json:"message"`
 	Receiver     string `json:"receiver"`
@@ -30,6 +31,7 @@ type Router struct {
 	UsersWhoAreWaiting map[string][]string // Stores users who'll be notified when this user gets online
 }
 
+// Message sent to user
 type Message struct {
 	Sender         string `json:"sender"`
 	Receiver       string `json:"receiver"`

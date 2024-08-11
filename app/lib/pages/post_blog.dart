@@ -3,6 +3,8 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
 import 'package:app/services/blog.dart';
+import 'package:app/utils/components/error.dart';
+import 'package:app/utils/components/alert_dialogue.dart';
 import 'package:app/utils/components/title_textfield.dart';
 import 'package:app/utils/components/snackbar.dart';
 import 'package:app/utils/components/button.dart';
@@ -29,9 +31,18 @@ class _PostBlogPageState extends State<PostBlogPage> {
 
   Future pickImageFromGallery() async {
     try {
+      const maxFileSizeInBytes = 2 * 1024 * 1024; // 2MB
       final image = await ImagePicker().pickImage(source: ImageSource.gallery);
+      var imagePath = await image!.readAsBytes();
+
+      var fileSize = imagePath.length;
+      if (fileSize > maxFileSizeInBytes) {
+        showErrorDialog(context, "Image should not exceed 2 MB");
+        return;
+      }
+
       setState(() {
-        selectedFile = File(image!.path);
+        selectedFile = File(image.path);
       });
     } catch (e) {
       // No need to catch
@@ -43,8 +54,7 @@ class _PostBlogPageState extends State<PostBlogPage> {
       return;
     }
     if (selectedFile == null) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(returnSnackbar("Please Select an Image"));
+      showErrorDialog(context, "Please Select an Image");
       return;
     }
 
@@ -59,17 +69,10 @@ class _PostBlogPageState extends State<PostBlogPage> {
             .showSnackBar(returnSnackbar("Blog Added"));
         Navigator.pop(context);
       }).catchError((err) {
-        final trimmedGrpcError = trimGrpcErrorMessage(err.toString());
-        ScaffoldMessenger.of(context)
-            .showSnackBar(returnSnackbar(trimmedGrpcError));
-
-        if (trimmedGrpcError == "INVALID SESSION TOKEN") {
-          Navigator.pushReplacementNamed(context, "login");
-        }
+        handleErrors(context, err);
       });
     }).catchError((err) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(returnSnackbar("Failed to Convert Images into Bytes"));
+      showErrorDialog(context, "Failed to Convert Images into Bytes");
     });
   }
 

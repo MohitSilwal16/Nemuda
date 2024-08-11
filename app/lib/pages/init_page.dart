@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
+import 'dart:async';
 
 import 'package:app/services/auth.dart';
 import 'package:app/pages/home.dart';
 import 'package:app/pages/login.dart';
-import 'package:app/utils/components/loading.dart';
+import 'package:app/pages/splash_screen.dart';
+import 'package:app/pages/server_error.dart';
+import 'package:app/pages/server_busy_page.dart';
 
 class InitPage extends StatelessWidget {
   const InitPage({super.key});
@@ -13,17 +16,20 @@ class InitPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return FutureBuilder(
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const CustomCircularProgressIndicator();
-        }
-        final data = snapshot.data;
-        if (data == null) {
-          return LoginPage();
-        }
-        if (data) {
+        if (snapshot.hasData) {
+          final isUserValidated = snapshot.data;
+          if (isUserValidated == null || isUserValidated == false) {
+            return LoginPage();
+          }
           return const HomePage();
         }
-        return LoginPage();
+        if (snapshot.hasError) {
+          if (snapshot.error is TimeoutException){
+            return const ServerBusyPage();
+          } 
+          return const ServerErrorPage();
+        }
+        return const SplashScreen();
       },
       future: Future(
         () async {

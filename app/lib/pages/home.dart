@@ -3,6 +3,7 @@ import 'package:double_back_to_close_app/double_back_to_close_app.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
 import 'package:app/pb/blogs.pb.dart';
+import 'package:app/utils/components/error.dart';
 import 'package:app/utils/colors.dart';
 import 'package:app/utils/components/button.dart';
 import 'package:app/utils/size.dart';
@@ -35,14 +36,7 @@ class _HomePageState extends State<HomePage> {
         offset = res.nextOffset;
       });
     }).catchError((err) {
-      final trimmedGrpcError = trimGrpcErrorMessage(err.toString());
-
-      ScaffoldMessenger.of(context)
-          .showSnackBar(returnSnackbar(trimmedGrpcError));
-
-      if (trimmedGrpcError == "INVALID SESSION TOKEN") {
-        Navigator.pushReplacementNamed(context, "login");
-      }
+      handleErrors(context, err);
     });
 
     super.initState();
@@ -64,14 +58,7 @@ class _HomePageState extends State<HomePage> {
                 offset = res.nextOffset;
               });
             }).catchError((err) {
-              final trimmedGrpcError = trimGrpcErrorMessage(err.toString());
-
-              ScaffoldMessenger.of(context)
-                  .showSnackBar(returnSnackbar(trimmedGrpcError));
-
-              if (trimmedGrpcError == "INVALID SESSION TOKEN") {
-                Navigator.pushReplacementNamed(context, "login");
-              }
+              handleErrors(context, err);
             });
           }
         },
@@ -105,14 +92,9 @@ class _HomePageState extends State<HomePage> {
             size: size,
             text: "Logout",
             onPressed: () {
-              logout().then((res) {
-                Clients().hiveBox.delete("sessionToken");
+              logout().then((_) {
+                ServiceManager().hiveBox.delete("sessionToken");
                 Navigator.pushReplacementNamed(context, "login");
-              }).catchError((err) {
-                final trimmedGrpcError = trimGrpcErrorMessage(err.toString());
-
-                ScaffoldMessenger.of(context)
-                    .showSnackBar(returnSnackbar(trimmedGrpcError));
               });
             },
             widthWRTScreen: .26,
@@ -183,14 +165,7 @@ class _HomePageState extends State<HomePage> {
 
       Navigator.pop(context);
     }).catchError((err) {
-      final trimmedGrpcError = trimGrpcErrorMessage(err.toString());
-
-      ScaffoldMessenger.of(context)
-          .showSnackBar(returnSnackbar(trimmedGrpcError));
-
-      if (trimmedGrpcError == "INVALID SESSION TOKEN") {
-        Navigator.pushReplacementNamed(context, "login");
-      }
+      handleErrors(context, err);
     });
   }
 
@@ -220,7 +195,12 @@ class _HomePageState extends State<HomePage> {
 
                   // Message Icon
                   IconButton(
-                    onPressed: () => Navigator.pushNamed(context, "chat_home"),
+                    onPressed: () {
+                      Navigator.of(context)
+                        ..pop() // Close menu bar
+                        ..pop() // Close home
+                        ..pushNamed("chat_home");
+                    },
                     icon: const Icon(Icons.message_outlined),
                   ),
                 ],

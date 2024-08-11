@@ -63,9 +63,14 @@ class BlogCard extends StatelessWidget {
                         style: TextStyle(
                             fontWeight: FontWeight.w600, fontSize: 15),
                       ),
-                      Text(
-                        blog.title,
-                        style: const TextStyle(fontSize: 15),
+                      // Expanded widget to handle overflow in description
+                      Expanded(
+                        child: Text(
+                          blog.title,
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                          style: const TextStyle(fontSize: 15),
+                        ),
                       ),
                     ],
                   ),

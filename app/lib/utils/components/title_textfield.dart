@@ -44,7 +44,7 @@ class _MyBlogTitleTextFieldState extends State<MyBlogTitleTextField> {
           fillColor: Colors.black,
         ),
         keyboardType: TextInputType.name,
-        maxLength: 20,
+        maxLength: 25,
         validator: (val) => Validators.validateTitle(val, errorText),
         onChanged: (value) async {
           final res = await searchBlog(value);

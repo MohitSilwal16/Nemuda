@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:double_back_to_close_app/double_back_to_close_app.dart';
 
-import 'package:app/utils/components/username_textfield.dart';
 import 'package:app/services/auth.dart';
-import 'package:app/utils/utils.dart';
+import 'package:app/utils/components/username_textfield.dart';
+import 'package:app/utils/components/error.dart';
 import 'package:app/utils/components/snackbar.dart';
 import 'package:app/utils/components/welcome_to_nemuda.dart';
 import 'package:app/utils/components/register_login_text_button.dart';
@@ -31,9 +31,8 @@ class RegisterPage extends StatelessWidget {
       Hive.box("session").put("sessionToken", responseData.sessionToken);
 
       Navigator.pushReplacementNamed(context, "home");
-    }).catchError((error) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(returnSnackbar(trimGrpcErrorMessage(error.toString())));
+    }).catchError((err) {
+      handleErrors(context, err);
     });
   }
 

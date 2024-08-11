@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 
 import 'package:app/pb/blogs.pb.dart';
 import 'package:app/pages/update_blog.dart';
-import 'package:app/pages/home.dart';
 import 'package:app/services/blog.dart';
-import 'package:app/utils/components/loading.dart';
-import 'package:app/utils/components/snackbar.dart';
-import 'package:app/utils/utils.dart';
 import 'package:app/utils/colors.dart';
 import 'package:app/utils/size.dart';
+import 'package:app/utils/components/loading.dart';
+import 'package:app/utils/components/snackbar.dart';
+import 'package:app/utils/components/error.dart';
+import 'package:app/utils/components/alert_dialogue.dart';
 
 class ViewBlogPage extends StatefulWidget {
   const ViewBlogPage({
@@ -41,13 +42,7 @@ class _ViewBlogPageState extends State<ViewBlogPage>
           .showSnackBar(returnSnackbar("Blog Deleted"));
       Navigator.pop(context);
     }).catchError((err) {
-       final trimmedGrpcError = trimGrpcErrorMessage(err.toString());
-        ScaffoldMessenger.of(context)
-            .showSnackBar(returnSnackbar(trimmedGrpcError));
-
-        if (trimmedGrpcError == "INVALID SESSION TOKEN") {
-          Navigator.pushReplacementNamed(context, "login");
-        }
+      handleErrors(context, err);
     });
   }
 
@@ -60,31 +55,14 @@ class _ViewBlogPageState extends State<ViewBlogPage>
             isBlogLiked = res.isBlogLiked;
           });
         }).catchError((err) {
-          final trimmedGrpcError = trimGrpcErrorMessage(err.toString());
-
-          ScaffoldMessenger.of(context)
-              .showSnackBar(returnSnackbar(trimmedGrpcError));
-
-          if (trimmedGrpcError == "INVALID SESSION TOKEN") {
-            Navigator.pushReplacementNamed(context, "login");
-            return;
-          }
-          Navigator.pop(context);
+          handleErrors(context, err);
         });
       }).catchError((err) {
-        final trimmedGrpcError = trimGrpcErrorMessage(err.toString());
-
-        ScaffoldMessenger.of(context)
-            .showSnackBar(returnSnackbar(trimmedGrpcError));
-
-        if (trimmedGrpcError == "INVALID SESSION TOKEN") {
-          Navigator.pushReplacementNamed(context, "login");
-          return;
-        }
-        Navigator.pop(context);
+        handleErrors(context, err);
       });
       return;
     }
+
     likeBlog(blog.title).then((_) {
       getBlogByTitle(blog.title).then((res) {
         setState(() {
@@ -92,35 +70,16 @@ class _ViewBlogPageState extends State<ViewBlogPage>
           isBlogLiked = res.isBlogLiked;
         });
       }).catchError((err) {
-        final trimmedGrpcError = trimGrpcErrorMessage(err.toString());
-
-        ScaffoldMessenger.of(context)
-            .showSnackBar(returnSnackbar(trimmedGrpcError));
-
-        if (trimmedGrpcError == "INVALID SESSION TOKEN") {
-          Navigator.pushReplacementNamed(context, "login");
-          return;
-        }
-        Navigator.pop(context);
+        handleErrors(context, err);
       });
     }).catchError((err) {
-      final trimmedGrpcError = trimGrpcErrorMessage(err.toString());
-
-      ScaffoldMessenger.of(context)
-          .showSnackBar(returnSnackbar(trimmedGrpcError));
-
-      if (trimmedGrpcError == "INVALID SESSION TOKEN") {
-        Navigator.pushReplacementNamed(context, "login");
-        return;
-      }
-      Navigator.pop(context);
+      handleErrors(context, err);
     });
   }
 
   onCommentSubmit() {
     if (controllerComment.text == "") {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(returnSnackbar("Comment is Empty"));
+      showErrorDialog(context, "Comment is Empty");
       return;
     }
     addComment(blog.title, controllerComment.text).then((_) {
@@ -135,28 +94,10 @@ class _ViewBlogPageState extends State<ViewBlogPage>
         ScaffoldMessenger.of(context)
             .showSnackBar(returnSnackbar("Comment Added"));
       }).catchError((err) {
-        final trimmedGrpcError = trimGrpcErrorMessage(err.toString());
-
-        ScaffoldMessenger.of(context)
-            .showSnackBar(returnSnackbar(trimmedGrpcError));
-
-        if (trimmedGrpcError == "INVALID SESSION TOKEN") {
-          Navigator.pushReplacementNamed(context, "login");
-          return;
-        }
-        Navigator.pop(context);
+        handleErrors(context, err);
       });
     }).catchError((err) {
-      final trimmedGrpcError = trimGrpcErrorMessage(err.toString());
-
-      ScaffoldMessenger.of(context)
-          .showSnackBar(returnSnackbar(trimmedGrpcError));
-
-      if (trimmedGrpcError == "INVALID SESSION TOKEN") {
-        Navigator.pushReplacementNamed(context, "login");
-        return;
-      }
-      Navigator.pop(context);
+      handleErrors(context, err);
     });
     return;
   }
@@ -171,10 +112,14 @@ class _ViewBlogPageState extends State<ViewBlogPage>
   }
 
   futureFunction() async {
-    final res = await getBlogByTitle(widget.title);
-    blog = res.blog;
-    isBlogLiked = res.isBlogLiked;
-    isBlogUpdatableDeletable = res.isBlogUpdatableDeletable;
+    try {
+      final res = await getBlogByTitle(widget.title);
+      blog = res.blog;
+      isBlogLiked = res.isBlogLiked;
+      isBlogUpdatableDeletable = res.isBlogUpdatableDeletable;
+    } catch (err) {
+      handleErrors(context, err);
+    }
   }
 
   @override
@@ -211,13 +156,14 @@ class _ViewBlogPageState extends State<ViewBlogPage>
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const CustomCircularProgressIndicator();
         }
-        if (snapshot.hasError) {
-          // Returning login page when session token is invalid doesn't works when textfield is opened
-          return const HomePage();
-          // TODO: Set this to Login Page
+        if (snapshot.connectionState == ConnectionState.done) {
+          return viewBlogPage(context, size);
         }
 
-        return viewBlogPage(context, size);
+        if (snapshot.hasError) {
+          handleErrorsFutureBuilder(context, snapshot.error!);
+        }
+        return const CustomCircularProgressIndicator();
       },
     );
   }

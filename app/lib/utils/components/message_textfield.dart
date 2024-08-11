@@ -19,12 +19,12 @@ class _MyMessageTextFieldState extends State<MyMessageTextField> {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10),
-      child: TextFormField(
+      child: TextField(
         controller: widget.controller,
         buildCounter: (context,
             {required currentLength, required isFocused, maxLength}) {
           return Container(
-            transform: Matrix4.translationValues(0, -110, 0),
+            transform: Matrix4.translationValues(0, -90, 0),
             child: Text("$currentLength/$maxLength"),
           );
         },
@@ -42,9 +42,10 @@ class _MyMessageTextFieldState extends State<MyMessageTextField> {
             icon: const Icon(Icons.send),
           ),
         ),
-        keyboardType: TextInputType.multiline,
+        keyboardType: TextInputType.text,
         maxLength: 50,
-        maxLines: 2,
+        textInputAction: TextInputAction.send,
+        onSubmitted: (val) => widget.sendMessage(widget.controller.text),
       ),
     );
   }

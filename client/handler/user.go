@@ -53,6 +53,12 @@ func SearchUsersByPattern(ctx *gin.Context) {
 
 	searchPattern := ctx.Query("searchPattern")
 
+	if len(searchPattern) < 5 && searchPattern != "" {
+		// Every Username is atleast of 5 chars
+		// So return empty list
+		return
+	}
+
 	ctxTimeout, cancelFunc := context.WithTimeout(context.Background(), SHORT_CONTEXT_TIMEOUT)
 	defer cancelFunc()
 

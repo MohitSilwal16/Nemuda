@@ -3,6 +3,7 @@ package chatwebsocket
 import (
 	"encoding/json"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/MohitSilwal16/Nemuda/chat/utils"
@@ -52,6 +53,7 @@ func (client *Client) readMessages() {
 			}
 			continue
 		}
+		wsMessage.Message = strings.TrimSpace(wsMessage.Message)
 
 		if wsMessage.Message == "" {
 			client.SendMessage <- Message{

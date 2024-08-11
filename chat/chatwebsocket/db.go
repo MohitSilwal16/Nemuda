@@ -92,8 +92,7 @@ func addMessageInDB(client *Client, message Message) {
 		return
 	}
 
-	message.Receiver = strings.ToLower(message.Receiver)
-	tableName := "messages_" + message.Receiver
+	tableName := "messages_" + strings.ToLower(message.Receiver)
 	// Tablename can't be used as placeholder
 	stmt, err := sqlDB.Prepare("INSERT INTO " + tableName + " (Sender, Receiver, MessageContent, Status, DateTime) VALUE (? , ? , ?, ?, ?);")
 
@@ -126,15 +125,12 @@ func changeStatusOfMessage(client *Client, sender string, receiver string, newSt
 		return
 	}
 
-	sender = strings.ToLower(sender)
-	receiver = strings.ToLower(receiver)
-
 	var err error
+	tableName := "messages_" + strings.ToLower(sender)
 	if newStatus == "Read" {
-		tableName := "messages_" + sender
 		_, err = sqlDB.Exec("UPDATE "+tableName+" SET Status = 'Read' WHERE Sender = ?;", receiver)
 	} else if newStatus == "Delivered" {
-		tableName := "messages_" + sender
+		// If a user is online, then every "Sent" message must be marked "Delivered"
 		_, err = sqlDB.Exec("UPDATE " + tableName + " SET Status = 'Delivered' WHERE Status = 'Sent';")
 	}
 

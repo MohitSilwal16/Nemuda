@@ -257,15 +257,12 @@ func SearchUsersByPattern(searchString string) ([]string, error) {
 }
 
 func ChangeStatusOfMessage(user string, user1 string, newStatus string) error {
-	user = strings.ToLower(user)
-	user1 = strings.ToLower(user1)
-
 	var err error
+	tableName := "messages_" + strings.ToLower(user)
 	if newStatus == "Read" {
-		tableName := "messages_" + user
 		_, err = sqlDB.Exec("UPDATE "+tableName+" SET Status = 'Read' WHERE Sender = ?;", user1)
 	} else if newStatus == "Delivered" {
-		tableName := "messages_" + user
+		// If a user is online, then every "Sent" message must be marked "Delivered"
 		_, err = sqlDB.Exec("UPDATE " + tableName + " SET Status = 'Delivered' WHERE Status = 'Sent';")
 	}
 
@@ -277,18 +274,15 @@ func ChangeStatusOfMessage(user string, user1 string, newStatus string) error {
 }
 
 func FetchLastMessage(user string, user1 string) (*pb.Message, error) {
-	user = strings.ToLower(user)
-	user1 = strings.ToLower(user1)
-
-	tableSender := "messages_" + user
-	tableReceiver := "messages_" + user1
+	tableUser := "messages_" + strings.ToLower(user)
+	tableUser1 := "messages_" + strings.ToLower(user1)
 
 	var lastMessage pb.Message
 	query := `
 		SELECT * FROM (
-			SELECT * FROM ` + tableSender + ` WHERE Sender = ? 
+			SELECT * FROM ` + tableUser + ` WHERE Sender = ? 
 			UNION ALL 
-			SELECT * FROM ` + tableReceiver + ` WHERE Sender = ?
+			SELECT * FROM ` + tableUser1 + ` WHERE Sender = ?
 		) AS combined 
 		ORDER BY DateTime DESC LIMIT 1;
 	`
@@ -309,13 +303,10 @@ func FetchLastMessage(user string, user1 string) (*pb.Message, error) {
 }
 
 func GetMessagesWithOffset(user string, user1 string, offset int, limit int) ([]*pb.Message, error) {
-	user = strings.ToLower(user)
-	user1 = strings.ToLower(user1)
+	tableUser := "messages_" + strings.ToLower(user)
+	tableUser1 := "messages_" + strings.ToLower(user1)
 
-	tableSender := "messages_" + user
-	tableReceiver := "messages_" + user1
-
-	rows, err := sqlDB.Query("(SELECT * FROM "+tableSender+" WHERE Sender = ? UNION SELECT * FROM "+tableReceiver+" WHERE Sender = ? ORDER BY DateTime DESC LIMIT ? OFFSET ?)ORDER BY DateTime;", user1, user, limit, offset)
+	rows, err := sqlDB.Query("(SELECT * FROM "+tableUser+" WHERE Sender = ? UNION SELECT * FROM "+tableUser1+" WHERE Sender = ? ORDER BY DateTime DESC LIMIT ? OFFSET ?)ORDER BY DateTime;", user1, user, limit, offset)
 
 	if err != nil {
 		return nil, err

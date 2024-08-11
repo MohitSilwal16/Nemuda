@@ -83,6 +83,12 @@ func RenderHomePage(ctx *gin.Context, sessionToken string) {
 		log.Println("Error:", err)
 		log.Println("Description: Cannot fetch blogs by tag\nSource: RenderHomePage()")
 
+		errMsg := utils.TrimGrpcErrorMessage(err.Error())
+		if errMsg == "INVALID SESSION TOKEN" {
+			RenderLoginPage(ctx, "Session Timed Out")
+			return
+		}
+
 		message := utils.ReturnAlertMessage(err.Error())
 		fmt.Fprint(ctx.Writer, message)
 		return
@@ -191,8 +197,17 @@ func RenderGetBlogPage(ctx *gin.Context, title string, message string) {
 	sessionToken := getSessionTokenFromCookie(ctx.Request)
 	res, err := getBlogByTitle(sessionToken, title)
 	if err != nil {
+		log.Println("Error:", err)
+		log.Println("Description: Cannot fetch blog by title\nSource: RenderGetBlogPage()")
+
+		errMsg := utils.TrimGrpcErrorMessage(err.Error())
+		if errMsg == "INVALID SESSION TOKEN" {
+			RenderLoginPage(ctx, "Session Timed Out")
+			return
+		}
 		msg := utils.ReturnAlertMessage(err.Error())
 		fmt.Fprint(ctx.Writer, msg)
+		return
 	}
 
 	data := map[string]interface{}{
@@ -253,6 +268,7 @@ func RenderChatPage(ctx *gin.Context) {
 		log.Println("Description: Error in tmpl.Execute() in RenderChatPage()")
 
 		fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
+		return
 	}
 
 	tmpl.Execute(ctx.Writer, data)
@@ -271,10 +287,11 @@ func RenderMessageBodyContainer(ctx *gin.Context, messages []*pb.Message, user1 
 	}
 
 	if err != nil {
-		log.Println("Error: ", err)
+		log.Println("Error:", err)
 		log.Println("Description: Error in tmpl.Execute() in RenderChatPage()")
 
 		fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
+		return
 	}
 
 	tmpl.Execute(ctx.Writer, data)
@@ -295,6 +312,7 @@ func RenderSearchUsersContainer(ctx *gin.Context, usersAndLastMessage []*pb.User
 		log.Println("Description: Error in tmpl.Execute() in RenderChatPage()")
 
 		fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
+		return
 	}
 
 	tmpl.Execute(ctx.Writer, data)
@@ -306,6 +324,7 @@ func RenderOlderMessage(ctx *gin.Context, offset int, messages []*pb.Message, re
 		log.Println("Error:", err)
 		log.Println("Description: Error in tmpl.Execute() in GetMessagesWithOffset() for message.html")
 
+		fmt.Fprint(ctx.Writer, INTERNAL_SERVER_ERROR_MESSAGE)
 		return
 	}
 
