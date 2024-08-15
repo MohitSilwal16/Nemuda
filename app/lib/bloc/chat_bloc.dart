@@ -13,9 +13,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   ChatBloc({required this.repo}) : super(StateChatInitial()) {
     messageSubscription = repo.messagesStream.listen(
       (message) {
-        add(
-          EventNewMsgReceived(message: message),
-        );
+        add(EventNewMsgReceived(message: message));
       },
       onError: (err) => add(EventError(message: err.toString())),
       onDone: () => add(EventError(message: "WebSocket Disconnected")),
@@ -32,8 +30,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
 
   Future<void> _fetchPrevMessages(
       EventFetchPrevMessages event, Emitter<ChatState> emit) async {
-    final currentState = state;
-    if (currentState is StateChatInitial || currentState is StateUserLoaded) {
+    if (state is StateChatInitial || state is StateUserLoaded) {
       emit(StateChatLoading());
     }
     try {
@@ -41,9 +38,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       emit(StateChatLoaded(messages: res.messages, nextOffset: res.nextOffset));
     } catch (err) {
       final errMsg = trimGrpcErrorMessage(err.toString());
-      emit(
-        StateChatError(errorMessage: errMsg),
-      );
+      emit(StateChatError(errorMessage: errMsg));
     }
   }
 
@@ -52,21 +47,15 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       repo.sendMessage(event.message, event.receiver);
       emit(StateNothing());
     } catch (err) {
-      emit(
-        StateChatError(errorMessage: err.toString()),
-      );
+      emit(StateChatError(errorMessage: err.toString()));
     }
   }
 
   void _newMsgReceived(EventNewMsgReceived event, Emitter<ChatState> emit) {
     try {
-      emit(
-        StateNewMsgReceived(message: event.message),
-      );
+      emit(StateNewMsgReceived(message: event.message));
     } catch (err) {
-      emit(StateChatError(
-        errorMessage: err.toString(),
-      ));
+      emit(StateChatError(errorMessage: err.toString()));
     }
   }
 
@@ -78,20 +67,16 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       emit(StateUserLoaded(usersAndLastMsg: res));
     } catch (err) {
       final errMsg = trimGrpcErrorMessage(err.toString());
-      emit(
-        StateChatError(errorMessage: errMsg),
-      );
+      emit(StateChatError(errorMessage: errMsg));
     }
   }
 
   void _markMsgAsRead(EventMarkMsgAsRead event, Emitter<ChatState> emit) {
     try {
       repo.markMsgAsRead(event.receiver);
-      emit(StateMsgMarkedAsRead());
+      emit(StateNothing());
     } catch (err) {
-      emit(
-        StateChatError(errorMessage: err.toString()),
-      );
+      emit(StateChatError(errorMessage: err.toString()));
     }
   }
 

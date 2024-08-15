@@ -6,10 +6,10 @@ import 'package:app/pb/blogs.pb.dart';
 import 'package:app/pages/update_blog.dart';
 import 'package:app/services/blog.dart';
 import 'package:app/utils/colors.dart';
-import 'package:app/utils/components/loading.dart';
 import 'package:app/utils/components/snackbar.dart';
 import 'package:app/utils/components/error.dart';
 import 'package:app/utils/components/alert_dialogue.dart';
+import 'package:app/pages/static/view_blog_skeleton.dart';
 
 class ViewBlogPage extends StatefulWidget {
   const ViewBlogPage({
@@ -153,7 +153,7 @@ class _ViewBlogPageState extends State<ViewBlogPage>
       future: _futureBlog,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const CustomCircularProgressIndicator();
+          return const ViewBlogSkeletonPage();
         }
         if (snapshot.connectionState == ConnectionState.done) {
           return viewBlogPage(context, size);
@@ -162,7 +162,7 @@ class _ViewBlogPageState extends State<ViewBlogPage>
         if (snapshot.hasError) {
           handleErrorsFutureBuilder(context, snapshot.error!);
         }
-        return const CustomCircularProgressIndicator();
+        return const ViewBlogSkeletonPage();
       },
     );
   }

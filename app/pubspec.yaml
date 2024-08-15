@@ -47,6 +47,8 @@ dependencies:
   web_socket_channel: ^3.0.1
   flutter_launcher_icons: ^0.13.1
   flutter_bloc: ^8.1.6
+  audioplayers: ^6.0.0
+  equatable: ^2.0.5
 
 dev_dependencies:
   flutter_test:

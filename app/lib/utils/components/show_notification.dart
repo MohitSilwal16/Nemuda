@@ -1,3 +1,4 @@
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 
 class NotificationDialog extends StatelessWidget {
@@ -15,64 +16,72 @@ class NotificationDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      backgroundColor: Colors.blueAccent,
+      backgroundColor: Colors.blue[600],
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
       title: Text(
         title,
         style: const TextStyle(
-          color: Colors.white,
           fontWeight: FontWeight.bold,
+          color: Colors.white,
           fontSize: 18,
         ),
       ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            body,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 16,
+      content: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              body,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+              ),
             ),
-          ),
-          const SizedBox(height: 20),
-          const Icon(
-            Icons.notifications,
-            color: Colors.white,
-            size: 48,
-          ),
-        ],
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    onOpen();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text('Open'),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text('Close'),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-          child: const Text(
-            'Close',
-            style: TextStyle(
-              color: Colors.white,
-            ),
-          ),
-        ),
-        TextButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-            onOpen();
-          },
-          child: const Text(
-            'Open',
-            style: TextStyle(
-              color: Colors.white,
-            ),
-          ),
-        ),
-      ],
     );
   }
 }
 
 void showNotificationDialog(
     BuildContext context, String title, String body, Function onTap) {
+  AudioPlayer().play(AssetSource("notification.mp3"));
   WidgetsBinding.instance.addPostFrameCallback((_) {
     showDialog(
       context: context,

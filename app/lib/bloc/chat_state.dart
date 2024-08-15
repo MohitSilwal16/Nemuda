@@ -36,6 +36,4 @@ class StateChatError extends ChatState {
   });
 }
 
-class StateMsgMarkedAsRead extends ChatState {}
-
 class StateNothing extends ChatState {}

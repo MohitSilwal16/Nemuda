@@ -1,7 +1,3 @@
-run_server_chat:
-	cd server && rm log.txt && ./server > log.txt 2>&1 & cd ..
-	cd chat && rm log.txt && ./chat > log.txt 2>&1 & cd ..
-
 run:
 	cd server && rm log.txt && ./server > log.txt 2>&1 & cd ..
 	cd client && rm log.txt && sudo ./client > log.txt 2>&1 & cd ..

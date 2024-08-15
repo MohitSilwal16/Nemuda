@@ -5,7 +5,6 @@ import 'package:app/main.dart';
 import 'package:app/bloc/chat_repo.dart';
 import 'package:app/pb/user.pb.dart';
 import 'package:app/utils/components/show_notification.dart';
-import 'package:app/pages/chat_user.dart';
 import 'package:app/bloc/chat_bloc.dart';
 import 'package:app/bloc/chat_event.dart';
 import 'package:app/bloc/chat_state.dart';
@@ -13,8 +12,9 @@ import 'package:app/services/auth.dart';
 import 'package:app/services/service_init.dart';
 import 'package:app/utils/components/button.dart';
 import 'package:app/utils/components/error.dart';
-import 'package:app/utils/components/loading.dart';
 import 'package:app/utils/components/user_card.dart';
+import 'package:app/pages/chat_user.dart';
+import 'package:app/pages/static/chat_home_skeleton.dart';
 
 class ChatHomePage extends StatelessWidget {
   const ChatHomePage({super.key});
@@ -77,11 +77,15 @@ class __BlocBuilderState extends State<_BlocBuilder> {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<ChatBloc, ChatState>(
+      buildWhen: (previous, current) {
+        // Only rebuild if the current state is not StateNothing and is different from the previous state.
+        return current.runtimeType != StateNothing && previous != current;
+        // return current is! StateNothing && previous != current;
+      },
       builder: (context, state) {
         final currentState = state;
         if (currentState is StateChatLoading) {
-          // TODO: Add Skeleton Page
-          return const CustomCircularProgressIndicator();
+          return const ChatHomeSkeletonPage();
         }
 
         if (currentState is StateChatError) {
@@ -106,7 +110,6 @@ class __BlocBuilderState extends State<_BlocBuilder> {
                 break;
               }
             }
-            // TODO: Change Notification Dialog's design
             showNotificationDialog(
               context,
               currentState.message.sender,

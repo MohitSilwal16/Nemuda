@@ -18,7 +18,7 @@ class UserMessageCard extends StatelessWidget {
       onTap: () => navigateToChatPage(usersAndLastMessage.username),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-        margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
         decoration: BoxDecoration(
           color: MyColors.primaryColor,
           borderRadius: BorderRadius.circular(10),

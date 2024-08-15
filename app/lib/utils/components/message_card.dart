@@ -20,7 +20,7 @@ class MessageCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 5),
       alignment:
-          isMessageSentByUser ? Alignment.centerLeft : Alignment.centerRight,
+          isMessageSentByUser && !isSelfMessage ? Alignment.centerLeft : Alignment.centerRight,
       child: Container(
         constraints:
             BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.5),

@@ -5,9 +5,9 @@ import 'dart:async';
 import 'package:app/services/auth.dart';
 import 'package:app/pages/home.dart';
 import 'package:app/pages/login.dart';
-import 'package:app/pages/splash_screen.dart';
-import 'package:app/pages/server_error.dart';
-import 'package:app/pages/server_busy_page.dart';
+import 'package:app/pages/static/splash_screen.dart';
+import 'package:app/pages/static/server_error.dart';
+import 'package:app/pages/static/server_busy_page.dart';
 
 class InitPage extends StatelessWidget {
   const InitPage({super.key});

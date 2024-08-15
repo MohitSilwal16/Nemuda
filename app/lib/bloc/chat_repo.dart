@@ -19,7 +19,6 @@ class ChatRepo {
   ChatRepo._internal();
 
   void init() {
-    // TODO: Initialize ws when user is in ChatHomePage
     _sessionToken = ServiceManager().hiveBox.get("sessionToken");
     if (_sessionToken == null) {
       throw Exception("INVALID SESSION TOKEN");
@@ -44,7 +43,6 @@ class ChatRepo {
 
   Future<GetMessagesResponse> fetchPrevMessages(
       String user1, int offset) async {
-    // TODO: Handle TimeoutException
     final request = GetMessagesRequest(
         sessionToken: _sessionToken, user1: user1, offset: offset);
 
@@ -80,8 +78,6 @@ class ChatRepo {
 
   Future<List<UserAndLastMessage>> getUsersByStartingPattern(
       String searchPattern) async {
-    // TODO: Handle TimeoutException
-
     final request = SearchUsersByStartingPatternRequest(
         sessionToken: _sessionToken, searchPattern: searchPattern);
 

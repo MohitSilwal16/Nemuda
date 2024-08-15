@@ -26,7 +26,8 @@ class ChatUserPage extends StatefulWidget {
   State<ChatUserPage> createState() => _ChatUserPageState();
 }
 
-class _ChatUserPageState extends State<ChatUserPage> {
+class _ChatUserPageState extends State<ChatUserPage>
+    with WidgetsBindingObserver {
   final TextEditingController controllerMessage = TextEditingController();
 
   void sendMessage(String message) {
@@ -72,9 +73,14 @@ class _ChatUserPageState extends State<ChatUserPage> {
               fit: BoxFit.cover,
             ),
           ),
-          child: ListView(
+          child: Column(
             children: [
-              _BuildMessages(user: widget.user),
+              Expanded(
+                child: SingleChildScrollView(
+                  reverse: true,
+                  child: _BuildMessages(user: widget.user),
+                ),
+              ),
 
               SizedBox(height: size.height * .035),
 
@@ -129,10 +135,13 @@ class _BuildMessagesState extends State<_BuildMessages> {
     return SizedBox(
       height: size.height * .7,
       child: BlocBuilder<ChatBloc, ChatState>(
+        buildWhen: (previous, current) {
+
+          return current is! StateNothing && previous != current;
+        },
         builder: (context, state) {
           final currentState = state;
           if (currentState is StateChatLoading) {
-            // TODO : Add Skeleton Page
             return const CustomCircularProgressIndicator();
           }
 
@@ -141,9 +150,13 @@ class _BuildMessagesState extends State<_BuildMessages> {
           }
 
           if (currentState is StateChatLoaded) {
+            // Set to avoid duplicacy
+            Set<Message> messageSet = currentState.messages.toSet();
+            messageSet.addAll(messages);
+            messages = messageSet.toList()
+              ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
             offset = currentState.nextOffset;
-            messages = currentState.messages + messages;
-
+            
             // Scroll to the bottom
             if (messages.length <= 9) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -162,9 +175,18 @@ class _BuildMessagesState extends State<_BuildMessages> {
           if (currentState is StateNewMsgReceived) {
             if (currentState.message.error != "") {
               handleErrorsBlocBuilder(context, currentState.message.error);
-            } else if (currentState.message.messageType == "Message") {
+            } else if (currentState.message.messageType == "Message" &&
+                messages.isNotEmpty) {
               if (currentState.message.sender == widget.user ||
                   currentState.message.selfMessage) {
+                // Retain only the last 18 messages
+                int keepLastN = 18;
+                if (messages.length > 27) {
+                  // Remove 18 messages if msg list size is more than 27
+                  messages = messages.sublist(messages.length - keepLastN);
+                  offset = 18;
+                }
+
                 messages.add(
                   Message(
                     sender: currentState.message.sender,
@@ -174,24 +196,16 @@ class _BuildMessagesState extends State<_BuildMessages> {
                     status: currentState.message.status,
                   ),
                 );
-                // Retain only the last 18 messages
-                int keepLastN = 18;
-                if (messages.length > 27) {
-                  // Remove 18 messages if msg list size is more than 27
-                  messages = messages.sublist(messages.length - keepLastN);
-                  offset = 18;
-                }
+
                 // Acknowledge user that I've read your msg
                 context
                     .read<ChatBloc>()
                     .add(EventMarkMsgAsRead(receiver: widget.user));
-                // Scroll a bit downwards
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   controllerScroll
                       .jumpTo(controllerScroll.position.maxScrollExtent);
                 });
               } else {
-                // TODO: Change Notification Dialog's design
                 showNotificationDialog(
                   context,
                   currentState.message.sender,
@@ -214,11 +228,15 @@ class _BuildMessagesState extends State<_BuildMessages> {
           }
 
           return ListView.builder(
+            physics: const BouncingScrollPhysics(),
             itemCount: messages.length + 1,
             controller: controllerScroll,
             itemBuilder: (context, index) {
               if (index == 0) {
-                return _LoadMoreMessages(offset: offset, user: widget.user);
+                return _LoadMoreMessages(
+                  offset: offset,
+                  user: widget.user,
+                );
               }
               return MessageCard(
                 user: widget.user,
