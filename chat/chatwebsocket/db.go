@@ -51,17 +51,17 @@ func Init_MariaDB() error {
 	return nil
 }
 
-func isSessionTokenValid(client *Client) {
+func isSessionTokenValid(client *Client) bool {
 	if client == nil {
 		log.Println("Null client\nSource: isSessionTokenValid()")
-		return
+		return false
 	}
 
 	if client.SessionToken == "" {
 		client.SendMessage <- Message{
 			Error: "Invalid Session Token",
 		}
-		return
+		return false
 	}
 
 	rows, err := sqlDB.Query("SELECT 1 from users WHERE Token = ?;", client.SessionToken)
@@ -73,7 +73,7 @@ func isSessionTokenValid(client *Client) {
 		client.SendMessage <- Message{
 			Error: "Internal Server Error",
 		}
-		return
+		return false
 	}
 
 	defer rows.Close()
@@ -83,7 +83,9 @@ func isSessionTokenValid(client *Client) {
 		client.SendMessage <- Message{
 			Error: "Invalid Session Token",
 		}
+		return false
 	}
+	return true
 }
 
 func addMessageInDB(client *Client, message Message) {

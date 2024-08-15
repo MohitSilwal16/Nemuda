@@ -2,15 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:double_back_to_close_app/double_back_to_close_app.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
+import 'package:app/main.dart';
+import 'package:app/bloc/chat_repo.dart';
 import 'package:app/pb/blogs.pb.dart';
-import 'package:app/utils/components/error.dart';
-import 'package:app/utils/colors.dart';
-import 'package:app/utils/components/button.dart';
-import 'package:app/utils/size.dart';
-import 'package:app/utils/components/snackbar.dart';
 import 'package:app/services/auth.dart';
 import 'package:app/services/blog.dart';
 import 'package:app/services/service_init.dart';
+import 'package:app/utils/components/error.dart';
+import 'package:app/utils/colors.dart';
+import 'package:app/utils/components/button.dart';
+import 'package:app/utils/components/snackbar.dart';
 import 'package:app/utils/components/blog_card.dart';
 import 'package:app/utils/utils.dart';
 
@@ -73,7 +74,6 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final size = returnSize(context);
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
@@ -196,10 +196,11 @@ class _HomePageState extends State<HomePage> {
                   // Message Icon
                   IconButton(
                     onPressed: () {
+                      ChatRepo().init(); // Init WebSocket
                       Navigator.of(context)
                         ..pop() // Close menu bar
-                        ..pop() // Close home
-                        ..pushNamed("chat_home");
+                        ..pushReplacementNamed(
+                            "chat_home"); // Close home & Open ChatHomePage
                     },
                     icon: const Icon(Icons.message_outlined),
                   ),

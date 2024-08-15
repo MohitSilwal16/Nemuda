@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 
+import 'package:app/main.dart';
 import 'package:app/pb/blogs.pb.dart';
 import 'package:app/pages/update_blog.dart';
 import 'package:app/services/blog.dart';
 import 'package:app/utils/colors.dart';
-import 'package:app/utils/size.dart';
 import 'package:app/utils/components/loading.dart';
 import 'package:app/utils/components/snackbar.dart';
 import 'package:app/utils/components/error.dart';
@@ -149,7 +149,6 @@ class _ViewBlogPageState extends State<ViewBlogPage>
 
   @override
   Widget build(BuildContext context) {
-    final size = returnSize(context);
     return FutureBuilder(
       future: _futureBlog,
       builder: (context, snapshot) {

@@ -29,22 +29,16 @@ handleErrors(BuildContext context, Object err) {
     navigateAndPOPbgPages("server_error", "Internal Server Error", context);
   }
   // Blog Errors
-  else if (trimmedGrpcError == "BLOG NOT FOUND") {
-    navigateAndPOPbgPages("home", "Blog Not Found", context);
-  } else if (trimmedGrpcError == "BLOG ALREADY DISLIKED") {
-    showErrorDialog(context, "Blog already Disliked");
-  } else if (trimmedGrpcError == "BLOG ALREADY LIKED") {
-    showErrorDialog(context, "Blog already Liked");
-  } else if (trimmedGrpcError == "XSS DETECTED") {
-    showErrorDialog(context, "XSS Detected");
-  } else if (trimmedGrpcError == "USER CANNOT DELETE THIS BLOG") {
-    navigateAndPOPbgPages("home", "User cannot delete this blog", context);
+  else if (trimmedGrpcError == "BLOG NOT FOUND" ||
+      trimmedGrpcError == "USER CANNOT UPDATE THIS BLOG" ||
+      trimmedGrpcError == "USER CANNOT DELETE THIS BLOG") {
+    navigateAndPOPbgPages("home", trimmedGrpcError, context);
   } else {
     showErrorDialog(context, trimmedGrpcError);
   }
 }
 
-// Called when there is Error in Future or Stream Builders
+// Called when there is Error in Future Builders
 navigateAndPOPbgPagesFutureBuilder(
     String routeName, String errorMessage, BuildContext context) {
   WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -67,17 +61,38 @@ handleErrorsFutureBuilder(BuildContext context, Object err) {
 
   // Common Errors
   if (trimmedGrpcError == "INVALID SESSION TOKEN") {
-    navigateAndPOPbgPagesFutureBuilder(
-        "login", "Session Timed Out", context);
+    navigateAndPOPbgPagesFutureBuilder("login", "Session Timed Out", context);
   } else if (trimmedGrpcError == "INTERNAL SERVER ERROR") {
     navigateAndPOPbgPagesFutureBuilder(
         "server_error", "Internal Server Error", context);
   }
   // Blog Errors
   else if (trimmedGrpcError == "BLOG NOT FOUND") {
-    navigateAndPOPbgPagesFutureBuilder(
-        "home", "Blog Not Found", context);
+    navigateAndPOPbgPagesFutureBuilder("home", "Blog Not Found", context);
   } else {
     showErrorDialog(context, trimmedGrpcError);
+  }
+}
+
+// Called when there is Error in Bloc Builders
+navigateAndPOPbgPagesBlocBuilder(
+    String routeName, String errorMessage, BuildContext context) {
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    Navigator.pushReplacementNamed(context, routeName);
+    showErrorDialog(context, errorMessage);
+  });
+}
+
+handleErrorsBlocBuilder(BuildContext context, Object err) {
+  if (err is TimeoutException) {
+    navigateAndPOPbgPagesFutureBuilder(
+        "server_busy", "Request Timed Out", context);
+  } else if (err == "INVALID SESSION TOKEN") {
+    navigateAndPOPbgPagesFutureBuilder("login", "Session Timed Out", context);
+  } else if (err == "INTERNAL SERVER ERROR") {
+    navigateAndPOPbgPagesFutureBuilder(
+        "server_error", "Internal Server Error", context);
+  } else {
+    showErrorDialog(context, err.toString());
   }
 }

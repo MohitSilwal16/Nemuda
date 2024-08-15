@@ -1,315 +1,68 @@
-import 'package:app/utils/components/show_notification.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:visibility_detector/visibility_detector.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
-import 'dart:convert';
 
-import 'package:app/pb/user.pb.dart';
-import 'package:app/models/message.dart';
-import 'package:app/pages/chat_home.dart';
-import 'package:app/pages/login.dart';
-import 'package:app/services/service_init.dart';
-import 'package:app/services/user.dart';
-import 'package:app/utils/components/alert_dialogue.dart';
+import 'package:app/main.dart';
+import 'package:app/pb/user.pbgrpc.dart';
+import 'package:app/bloc/chat_bloc.dart';
+import 'package:app/bloc/chat_event.dart';
+import 'package:app/bloc/chat_state.dart';
 import 'package:app/utils/colors.dart';
-import 'package:app/utils/components/snackbar.dart';
-import 'package:app/utils/utils.dart';
+import 'package:app/utils/components/error.dart';
 import 'package:app/utils/components/loading.dart';
-import 'package:app/utils/components/message_textfield.dart';
 import 'package:app/utils/components/message_card.dart';
+import 'package:app/utils/components/message_textfield.dart';
+import 'package:app/utils/components/show_notification.dart';
 
 class ChatUserPage extends StatefulWidget {
+  final String user;
+
   const ChatUserPage({
     super.key,
     required this.user,
-    required this.channel,
-    required this.broadcastStream,
   });
-
-  final String user;
-  final WebSocketChannel channel;
-  final Stream broadcastStream;
 
   @override
   State<ChatUserPage> createState() => _ChatUserPageState();
 }
 
 class _ChatUserPageState extends State<ChatUserPage> {
-  final controllerMessage = TextEditingController();
-  final ScrollController controllerScroll = ScrollController();
-  late final Future<void> finalFutureFunc;
-  late final String sessionToken;
+  final TextEditingController controllerMessage = TextEditingController();
 
-  late List<Message> messages;
-  late int offset;
-
-  futureFunction() async {
-    final res = await getMessages(widget.user, 0);
-    messages = res.messages;
-    offset = res.nextOffset;
-  }
-
-  loadMoreMessages(int index, Size size) {
-    if (index == 0) {
-      return VisibilityDetector(
-        key: const Key("Load-More-Messages"),
-        child: noMoreMessagesContainer(),
-        onVisibilityChanged: (VisibilityInfo info) {
-          if (info.visibleFraction > 0) {
-            if (offset == -1) {
-              return;
-            }
-
-            getMessages(widget.user, offset).then((res) {
-              setState(() {
-                final temp = messages;
-                messages = res.messages;
-                messages += temp;
-                offset = res.nextOffset;
-              });
-            }).catchError((err) {
-              if (err.toString() ==
-                  "TimeoutException after 0:00:05.000000: Future not completed") {
-                ScaffoldMessenger.of(context)
-                    .showSnackBar(returnSnackbar("Request Timed Out"));
-                return;
-              }
-
-              final trimmedGrpcError = trimGrpcErrorMessage(err.toString());
-
-              ScaffoldMessenger.of(context)
-                  .showSnackBar(returnSnackbar(trimmedGrpcError));
-
-              if (trimmedGrpcError == "INVALID SESSION TOKEN") {
-                Navigator.pushReplacementNamed(context, "login");
-              }
-            });
-          }
-        },
-      );
-    }
-
-    return MessageCard(
-      message: messages[index - 1],
-      user: widget.user,
-    );
-  }
-
-  sendMessage(String message) {
-    if (message == "") {
-      return;
-    }
+  void sendMessage(String message) {
+    context
+        .read<ChatBloc>()
+        .add(EventSendMessage(message: message, receiver: widget.user));
     controllerMessage.text = "";
-
-    widget.channel.sink.add(
-      jsonEncode(
-        ModelWSMessage(
-          message: message.trim(),
-          receiver: widget.user,
-          sessionToken: sessionToken,
-          messageType: "Message",
-        ).toJson(),
-      ),
-    );
-  }
-
-  navigateToChatPage(String user) {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ChatUserPage(
-          user: user,
-          channel: widget.channel,
-          broadcastStream: widget.broadcastStream,
-        ),
-      ),
-    );
-  }
-
-  @override
-  void initState() {
-    finalFutureFunc = futureFunction();
-
-    sessionToken = ServiceManager().hiveBox.get("sessionToken");
-    widget.channel.sink.add(
-      jsonEncode(
-        ModelWSMessage(
-          message: "",
-          receiver: widget.user,
-          sessionToken: sessionToken,
-          messageType: "Read",
-        ).toJson(),
-      ),
-    );
-
-    super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder(
-      future: finalFutureFunc,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          // TODO: Skeleton Page
-          return const CustomCircularProgressIndicator();
-        }
-
-        if (snapshot.hasError) {
-          return LoginPage();
-        }
-
-        if (messages.length <= 9) {
-          // Initial message loading
-          // Scroll to the bottom
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            controllerScroll.jumpTo(controllerScroll.position.maxScrollExtent);
-          });
-        } else {
-          // Scroll a bit downwards
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            controllerScroll.jumpTo(70);
-          });
-        }
-        return chatUserPage();
-      },
-    );
-  }
-
-  StreamBuilder stream() {
-    return StreamBuilder(
-      stream: widget.broadcastStream,
-      builder: (context, snapshot) {
-        print("Build");
-        if (snapshot.hasData) {
-          print("Build 1");
-          Map<String, dynamic> jsonMap = jsonDecode(snapshot.data.toString());
-          ModelMessage message = ModelMessage.fromJson(jsonMap);
-
-          if (message.error != "") {
-            showErrorDialog(context, message.error);
-          }
-
-          if (message.sender == widget.user ||
-              (message.selfMessage && widget.user == message.receiver)) {
-            if (message.messageType == "Message") {
-              // Scroll to the bottom
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                controllerScroll
-                    .jumpTo(controllerScroll.position.maxScrollExtent);
-              });
-
-              messages.add(
-                Message(
-                  sender: message.sender,
-                  receiver: message.receiver,
-                  messageContent: message.messageContent,
-                  dateTime: message.dateTime,
-                  status: message.status,
-                ),
-              );
-              print(messages.length);
-
-              // Retain only the last 18 messages
-              int keepLastN = 18;
-              if (messages.length > keepLastN) {
-                messages = messages.sublist(messages.length - keepLastN);
-              }
-
-              // Acknowledge user that I read his/her message
-              if (!message.selfMessage) {
-                widget.channel.sink.add(
-                  jsonEncode(
-                    ModelWSMessage(
-                            message: "",
-                            receiver: message.sender,
-                            sessionToken: sessionToken,
-                            messageType: "Read")
-                        .toJson(),
-                  ),
-                );
-              }
-            } else if (message.messageType == "Read") {
-              // Update message status if available in list
-              for (int i = messages.length - 1; i >= 0; --i) {
-                if (messages[i].status == "Read") {
-                  break;
-                }
-                messages[i].status = "Read";
-              }
-            } else if (message.messageType == "Delivered") {
-              for (int i = messages.length - 1; i >= 0; --i) {
-                if (messages[i].status == "Read" ||
-                    messages[i].status == "Delivered") {
-                  break;
-                }
-                messages[i].status = "Delivered";
-              }
-            }
-          } else {
-            // The message is from some another user
-            if (message.messageType == "Message") {
-              showNotificationDialog(
-                  context,
-                  message.sender,
-                  message.messageContent,
-                  () => navigateToChatPage(message.sender));
-            }
-          }
-        }
-
-        if (snapshot.hasError) {
-          showErrorDialog(context, "Error in WebSocket");
-        }
-
-        return chatUserPage();
-      },
-    );
-  }
-
-  PopScope chatUserPage() {
-    final size = MediaQuery.of(context).size;
-
-    return PopScope(
-      canPop: false,
-      onPopInvoked: (didPop) {
-        if (didPop) {
-          return;
-        }
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ChatHomePage(
-              channel: widget.channel,
-              broadcastStream: widget.broadcastStream,
-            ),
+    return Scaffold(
+      appBar: AppBar(
+        leading: CircleAvatar(
+          backgroundColor: Colors.transparent,
+          child: IconButton(
+            onPressed: () =>
+                Navigator.pushReplacementNamed(context, "chat_home"),
+            icon: const Icon(Icons.arrow_back_ios_new),
           ),
-        );
-      },
-      child: Scaffold(
-        appBar: AppBar(
-          leading: CircleAvatar(
-            backgroundColor: Colors.transparent,
-            child: IconButton(
-              onPressed: () => Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ChatHomePage(
-                    channel: widget.channel,
-                    broadcastStream: widget.broadcastStream,
-                  ),
-                ),
-              ),
-              icon: const Icon(Icons.arrow_back_ios_new),
-            ),
-          ),
-          title: Text(
-            widget.user,
-            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 24),
-          ),
-          centerTitle: true,
         ),
-        body: Container(
+        title: Text(
+          widget.user,
+          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 24),
+        ),
+        centerTitle: true,
+      ),
+      body: PopScope(
+        canPop: false,
+        onPopInvoked: (didPop) {
+          if (didPop) {
+            return;
+          }
+          Navigator.pushReplacementNamed(context, "chat_home");
+        },
+        child: Container(
           width: size.width,
           height: size.height,
           padding: const EdgeInsets.symmetric(vertical: 20),
@@ -321,20 +74,9 @@ class _ChatUserPageState extends State<ChatUserPage> {
           ),
           child: ListView(
             children: [
-              SizedBox(
-                height: size.height * .7,
-                child: messages.isNotEmpty
-                    ? ListView(
-                        controller: controllerScroll,
-                        children: List.generate(
-                          messages.length + 1,
-                          (index) => loadMoreMessages(index, size),
-                        ),
-                      )
-                    : noMoreMessagesContainer(),
-              ),
+              _BuildMessages(user: widget.user),
 
-              SizedBox(height: size.height * .06),
+              SizedBox(height: size.height * .035),
 
               MyMessageTextField(
                 controller: controllerMessage,
@@ -348,8 +90,188 @@ class _ChatUserPageState extends State<ChatUserPage> {
       ),
     );
   }
+}
 
-  Padding noMoreMessagesContainer() {
+class _BuildMessages extends StatefulWidget {
+  const _BuildMessages({required this.user});
+
+  final String user;
+
+  @override
+  State<_BuildMessages> createState() => _BuildMessagesState();
+}
+
+class _BuildMessagesState extends State<_BuildMessages> {
+  int offset = 0;
+  List<Message> messages = [];
+  final ScrollController controllerScroll = ScrollController();
+
+  void navigateToChatPage(String user) {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ChatUserPage(user: user),
+      ),
+    );
+  }
+
+  @override
+  void initState() {
+    context.read<ChatBloc>().add(EventMarkMsgAsRead(receiver: widget.user));
+    context
+        .read<ChatBloc>()
+        .add(EventFetchPrevMessages(offset: 0, receiver: widget.user));
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: size.height * .7,
+      child: BlocBuilder<ChatBloc, ChatState>(
+        builder: (context, state) {
+          final currentState = state;
+          if (currentState is StateChatLoading) {
+            // TODO : Add Skeleton Page
+            return const CustomCircularProgressIndicator();
+          }
+
+          if (currentState is StateChatError) {
+            handleErrorsBlocBuilder(context, currentState.errorMessage);
+          }
+
+          if (currentState is StateChatLoaded) {
+            offset = currentState.nextOffset;
+            messages = currentState.messages + messages;
+
+            // Scroll to the bottom
+            if (messages.length <= 9) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                controllerScroll
+                    .jumpTo(controllerScroll.position.maxScrollExtent);
+              });
+            } else {
+              // Scroll lil bit downwards when old message is loaded
+              // Else it's gonna request for older messages again & again
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                controllerScroll.jumpTo(70);
+              });
+            }
+          }
+
+          if (currentState is StateNewMsgReceived) {
+            if (currentState.message.error != "") {
+              handleErrorsBlocBuilder(context, currentState.message.error);
+            } else if (currentState.message.messageType == "Message") {
+              if (currentState.message.sender == widget.user ||
+                  currentState.message.selfMessage) {
+                messages.add(
+                  Message(
+                    sender: currentState.message.sender,
+                    receiver: currentState.message.receiver,
+                    messageContent: currentState.message.messageContent,
+                    dateTime: currentState.message.dateTime,
+                    status: currentState.message.status,
+                  ),
+                );
+                // Retain only the last 18 messages
+                int keepLastN = 18;
+                if (messages.length > 27) {
+                  // Remove 18 messages if msg list size is more than 27
+                  messages = messages.sublist(messages.length - keepLastN);
+                  offset = 18;
+                }
+                // Acknowledge user that I've read your msg
+                context
+                    .read<ChatBloc>()
+                    .add(EventMarkMsgAsRead(receiver: widget.user));
+                // Scroll a bit downwards
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  controllerScroll
+                      .jumpTo(controllerScroll.position.maxScrollExtent);
+                });
+              } else {
+                // TODO: Change Notification Dialog's design
+                showNotificationDialog(
+                  context,
+                  currentState.message.sender,
+                  currentState.message.messageContent,
+                  () => navigateToChatPage(currentState.message.sender),
+                );
+              }
+            } else if (currentState.message.messageType == "Read") {
+              for (int i = messages.length - 1; i >= 0; --i) {
+                if (messages[i].status == "Read") break;
+                messages[i].status = "Read";
+              }
+            } else if (currentState.message.messageType == "Delivered") {
+              for (int i = messages.length - 1; i >= 0; --i) {
+                if (messages[i].status == "Read" ||
+                    messages[i].status == "Delivered") break;
+                messages[i].status = "Delivered";
+              }
+            }
+          }
+
+          return ListView.builder(
+            itemCount: messages.length + 1,
+            controller: controllerScroll,
+            itemBuilder: (context, index) {
+              if (index == 0) {
+                return _LoadMoreMessages(offset: offset, user: widget.user);
+              }
+              return MessageCard(
+                user: widget.user,
+                message: messages[index - 1],
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _LoadMoreMessages extends StatelessWidget {
+  const _LoadMoreMessages({
+    required this.offset,
+    required this.user,
+  });
+
+  final int offset;
+  final String user;
+
+  @override
+  Widget build(BuildContext context) {
+    return VisibilityDetector(
+      key: const Key("Load-More-Msg"),
+      child: _NoMoreMessagesContainer(offset: offset),
+      onVisibilityChanged: (info) {
+        if (info.visibleFraction > 0) {
+          if (offset == -1) {
+            return;
+          }
+          context.read<ChatBloc>().add(
+                EventFetchPrevMessages(
+                  offset: offset,
+                  receiver: user,
+                ),
+              );
+        }
+      },
+    );
+  }
+}
+
+class _NoMoreMessagesContainer extends StatelessWidget {
+  const _NoMoreMessagesContainer({
+    required this.offset,
+  });
+
+  final int offset;
+
+  @override
+  Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Center(

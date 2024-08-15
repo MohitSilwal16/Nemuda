@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
+import 'package:app/main.dart';
 import 'package:app/services/blog.dart';
 import 'package:app/utils/components/error.dart';
 import 'package:app/utils/components/alert_dialogue.dart';
@@ -11,7 +12,6 @@ import 'package:app/utils/components/button.dart';
 import 'package:app/utils/components/textfield.dart';
 import 'package:app/utils/utils.dart';
 import 'package:app/utils/validator.dart';
-import 'package:app/utils/size.dart';
 
 class PostBlogPage extends StatefulWidget {
   const PostBlogPage({super.key});
@@ -78,8 +78,6 @@ class _PostBlogPageState extends State<PostBlogPage> {
 
   @override
   Widget build(BuildContext context) {
-    final size = returnSize(context);
-
     return Scaffold(
       body: SafeArea(
         child: Container(

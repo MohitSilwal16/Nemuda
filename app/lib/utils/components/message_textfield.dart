@@ -24,7 +24,8 @@ class _MyMessageTextFieldState extends State<MyMessageTextField> {
         buildCounter: (context,
             {required currentLength, required isFocused, maxLength}) {
           return Container(
-            transform: Matrix4.translationValues(0, -90, 0),
+            transform: Matrix4.translationValues(
+                0, -110, 0), // Shift Counter Text to Top
             child: Text("$currentLength/$maxLength"),
           );
         },
@@ -44,8 +45,8 @@ class _MyMessageTextFieldState extends State<MyMessageTextField> {
         ),
         keyboardType: TextInputType.text,
         maxLength: 50,
-        textInputAction: TextInputAction.send,
-        onSubmitted: (val) => widget.sendMessage(widget.controller.text),
+        maxLines: 2,
+        textInputAction: TextInputAction.none,
       ),
     );
   }

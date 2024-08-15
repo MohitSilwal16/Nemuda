@@ -3,6 +3,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:async';
 import 'dart:io';
 
+import 'package:app/main.dart';
 import 'package:app/services/blog.dart';
 import 'package:app/pb/blogs.pb.dart';
 import 'package:app/utils/components/alert_dialogue.dart';
@@ -13,7 +14,6 @@ import 'package:app/utils/components/button.dart';
 import 'package:app/utils/components/textfield.dart';
 import 'package:app/utils/utils.dart';
 import 'package:app/utils/validator.dart';
-import 'package:app/utils/size.dart';
 
 class UpdateBlogPage extends StatefulWidget {
   const UpdateBlogPage({
@@ -106,8 +106,6 @@ class _UpdateBlogPageState extends State<UpdateBlogPage> {
 
   @override
   Widget build(BuildContext context) {
-    final size = returnSize(context);
-
     return Scaffold(
       body: SafeArea(
         child: Container(

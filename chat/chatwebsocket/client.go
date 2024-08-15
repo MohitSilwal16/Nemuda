@@ -40,7 +40,11 @@ func (client *Client) readMessages() {
 			return
 		}
 
-		isSessionTokenValid(client)
+		isSessionTokenValid := isSessionTokenValid(client)
+
+		if !isSessionTokenValid {
+			return // Just Return Everything is handled in isSessionTokenValid func
+		}
 
 		if wsMessage.MessageType == "Read" {
 			if client.Username == wsMessage.Receiver {

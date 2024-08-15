@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:double_back_to_close_app/double_back_to_close_app.dart';
 
+import 'package:app/main.dart';
 import 'package:app/services/auth.dart';
 import 'package:app/utils/components/username_textfield.dart';
 import 'package:app/utils/components/error.dart';
@@ -11,7 +12,6 @@ import 'package:app/utils/components/register_login_text_button.dart';
 import 'package:app/utils/components/button.dart';
 import 'package:app/utils/components/textfield.dart';
 import 'package:app/utils/validator.dart';
-import 'package:app/utils/size.dart';
 
 class RegisterPage extends StatelessWidget {
   RegisterPage({super.key});
@@ -42,8 +42,6 @@ class RegisterPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final size = returnSize(context);
-
     return Scaffold(
       body: DoubleBackToCloseApp(
         snackBar: returnSnackbar("Tap Again to Exit"),

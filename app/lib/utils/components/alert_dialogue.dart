@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 
 void showErrorDialog(BuildContext context, String message) {
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return ErrorAlertDialog(
-        errorMessage: message,
-      );
-    },
-  );
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return ErrorAlertDialog(
+          errorMessage: message,
+        );
+      },
+    );
+  });
 }
 
 class ErrorAlertDialog extends StatelessWidget {

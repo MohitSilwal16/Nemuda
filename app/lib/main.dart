@@ -1,22 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hive/hive.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 
+import 'package:app/bloc/chat_bloc.dart';
+import 'package:app/bloc/chat_repo.dart';
 import 'package:app/services/service_init.dart';
+import 'package:app/pages/chat_home.dart';
 import 'package:app/pages/server_error.dart';
 import 'package:app/pages/server_busy_page.dart';
-import 'package:app/pages/chat_home.dart';
 import 'package:app/pages/init_page.dart';
 import 'package:app/pages/post_blog.dart';
 import 'package:app/pages/home.dart';
 import 'package:app/pages/login.dart';
 import 'package:app/pages/register.dart';
 
-// const serviceURL = "nemuda.hopto.org";
-const serviceURL = "13.60.113.45";
+const serviceURL = "nemuda.hopto.org";
+// const serviceURL = "13.60.113.45";
 const servicePort = 8080;
 const wsPort = 3000;
+late Size size;
 
 void main() async {
   // Init Hive
@@ -28,7 +32,16 @@ void main() async {
   // Init GRPC Clients & Hivebox
   await ServiceManager().init();
 
-  runApp(const MyApp());
+  runApp(
+    MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (context) => ChatBloc(repo: ChatRepo()),
+        )
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -36,6 +49,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    size = MediaQuery.of(context).size;
     SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
       statusBarColor: Colors.black, // Change this to your desired color
       statusBarIconBrightness: Brightness.light, // This makes the icons white
@@ -58,8 +72,8 @@ class MyApp extends StatelessWidget {
         "register": (context) => RegisterPage(),
         "post_blog": (context) => const PostBlogPage(),
         "chat_home": (context) => const ChatHomePage(),
-        "server_error":(context)=> const ServerErrorPage(),
-        "server_busy":(context)=> const ServerBusyPage(),
+        "server_error": (context) => const ServerErrorPage(),
+        "server_busy": (context) => const ServerBusyPage(),
       },
       home: const InitPage(),
     );
