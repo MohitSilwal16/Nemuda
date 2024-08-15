@@ -33,6 +33,3 @@ kill_chat:
 	pkill chat
 log_chat:
 	tail -n 25 chat/log.txt
-
-go_build:
-	env GOOS=linux go build -o server/server
