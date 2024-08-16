@@ -132,6 +132,8 @@ class _ViewBlogPageState extends State<ViewBlogPage>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    controllerComment.dispose();
+
     super.dispose();
   }
 

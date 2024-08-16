@@ -16,8 +16,8 @@ import 'package:app/pages/home.dart';
 import 'package:app/pages/login.dart';
 import 'package:app/pages/register.dart';
 
-const serviceURL = "nemuda.hopto.org";
-// const serviceURL = "13.60.113.45";
+// const serviceURL = "nemuda.hopto.org";
+const serviceURL = "13.60.113.45";
 const servicePort = 8080;
 const wsPort = 3000;
 late Size size;
@@ -68,8 +68,8 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       routes: {
         "home": (context) => const HomePage(),
-        "login": (context) => LoginPage(),
-        "register": (context) => RegisterPage(),
+        "login": (context) => const LoginPage(),
+        "register": (context) => const RegisterPage(),
         "post_blog": (context) => const PostBlogPage(),
         "chat_home": (context) => const ChatHomePage(),
         "server_error": (context) => const ServerErrorPage(),

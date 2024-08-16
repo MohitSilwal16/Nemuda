@@ -105,6 +105,13 @@ class _UpdateBlogPageState extends State<UpdateBlogPage> {
   }
 
   @override
+  void dispose() {
+    controllerTitle.dispose();
+    controllerDescription.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
@@ -243,10 +250,8 @@ class _UpdateBlogPageState extends State<UpdateBlogPage> {
                     ],
                   ),
 
-                  const SizedBox(height: 30),
-
                   SizedBox(
-                    height: size.height * .06,
+                    height: size.height * .02,
                   ),
 
                   // Post Blog Button
@@ -261,6 +266,8 @@ class _UpdateBlogPageState extends State<UpdateBlogPage> {
                       fontSize: 22,
                     ),
                   ),
+
+                  const SizedBox(height: 30),
 
                   // END
                 ],

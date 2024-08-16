@@ -12,9 +12,14 @@ import 'package:app/utils/components/button.dart';
 import 'package:app/utils/components/textfield.dart';
 import 'package:app/utils/validator.dart';
 
-class LoginPage extends StatelessWidget {
-  LoginPage({super.key});
+class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
 
+  @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
   final formKey = GlobalKey<FormState>();
   final controllerUsername = TextEditingController();
   final controllerPassword = TextEditingController();
@@ -37,6 +42,13 @@ class LoginPage extends StatelessWidget {
 
   redirectToRegisterPage(BuildContext context) {
     Navigator.pushReplacementNamed(context, "register");
+  }
+
+  @override
+  void dispose() {
+    controllerUsername.dispose();
+    controllerPassword.dispose();
+    super.dispose();
   }
 
   @override

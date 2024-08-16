@@ -26,20 +26,27 @@ class ChatUserPage extends StatefulWidget {
   State<ChatUserPage> createState() => _ChatUserPageState();
 }
 
-class _ChatUserPageState extends State<ChatUserPage>
-    with WidgetsBindingObserver {
+class _ChatUserPageState extends State<ChatUserPage> {
   final TextEditingController controllerMessage = TextEditingController();
 
   void sendMessage(String message) {
     context
         .read<ChatBloc>()
         .add(EventSendMessage(message: message, receiver: widget.user));
-    controllerMessage.text = "";
+    controllerMessage.clear();
+  }
+
+  @override
+  void dispose() {
+    controllerMessage.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset:
+          true, // To Scroll Properly when keyboard is open
       appBar: AppBar(
         leading: CircleAvatar(
           backgroundColor: Colors.transparent,
@@ -131,16 +138,22 @@ class _BuildMessagesState extends State<_BuildMessages> {
   }
 
   @override
+  void dispose() {
+    controllerScroll.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return SizedBox(
       height: size.height * .7,
       child: BlocBuilder<ChatBloc, ChatState>(
         buildWhen: (previous, current) {
-
           return current is! StateNothing && previous != current;
         },
         builder: (context, state) {
           final currentState = state;
+          print(currentState);
           if (currentState is StateChatLoading) {
             return const CustomCircularProgressIndicator();
           }
@@ -156,7 +169,7 @@ class _BuildMessagesState extends State<_BuildMessages> {
             messages = messageSet.toList()
               ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
             offset = currentState.nextOffset;
-            
+
             // Scroll to the bottom
             if (messages.length <= 9) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -176,7 +189,10 @@ class _BuildMessagesState extends State<_BuildMessages> {
             if (currentState.message.error != "") {
               handleErrorsBlocBuilder(context, currentState.message.error);
             } else if (currentState.message.messageType == "Message" &&
-                messages.isNotEmpty) {
+                messages.isNotEmpty &&
+                messages.last.messageContent !=
+                    currentState.message.messageContent &&
+                messages.last.dateTime != currentState.message.dateTime) {
               if (currentState.message.sender == widget.user ||
                   currentState.message.selfMessage) {
                 // Retain only the last 18 messages
@@ -263,7 +279,7 @@ class _LoadMoreMessages extends StatelessWidget {
   Widget build(BuildContext context) {
     return VisibilityDetector(
       key: const Key("Load-More-Msg"),
-      child: _NoMoreMessagesContainer(offset: offset),
+      child: _NoMessagesContainer(offset: offset),
       onVisibilityChanged: (info) {
         if (info.visibleFraction > 0) {
           if (offset == -1) {
@@ -281,8 +297,8 @@ class _LoadMoreMessages extends StatelessWidget {
   }
 }
 
-class _NoMoreMessagesContainer extends StatelessWidget {
-  const _NoMoreMessagesContainer({
+class _NoMessagesContainer extends StatelessWidget {
+  const _NoMessagesContainer({
     required this.offset,
   });
 
@@ -296,7 +312,7 @@ class _NoMoreMessagesContainer extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           decoration: BoxDecoration(
-            color: MyColors.primaryColor,
+            color: offset == -1 ? MyColors.primaryColor : Colors.transparent,
             borderRadius: BorderRadius.circular(10),
             boxShadow: [
               BoxShadow(
@@ -306,14 +322,16 @@ class _NoMoreMessagesContainer extends StatelessWidget {
               ),
             ],
           ),
-          child: Text(
-            offset == -1 ? "No Messages" : "Loading ...",
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey.shade100,
-            ),
-          ),
+          child: offset == -1
+              ? Text(
+                  "No Messages",
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey.shade100,
+                  ),
+                )
+              : const CustomCircularProgressIndicator(),
         ),
       ),
     );

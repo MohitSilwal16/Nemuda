@@ -6,8 +6,7 @@
   hx-get="/message/{{ .Receiver }}?offset={{ .Offset }}"
   hx-swap="outerHTML"
   hx-trigger="intersect once"
->
-</div>
+></div>
 {{ else }}
 <!-- No More Messages Container -->
 <div class="flex items-center justify-center cursor-not-allowed">
@@ -61,4 +60,7 @@
     </div>
   </div>
   {{ end }} {{ end }}
+  <script>
+    scrollToBottom(document.getElementById("message-scroll"));
+  </script>
 </div>

@@ -7,8 +7,8 @@ class CustomCircularProgressIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: SizedBox(
-        width: 50,
-        height: 50,
+        width: 30,
+        height: 30,
         child: CircularProgressIndicator(
           strokeWidth: 4,
           valueColor: const AlwaysStoppedAnimation<Color>(Colors.blueAccent),

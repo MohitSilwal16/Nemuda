@@ -77,6 +77,13 @@ class _PostBlogPageState extends State<PostBlogPage> {
   }
 
   @override
+  void dispose() {
+    controllerTitle.dispose();
+    controllerDescription.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(

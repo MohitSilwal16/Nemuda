@@ -1,7 +1,10 @@
 import 'package:app/models/message.dart';
 import 'package:equatable/equatable.dart';
 
-abstract class ChatEvent extends Equatable {}
+abstract class ChatEvent extends Equatable {
+  @override
+  List<Object?> get props => [];
+}
 
 class EventSendMessage extends ChatEvent {
   final String message;

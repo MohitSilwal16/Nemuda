@@ -79,8 +79,7 @@ class __BlocBuilderState extends State<_BlocBuilder> {
     return BlocBuilder<ChatBloc, ChatState>(
       buildWhen: (previous, current) {
         // Only rebuild if the current state is not StateNothing and is different from the previous state.
-        return current.runtimeType != StateNothing && previous != current;
-        // return current is! StateNothing && previous != current;
+        return current is! StateNothing && previous != current;
       },
       builder: (context, state) {
         final currentState = state;
@@ -154,6 +153,12 @@ class _BuildAppBar extends StatefulWidget implements PreferredSizeWidget {
 class _BuildAppBarState extends State<_BuildAppBar> {
   bool isSearchBarClosed = true;
   final controllerSearch = TextEditingController();
+
+  @override
+  void dispose() {
+    controllerSearch.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

@@ -13,6 +13,7 @@ import 'package:app/utils/colors.dart';
 import 'package:app/utils/components/button.dart';
 import 'package:app/utils/components/snackbar.dart';
 import 'package:app/utils/components/blog_card.dart';
+import 'package:app/utils/components/loading.dart';
 import 'package:app/utils/utils.dart';
 
 class HomePage extends StatefulWidget {
@@ -72,20 +73,36 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  getBlogsByTagForNavbar(String tag) {
+    getBlogsWithPagination(tag, 0).then((res) {
+      setState(() {
+        blogs = res.blogs;
+        offset = res.nextOffset;
+        title = tag;
+      });
+
+      Navigator.pop(context);
+    }).catchError((err) {
+      handleErrors(context, err);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
         title: Text(title),
-        leading: Builder(builder: (context) {
-          return IconButton(
-            onPressed: () {
-              Scaffold.of(context).openDrawer();
-            },
-            icon: const Icon(Icons.menu),
-          );
-        }),
+        leading: Builder(
+          builder: (context) {
+            return IconButton(
+              onPressed: () {
+                Scaffold.of(context).openDrawer();
+              },
+              icon: const Icon(Icons.menu),
+            );
+          },
+        ),
         actions: [
           // Log out Button
           MyButton(
@@ -119,7 +136,10 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
       ),
-      drawer: appDrawer(context),
+      drawer: _HomePageDrawer(
+        getBlogsByTagForNavbar: getBlogsByTagForNavbar,
+        title: title,
+      ),
       body: DoubleBackToCloseApp(
         snackBar: returnSnackbar("Tag Again to Exit"),
         child: Container(
@@ -155,21 +175,50 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  getBlogsByTagForNavbar(String tag) {
-    getBlogsWithPagination(tag, 0).then((res) {
-      setState(() {
-        blogs = res.blogs;
-        offset = res.nextOffset;
-        title = tag;
-      });
-
-      Navigator.pop(context);
-    }).catchError((err) {
-      handleErrors(context, err);
-    });
+  Padding noMoreBlogsContainer() {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          decoration: BoxDecoration(
+            color: offset == -1 ? MyColors.primaryColor : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                spreadRadius: 1,
+                blurRadius: 4,
+              ),
+            ],
+          ),
+          child: offset == -1
+              ? Text(
+                  "No more Blogs",
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey.shade100,
+                  ),
+                )
+              : const CustomCircularProgressIndicator(),
+        ),
+      ),
+    );
   }
+}
 
-  Drawer appDrawer(BuildContext context) {
+class _HomePageDrawer extends StatelessWidget {
+  const _HomePageDrawer({
+    required this.getBlogsByTagForNavbar,
+    required this.title,
+  });
+
+  final Function getBlogsByTagForNavbar;
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
     return Drawer(
       child: Container(
         decoration: const BoxDecoration(
@@ -315,36 +364,6 @@ class _HomePageState extends State<HomePage> {
 
             // End
           ],
-        ),
-      ),
-    );
-  }
-
-  Padding noMoreBlogsContainer() {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Center(
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          decoration: BoxDecoration(
-            color: MyColors.primaryColor,
-            borderRadius: BorderRadius.circular(10),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                spreadRadius: 1,
-                blurRadius: 4,
-              ),
-            ],
-          ),
-          child: Text(
-            offset == -1 ? "No more Blogs" : "Loading ...",
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey.shade100,
-            ),
-          ),
         ),
       ),
     );

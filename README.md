@@ -1,4 +1,4 @@
-## To get started with this project, you'll need to set up environment variables in three files: `main.env` and `.env`.
+## To get started with this project, you'll need to set up environment variables in: `main.env` and `.env`.
 
 ## 1. Create `main.env`
 
