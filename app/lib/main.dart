@@ -7,14 +7,13 @@ import 'package:path_provider/path_provider.dart';
 import 'package:app/bloc/chat_bloc.dart';
 import 'package:app/bloc/chat_repo.dart';
 import 'package:app/services/service_init.dart';
+import 'package:app/pages/register_login.dart';
 import 'package:app/pages/chat_home.dart';
 import 'package:app/pages/static/server_error.dart';
 import 'package:app/pages/static/server_busy_page.dart';
 import 'package:app/pages/init_page.dart';
 import 'package:app/pages/post_blog.dart';
 import 'package:app/pages/home.dart';
-import 'package:app/pages/login.dart';
-import 'package:app/pages/register.dart';
 
 // const serviceURL = "nemuda.hopto.org";
 const serviceURL = "13.60.113.45";
@@ -68,8 +67,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       routes: {
         "home": (context) => const HomePage(),
-        "login": (context) => const LoginPage(),
-        "register": (context) => const RegisterPage(),
+        "login": (context) => const RegisterLoginPage(),
         "post_blog": (context) => const PostBlogPage(),
         "chat_home": (context) => const ChatHomePage(),
         "server_error": (context) => const ServerErrorPage(),

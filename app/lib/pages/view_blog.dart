@@ -14,10 +14,10 @@ import 'package:app/pages/static/view_blog_skeleton.dart';
 class ViewBlogPage extends StatefulWidget {
   const ViewBlogPage({
     super.key,
-    required this.title,
+    required this.blog,
   });
 
-  final String title;
+  final Blog blog;
 
   @override
   State<ViewBlogPage> createState() => _ViewBlogPageState();
@@ -27,7 +27,7 @@ class _ViewBlogPageState extends State<ViewBlogPage>
     with WidgetsBindingObserver {
   late Blog blog;
   late bool isBlogLiked = false;
-  late bool isBlogUpdatableDeletable;
+  late bool isBlogUpdatableDeletable = false;
   late Future<void> _futureBlog;
 
   final verticalScrollBar = ScrollController();
@@ -37,7 +37,7 @@ class _ViewBlogPageState extends State<ViewBlogPage>
   bool _isKeyboardVisible = false;
 
   onDeleteBlog() {
-    deleteBlog(widget.title).then((res) {
+    deleteBlog(blog.title).then((res) {
       ScaffoldMessenger.of(context)
           .showSnackBar(returnSnackbar("Blog Deleted"));
       Navigator.pop(context);
@@ -113,17 +113,20 @@ class _ViewBlogPageState extends State<ViewBlogPage>
 
   futureFunction() async {
     try {
-      final res = await getBlogByTitle(widget.title);
+      final res = await getBlogByTitle(widget.blog.title);
       blog = res.blog;
       isBlogLiked = res.isBlogLiked;
       isBlogUpdatableDeletable = res.isBlogUpdatableDeletable;
     } catch (err) {
-      handleErrors(context, err);
+      if (mounted) {
+        handleErrors(context, err);
+      }
     }
   }
 
   @override
   void initState() {
+    blog = widget.blog;
     _futureBlog = futureFunction();
     super.initState();
     WidgetsBinding.instance.addObserver(this);
@@ -140,7 +143,8 @@ class _ViewBlogPageState extends State<ViewBlogPage>
   @override
   void didChangeMetrics() {
     super.didChangeMetrics();
-    final bottomInset = WidgetsBinding.instance.window.viewInsets.bottom;
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
     final newValue = bottomInset > 0.0;
     if (_isKeyboardVisible != newValue) {
       setState(() {
@@ -154,6 +158,9 @@ class _ViewBlogPageState extends State<ViewBlogPage>
     return FutureBuilder(
       future: _futureBlog,
       builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          handleErrorsFutureBuilder(context, snapshot.error!);
+        }
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const ViewBlogSkeletonPage();
         }
@@ -161,9 +168,6 @@ class _ViewBlogPageState extends State<ViewBlogPage>
           return viewBlogPage(context, size);
         }
 
-        if (snapshot.hasError) {
-          handleErrorsFutureBuilder(context, snapshot.error!);
-        }
         return const ViewBlogSkeletonPage();
       },
     );

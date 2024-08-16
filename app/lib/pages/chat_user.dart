@@ -153,7 +153,6 @@ class _BuildMessagesState extends State<_BuildMessages> {
         },
         builder: (context, state) {
           final currentState = state;
-          print(currentState);
           if (currentState is StateChatLoading) {
             return const CustomCircularProgressIndicator();
           }

@@ -4,6 +4,7 @@ import 'package:double_back_to_close_app/double_back_to_close_app.dart';
 
 import 'package:app/main.dart';
 import 'package:app/services/auth.dart';
+import 'package:app/utils/components/loading.dart';
 import 'package:app/utils/components/error.dart';
 import 'package:app/utils/components/snackbar.dart';
 import 'package:app/utils/components/welcome_to_nemuda.dart';
@@ -13,7 +14,12 @@ import 'package:app/utils/components/textfield.dart';
 import 'package:app/utils/validator.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+  const LoginPage({
+    super.key,
+    required this.togglePage,
+  });
+
+  final Function togglePage;
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -30,6 +36,10 @@ class _LoginPageState extends State<LoginPage> {
     }
 
     final response = login(controllerUsername.text, controllerPassword.text);
+    showDialog(
+      context: context,
+      builder: (context) => const CustomCircularProgressIndicator(),
+    );
 
     response.then((responseData) {
       Hive.box("session").put("sessionToken", responseData.sessionToken);
@@ -38,10 +48,6 @@ class _LoginPageState extends State<LoginPage> {
     }).catchError((err) {
       handleErrors(context, err);
     });
-  }
-
-  redirectToRegisterPage(BuildContext context) {
-    Navigator.pushReplacementNamed(context, "register");
   }
 
   @override
@@ -72,16 +78,14 @@ class _LoginPageState extends State<LoginPage> {
                 key: formKey,
                 child: Column(
                   children: [
-                    SizedBox(
-                      height: size.height * .1,
-                    ),
+                    SizedBox(height: size.height * .05),
 
                     // Welcome to Nemu 2.0
                     const WelcomeToNemudaText(),
 
-                    SizedBox(
-                      height: size.height * .05,
-                    ),
+                    SizedBox(height: size.height * .05),
+                    Image.asset("assets/icon.png"),
+                    SizedBox(height: size.height * .05),
 
                     // Login Text
                     const Text(
@@ -92,9 +96,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
 
-                    SizedBox(
-                      height: size.height * .05,
-                    ),
+                    SizedBox(height: size.height * .03),
 
                     // Username textfield
                     MyTextField(
@@ -107,7 +109,9 @@ class _LoginPageState extends State<LoginPage> {
                       suffixIconData: Icons.person,
                     ),
 
-                    // // Password Textfield
+                    const SizedBox(height: 10),
+
+                    // Password Textfield
                     MyTextField(
                       hintText: "Password",
                       obscureText: true,
@@ -135,7 +139,7 @@ class _LoginPageState extends State<LoginPage> {
                     RegisterLoginTextButton(
                       text: "New to Nemuda ?",
                       buttonText: "Register",
-                      onTap: () => redirectToRegisterPage(context),
+                      onTap: () => widget.togglePage(),
                     ),
 
                     // End

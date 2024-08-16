@@ -4,6 +4,7 @@ import 'package:double_back_to_close_app/double_back_to_close_app.dart';
 
 import 'package:app/main.dart';
 import 'package:app/services/auth.dart';
+import 'package:app/utils/components/loading.dart';
 import 'package:app/utils/components/username_textfield.dart';
 import 'package:app/utils/components/error.dart';
 import 'package:app/utils/components/snackbar.dart';
@@ -14,7 +15,12 @@ import 'package:app/utils/components/textfield.dart';
 import 'package:app/utils/validator.dart';
 
 class RegisterPage extends StatefulWidget {
-  const RegisterPage({super.key});
+  const RegisterPage({
+    super.key,
+    required this.togglePage,
+  });
+
+  final Function togglePage;
 
   @override
   State<RegisterPage> createState() => _RegisterPageState();
@@ -31,6 +37,10 @@ class _RegisterPageState extends State<RegisterPage> {
     }
 
     final response = register(controllerUsername.text, controllerPassword.text);
+    showDialog(
+      context: context,
+      builder: (context) => const CustomCircularProgressIndicator(),
+    );
 
     response.then((responseData) {
       Hive.box("session").put("sessionToken", responseData.sessionToken);
@@ -39,10 +49,6 @@ class _RegisterPageState extends State<RegisterPage> {
     }).catchError((err) {
       handleErrors(context, err);
     });
-  }
-
-  redirectToLoginPage(BuildContext context) {
-    Navigator.pushReplacementNamed(context, "login");
   }
 
   @override
@@ -73,16 +79,14 @@ class _RegisterPageState extends State<RegisterPage> {
                 key: formKey,
                 child: Column(
                   children: [
-                    SizedBox(
-                      height: size.height * .1,
-                    ),
+                    SizedBox(height: size.height * .05),
 
                     // Welcome to Nemu 2.0
                     const WelcomeToNemudaText(),
 
-                    SizedBox(
-                      height: size.height * .05,
-                    ),
+                    SizedBox(height: size.height * .05),
+                    Image.asset("assets/icon.png"),
+                    SizedBox(height: size.height * .05),
 
                     // Register Text
                     const Text(
@@ -93,12 +97,12 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                     ),
 
-                    SizedBox(
-                      height: size.height * .05,
-                    ),
+                    SizedBox(height: size.height * .03),
 
                     // Username textfield
                     MyUsernameTextField(controller: controllerUsername),
+
+                    const SizedBox(height: 10),
 
                     // Password Textfield
                     MyTextField(
@@ -128,7 +132,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     RegisterLoginTextButton(
                       text: "Have an Account ?",
                       buttonText: "Login",
-                      onTap: () => redirectToLoginPage(context),
+                      onTap: () => widget.togglePage(),
                     ),
 
                     // End

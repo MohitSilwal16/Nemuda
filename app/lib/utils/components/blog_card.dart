@@ -17,7 +17,7 @@ class BlogCard extends StatelessWidget {
       onTap: () => Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => ViewBlogPage(title: blog.title),
+          builder: (context) => ViewBlogPage(blog: blog),
         ),
       ),
       child: Container(

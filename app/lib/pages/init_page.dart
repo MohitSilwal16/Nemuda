@@ -4,7 +4,7 @@ import 'dart:async';
 
 import 'package:app/services/auth.dart';
 import 'package:app/pages/home.dart';
-import 'package:app/pages/login.dart';
+import 'package:app/pages/register_login.dart';
 import 'package:app/pages/static/splash_screen.dart';
 import 'package:app/pages/static/server_error.dart';
 import 'package:app/pages/static/server_busy_page.dart';
@@ -19,7 +19,7 @@ class InitPage extends StatelessWidget {
         if (snapshot.hasData) {
           final isUserValidated = snapshot.data;
           if (isUserValidated == null || isUserValidated == false) {
-            return LoginPage();
+            return const RegisterLoginPage();
           }
           return const HomePage();
         }
