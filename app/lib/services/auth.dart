@@ -21,6 +21,10 @@ Future<AuthResponse> register(String username, String password) async {
 
 Future<ValidationResponse> validateSessionToken() async {
   final sessionToken = ServiceManager().hiveBox.get("sessionToken");
+  if (sessionToken == null){
+    throw Exception("INVALID SESSION TOKEN");
+  }
+
   final request = ValidationRequest(sessionToken: sessionToken);
   final response = await ServiceManager()
       .authClient

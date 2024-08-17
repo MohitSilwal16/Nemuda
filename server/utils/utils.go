@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"mime/multipart"
+	"net"
 	"os"
 	"os/exec"
 	"regexp"
@@ -15,6 +16,7 @@ import (
 	"unicode"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/peer"
 )
 
 // ANSI escape codes for background colors
@@ -155,6 +157,15 @@ func StructuredLoggerInterceptor() grpc.UnaryServerInterceptor {
 		start := time.Now()
 		method := info.FullMethod
 
+		// Get client IP address
+		p, ok := peer.FromContext(ctx)
+		var clientIP string
+		if ok {
+			clientIP, _, _ = net.SplitHostPort(p.Addr.String())
+		} else {
+			clientIP = "unknown"
+		}
+
 		// Handle the request
 		resp, err := handler(ctx, req)
 
@@ -168,15 +179,16 @@ func StructuredLoggerInterceptor() grpc.UnaryServerInterceptor {
 		}
 
 		// Format log output
-		methodField := fmt.Sprintf("%-40s", method)      // Align method column
-		statusField := fmt.Sprintf("%-7s", status)       // Align status column
-		durationField := fmt.Sprintf("%10dms", duration) // Align duration column
+		methodField := fmt.Sprintf("%-40s", method)     // Align method column
+		statusField := fmt.Sprintf("%-7s", status)      // Align status column
+		durationField := fmt.Sprintf("%4dms", duration) // Align duration column
 
-		log.Printf("%s %s %s | %s |%s %s %s",
+		log.Printf("%s %s %s | %s | %s |%s %s %s",
 			statusColor,
 			statusField,
 			ColorReset,
 			durationField,
+			clientIP,
 			BackgroundBlue,
 			methodField,
 			ColorReset,

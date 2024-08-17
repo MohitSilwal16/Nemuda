@@ -6,6 +6,7 @@ import 'package:app/services/service_init.dart';
 
 Future<UserExistsResponse> doesUserExists(String username) async {
   final request = UserExistsRequest(username: username);
+
   final response = await ServiceManager()
       .userClient
       .doesUserExists(request)

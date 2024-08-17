@@ -6,6 +6,9 @@ import 'package:app/services/service_init.dart';
 
 Future<GetBlogsResponse> getBlogsWithPagination(String tag, int offset) async {
   final sessionToken = ServiceManager().hiveBox.get("sessionToken");
+  if (sessionToken == null) {
+    throw Exception("INVALID SESSION TOKEN");
+  }
 
   final request =
       GetBlogsRequest(sessionToken: sessionToken, tag: tag, offset: offset);
@@ -19,6 +22,9 @@ Future<GetBlogsResponse> getBlogsWithPagination(String tag, int offset) async {
 Future<UpdateBlogResponse> updateBlog(String oldTitle, String newTitle,
     String newDescription, String newTag, List<int> imageData) async {
   final sessionToken = ServiceManager().hiveBox.get("sessionToken");
+  if (sessionToken == null) {
+    throw Exception("INVALID SESSION TOKEN");
+  }
 
   final request = UpdateBlogRequest(
     sessionToken: sessionToken,
@@ -39,6 +45,9 @@ Future<UpdateBlogResponse> updateBlog(String oldTitle, String newTitle,
 Future<PostBlogResponse> postBlog(
     String title, String description, String tag, List<int> imageData) async {
   final sessionToken = ServiceManager().hiveBox.get("sessionToken");
+  if (sessionToken == null) {
+    throw Exception("INVALID SESSION TOKEN");
+  }
 
   final request = PostBlogRequest(
     sessionToken: sessionToken,
@@ -57,9 +66,11 @@ Future<PostBlogResponse> postBlog(
 
 Future<DeleteBlogResponse> deleteBlog(String title) async {
   final sessionToken = ServiceManager().hiveBox.get("sessionToken");
+  if (sessionToken == null) {
+    throw Exception("INVALID SESSION TOKEN");
+  }
 
   final request = DeleteBlogRequest(sessionToken: sessionToken, title: title);
-
   final response = ServiceManager()
       .blogClient
       .deleteBlog(request)
@@ -70,6 +81,9 @@ Future<DeleteBlogResponse> deleteBlog(String title) async {
 // Other Blog Operations
 Future<LikeBlogResponse> likeBlog(String title) async {
   final sessionToken = ServiceManager().hiveBox.get("sessionToken");
+  if (sessionToken == null) {
+    throw Exception("INVALID SESSION TOKEN");
+  }
 
   final request = LikeBlogRequest(sessionToken: sessionToken, title: title);
   final response = await ServiceManager()
@@ -81,6 +95,9 @@ Future<LikeBlogResponse> likeBlog(String title) async {
 
 Future<DislikeBlogResponse> dislikeBlog(String title) async {
   final sessionToken = ServiceManager().hiveBox.get("sessionToken");
+  if (sessionToken == null) {
+    throw Exception("INVALID SESSION TOKEN");
+  }
 
   final request = DislikeBlogRequest(sessionToken: sessionToken, title: title);
   final response = await ServiceManager()
@@ -92,6 +109,9 @@ Future<DislikeBlogResponse> dislikeBlog(String title) async {
 
 Future<AddCommentResponse> addComment(String title, String comment) async {
   final sessionToken = ServiceManager().hiveBox.get("sessionToken");
+  if (sessionToken == null) {
+    throw Exception("INVALID SESSION TOKEN");
+  }
 
   final request = AddCommentRequest(
       sessionToken: sessionToken, title: title, commentDescription: comment);
@@ -105,6 +125,9 @@ Future<AddCommentResponse> addComment(String title, String comment) async {
 
 Future<SearchBlogResponse> searchBlog(String title) async {
   final sessionToken = ServiceManager().hiveBox.get("sessionToken");
+  if (sessionToken == null) {
+    throw Exception("INVALID SESSION TOKEN");
+  }
 
   final request = SearchBlogRequest(sessionToken: sessionToken, title: title);
 
@@ -117,6 +140,9 @@ Future<SearchBlogResponse> searchBlog(String title) async {
 
 Future<GetBlogResponse> getBlogByTitle(String title) async {
   final sessionToken = ServiceManager().hiveBox.get("sessionToken");
+  if (sessionToken == null) {
+    throw Exception("INVALID SESSION TOKEN");
+  }
 
   final request = GetBlogRequest(sessionToken: sessionToken, title: title);
 

@@ -183,7 +183,8 @@
       let sessionToken = getSessionToken();
       var socket = new WebSocket(
         // "ws://127.0.0.1:3000/ws/chat/" + sessionToken
-        "ws://nemuda.hopto.org:3000/ws/chat/" + sessionToken
+        // "ws://nemuda.hopto.org:3000/ws/chat/" + sessionToken
+        "ws://13.60.113.45:3000/ws/chat/" + sessionToken
       );
     } catch (e) {
       openAlert("WebSocket not Connected", "Try Refresing Browser");
