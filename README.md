@@ -1,4 +1,25 @@
-## To get started with this project, you'll need to set up environment variables in: `main.env` and `.env`.
+# Blogging Platform Integrated with Real-Time Messaging 
+
+## Overview
+
+This project is a blogging platform with integrated real-time messaging, combining multiple components to deliver an interactive and adaptable user experience.
+
+- **Frontend Server**: Written in Go using Gin Gonic, handles HTTP requests from users and communicates with the backend server via gRPC.
+- **Backend Server**: Written in Go, handles business logic and data processing, communicates with the frontend server & flutter application using gRPC.
+- **Messaging Server**: Written in Go, manages real-time messaging and concurrency using channels and goroutines, communicates with the frontend server & flutter application using gRPC.
+- **Flutter Application**: Manages state using BLoC pattern and interacts with the backend and messaging servers via gRPC.
+- **Data Storage**: MySQL, MongoDB, and S3 Bucket (for images).
+- **Hosting**: AWS EC2.
+
+## Features
+
+- **Blog Management**: Create, read, update, delete, like, comment blog posts.
+- **Real-Time Messaging**: Handle real-time messaging with efficient concurrency.
+<br>
+
+---
+
+# To get started with this project, you'll need to set up environment variables in: `main.env` and `.env`.
 
 ## 1. Create `main.env`
 
