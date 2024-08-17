@@ -16,6 +16,16 @@ import (
 
 var sqlDB *sql.DB
 
+// Prepared Statements
+var stmtIsSessionTokenValid *sql.Stmt
+var stmtUpdateSessionToken *sql.Stmt
+var stmtDeleteSessionToken *sql.Stmt // Set Session Token as ""
+var stmtDoesUserExists *sql.Stmt
+var stmtAddUser *sql.Stmt
+var stmtVerifyIdPass *sql.Stmt
+var stmtGetUserBySessionToken *sql.Stmt
+var stmtSearchUsersByPattern *sql.Stmt
+
 func Init_MariaDB() error {
 	err := godotenv.Load("main.env")
 
@@ -49,6 +59,57 @@ func Init_MariaDB() error {
 		return err
 	}
 	log.Println("Connection with Maria DB is established")
+	log.Println("Formulating Prepared Statements ...")
+
+	stmtIsSessionTokenValid, err = sqlDB.Prepare("SELECT 1 FROM users WHERE Token = ?;")
+	if err != nil {
+		log.Println("Error: Failed to Create Prepared Statement for Validating Session Token")
+		return err
+	}
+
+	stmtUpdateSessionToken, err = sqlDB.Prepare("UPDATE users SET Token = ? WHERE Username = ?;")
+	if err != nil {
+		log.Println("Error: Failed to Prepare Statement for Updating Session Token")
+		return err
+	}
+
+	stmtDeleteSessionToken, err = sqlDB.Prepare("UPDATE users SET Token = '' WHERE Token = ?;")
+	if err != nil {
+		log.Println("Error: Failed to Prepare Statement for Deleting Session Token")
+		return err
+	}
+
+	stmtDoesUserExists, err = sqlDB.Prepare("SELECT 1 FROM users WHERE Username = ?;")
+	if err != nil {
+		log.Println("Error: Failed to Prepare Statement for checking whether Username is used or not")
+		return err
+	}
+
+	stmtAddUser, err = sqlDB.Prepare("INSERT INTO users (Username , Password , Token) VALUE (? , ? , ?);")
+	if err != nil {
+		log.Println("Error: Failed to Prepare Statement for Registering User")
+		return err
+	}
+
+	stmtVerifyIdPass, err = sqlDB.Prepare("SELECT 1 FROM users WHERE Username = ? AND Password = ?;")
+	if err != nil {
+		log.Println("Error: Failed to Prepare Statement for Validating Username & Password")
+		return err
+	}
+
+	stmtGetUserBySessionToken, err = sqlDB.Prepare("SELECT Username FROM users WHERE Token = ?;")
+	if err != nil {
+		log.Println("Error: Failed to Prepare Statement for getting Username from Session Token")
+		return err
+	}
+
+	stmtSearchUsersByPattern, err = sqlDB.Prepare("SELECT Username FROM users WHERE Username LIKE ? LIMIT 10;")
+	if err != nil {
+		log.Println("Error: Failed to Prepare Statement for Searching Username by Pattern")
+		return err
+	}
+
+	log.Println("Prepared statements have been finalized")
 	return nil
 }
 
@@ -59,7 +120,7 @@ func IsSessionTokenValid(token string) (bool, error) {
 		return false, nil
 	}
 
-	rows, err := sqlDB.Query("SELECT 1 from users WHERE Token = ?;", token)
+	rows, err := stmtIsSessionTokenValid.Query(token)
 
 	if err != nil {
 		return false, err
@@ -88,7 +149,7 @@ func UpdateTokenInDBAndReturn(username string) (string, error) {
 		log.Println("Duplicate Token " + sessionToken)
 	}
 
-	_, err := sqlDB.Query("UPDATE users SET Token = ? WHERE Username = ?;", sessionToken, username)
+	_, err := stmtUpdateSessionToken.Exec(sessionToken, username)
 
 	if err != nil {
 		return "", nil
@@ -107,13 +168,7 @@ func DeleteTokenInDB(sessionToken string) error {
 		return errors.New("INVALID SESSION TOKEN")
 	}
 
-	stmt, err := sqlDB.Prepare("UPDATE users SET TOKEN = '' WHERE Token = ?;")
-
-	if err != nil {
-		return err
-	}
-	_, err = stmt.Exec(sessionToken)
-
+	_, err = stmtDeleteSessionToken.Exec(sessionToken)
 	if err != nil {
 		return err
 	}
@@ -121,7 +176,7 @@ func DeleteTokenInDB(sessionToken string) error {
 }
 
 func DoesUserExists(username string) (bool, error) {
-	rows, err := sqlDB.Query("SELECT 1 FROM users WHERE Username = ?;", username)
+	rows, err := stmtDoesUserExists.Query(username)
 
 	if err != nil {
 		return false, err
@@ -144,41 +199,29 @@ func AddUser(user *pb.User) error {
 		return errors.New("USERNAME IS ALREADY USED")
 	}
 
-	stmt, err := sqlDB.Prepare("INSERT INTO users (Username , Password , Token) VALUE (? , ? , ?);")
+	_, err = stmtAddUser.Exec(user.Username, user.Password, user.Token)
 
 	if err != nil {
 		return err
 	}
 
-	_, err = stmt.Exec(user.Username, user.Password, user.Token)
+	tableName := "messages_" + strings.ToLower(user.Username)
 
-	if err != nil {
-		return err
-	}
-
-	user.Username = strings.ToLower(user.Username)
-	tableName := "messages_" + user.Username
-
-	sqlQuery := `CREATE TABLE ` + tableName + ` (
+	sqlQuery := fmt.Sprintf(`CREATE TABLE %s (
         Sender VARCHAR(20) NOT NULL CHECK (Sender <> ''),
-        Receiver VARCHAR(20) NOT NULL CHECK (Receiver = ?),
+        Receiver VARCHAR(20) NOT NULL CHECK (Receiver = '%s'),
         MessageContent VARCHAR(100) NOT NULL CHECK (MessageContent <> '' AND CHAR_LENGTH(MessageContent) <= 100),
         Status VARCHAR(10) NOT NULL CHECK (Status IN ('Sent', 'Delivered', 'Read')),
         DateTime DATETIME NOT NULL,
         FOREIGN KEY (Sender) REFERENCES users (Username),
         FOREIGN KEY (Receiver) REFERENCES users (Username)
-    )`
+    )`, tableName, user.Username)
 
-	stmt, err = sqlDB.Prepare(sqlQuery)
+	rows, err := sqlDB.Query(sqlQuery)
 	if err != nil {
 		return err
 	}
-	defer stmt.Close()
-
-	_, err = stmt.Exec(user.Username)
-	if err != nil {
-		return err
-	}
+	defer rows.Close()
 
 	return nil
 }
@@ -194,8 +237,7 @@ func VerifyIdPass(user *pb.User) (bool, error) {
 		return false, errors.New("USER DOESN'T EXISTS")
 	}
 
-	rows, err := sqlDB.Query("SELECT 1 FROM users WHERE Username = ? AND Password = ?;", user.Username, user.Password)
-
+	rows, err := stmtVerifyIdPass.Query(user.Username, user.Password)
 	if err != nil {
 		return false, err
 	}
@@ -210,8 +252,7 @@ func GetUsernameBySessionToken(sessionToken string) (string, error) {
 		return "", errors.New("INVALID SESSION TOKEN")
 	}
 
-	rows, err := sqlDB.Query("SELECT Username FROM users WHERE Token = ? LIMIT 1;", sessionToken)
-
+	rows, err := stmtGetUserBySessionToken.Query(sessionToken)
 	if err != nil {
 		return "", err
 	}
@@ -235,7 +276,7 @@ func GetUsernameBySessionToken(sessionToken string) (string, error) {
 func SearchUsersByPattern(searchString string) ([]string, error) {
 	searchString += "%"
 
-	rows, err := sqlDB.Query("SELECT Username FROM users WHERE Username LIKE ? LIMIT 10;", searchString)
+	rows, err := stmtSearchUsersByPattern.Query(searchString)
 
 	if err != nil {
 		return nil, err
