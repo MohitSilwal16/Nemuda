@@ -44,7 +44,8 @@ class _LoginPageState extends State<LoginPage> {
     response.then((responseData) {
       Hive.box("session").put("sessionToken", responseData.sessionToken);
 
-      Navigator.pushReplacementNamed(context, "home");
+      Navigator.pushNamedAndRemoveUntil(
+          context, "home", (Route<dynamic> route) => false);
     }).catchError((err) {
       handleErrors(context, err);
     });

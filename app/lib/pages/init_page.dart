@@ -5,9 +5,8 @@ import 'dart:async';
 import 'package:app/services/auth.dart';
 import 'package:app/pages/home.dart';
 import 'package:app/pages/register_login.dart';
+import 'package:app/utils/components/error.dart';
 import 'package:app/pages/static/splash_screen.dart';
-import 'package:app/pages/static/server_error.dart';
-import 'package:app/pages/static/server_busy_page.dart';
 
 class InitPage extends StatelessWidget {
   const InitPage({super.key});
@@ -24,10 +23,7 @@ class InitPage extends StatelessWidget {
           return const HomePage();
         }
         if (snapshot.hasError) {
-          if (snapshot.error is TimeoutException){
-            return const ServerBusyPage();
-          } 
-          return const ServerErrorPage();
+          handleErrorsFutureBuilder(context, snapshot.error.toString());
         }
         return const SplashScreen();
       },

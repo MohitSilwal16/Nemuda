@@ -99,7 +99,6 @@ func (s *UserServer) GetMessagesWithPagination(ctx context.Context, req *pb.GetM
 	}
 
 	user, err := db.GetUsernameBySessionToken(req.SessionToken)
-
 	if err != nil {
 		if err.Error() == "INVALID SESSION TOKEN" {
 			return nil, ErrInvalidSessionToken
@@ -110,7 +109,6 @@ func (s *UserServer) GetMessagesWithPagination(ctx context.Context, req *pb.GetM
 	}
 
 	isReceiverValid, err := db.DoesUserExists(req.User1)
-
 	if err != nil {
 		log.Println("Error:", err)
 		log.Println("Description: Cannot check whether user exists or not\nSource: GetMessagesWithPagination()")
@@ -123,7 +121,6 @@ func (s *UserServer) GetMessagesWithPagination(ctx context.Context, req *pb.GetM
 	}
 
 	messages, err := db.GetMessagesWithOffset(user, req.User1, int(req.Offset), MESSAGE_LIMIT)
-
 	if err != nil {
 		log.Println("Error: ", err)
 		log.Println("Description: Cannot fetch messages\nSource: GetMessagesWithPagination()")
@@ -136,19 +133,6 @@ func (s *UserServer) GetMessagesWithPagination(ctx context.Context, req *pb.GetM
 			Messages:   nil,
 			NextOffset: -1,
 		}, nil
-	}
-
-	lenMessages := len(messages)
-
-	// Fetching all messages of receiver indirectly means I read 'em so I should mark 'em as read
-	for i := lenMessages - 1; i >= 0; i-- {
-		if messages[i].Sender == req.User1 {
-			if messages[i].Status == "Read" {
-				break
-			}
-			db.ChangeStatusOfMessage(messages[i].Sender, messages[i].Receiver, "Read")
-			messages[i].Status = "Read"
-		}
 	}
 
 	if len(messages) < MESSAGE_LIMIT {

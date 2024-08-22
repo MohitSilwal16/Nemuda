@@ -29,10 +29,10 @@ class StateUserLoaded extends ChatState {
 }
 
 class StateChatError extends ChatState {
-  final String errorMessage;
+  final String exception;
 
   StateChatError({
-    required this.errorMessage,
+    required this.exception,
   });
 }
 

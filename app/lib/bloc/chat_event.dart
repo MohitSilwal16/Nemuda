@@ -64,3 +64,5 @@ class EventError extends ChatEvent {
   @override
   List<Object?> get props => [message];
 }
+
+class EventNothing extends ChatEvent {}

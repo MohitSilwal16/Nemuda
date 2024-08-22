@@ -297,23 +297,6 @@ func SearchUsersByPattern(searchString string) ([]string, error) {
 	return usernames, nil
 }
 
-func ChangeStatusOfMessage(user string, user1 string, newStatus string) error {
-	var err error
-	tableName := "messages_" + strings.ToLower(user)
-	if newStatus == "Read" {
-		_, err = sqlDB.Exec("UPDATE "+tableName+" SET Status = 'Read' WHERE Sender = ?;", user1)
-	} else if newStatus == "Delivered" {
-		// If a user is online, then every "Sent" message must be marked "Delivered"
-		_, err = sqlDB.Exec("UPDATE " + tableName + " SET Status = 'Delivered' WHERE Status = 'Sent';")
-	}
-
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func FetchLastMessage(user string, user1 string) (*pb.Message, error) {
 	tableUser := "messages_" + strings.ToLower(user)
 	tableUser1 := "messages_" + strings.ToLower(user1)

@@ -28,17 +28,40 @@ class ChatUserPage extends StatefulWidget {
 
 class _ChatUserPageState extends State<ChatUserPage> {
   final TextEditingController controllerMessage = TextEditingController();
+  final ScrollController controllerScroll = ScrollController();
+  FocusNode focusNode = FocusNode();
 
   void sendMessage(String message) {
     context
         .read<ChatBloc>()
         .add(EventSendMessage(message: message, receiver: widget.user));
     controllerMessage.clear();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      controllerScroll.jumpTo(controllerScroll.position.maxScrollExtent);
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    focusNode.addListener(() {
+      if (focusNode.hasFocus) {
+        Future.delayed(
+          const Duration(milliseconds: 500),
+          () => controllerScroll.animateTo(
+            controllerScroll.position.maxScrollExtent,
+            duration: const Duration(seconds: 1),
+            curve: Curves.fastOutSlowIn,
+          ),
+        );
+      }
+    });
   }
 
   @override
   void dispose() {
     controllerMessage.dispose();
+    controllerScroll.dispose();
     super.dispose();
   }
 
@@ -85,7 +108,10 @@ class _ChatUserPageState extends State<ChatUserPage> {
               Expanded(
                 child: SingleChildScrollView(
                   reverse: true,
-                  child: _BuildMessages(user: widget.user),
+                  child: _BuildMessages(
+                    user: widget.user,
+                    controllerScroll: controllerScroll,
+                  ),
                 ),
               ),
 
@@ -94,6 +120,7 @@ class _ChatUserPageState extends State<ChatUserPage> {
               MyMessageTextField(
                 controller: controllerMessage,
                 sendMessage: sendMessage,
+                focusNode: focusNode,
               ),
 
               // END
@@ -106,9 +133,13 @@ class _ChatUserPageState extends State<ChatUserPage> {
 }
 
 class _BuildMessages extends StatefulWidget {
-  const _BuildMessages({required this.user});
+  const _BuildMessages({
+    required this.user,
+    required this.controllerScroll,
+  });
 
   final String user;
+  final ScrollController controllerScroll;
 
   @override
   State<_BuildMessages> createState() => _BuildMessagesState();
@@ -117,7 +148,6 @@ class _BuildMessages extends StatefulWidget {
 class _BuildMessagesState extends State<_BuildMessages> {
   int offset = 0;
   List<Message> messages = [];
-  final ScrollController controllerScroll = ScrollController();
 
   void navigateToChatPage(String user) {
     Navigator.pushReplacement(
@@ -130,17 +160,11 @@ class _BuildMessagesState extends State<_BuildMessages> {
 
   @override
   void initState() {
+    super.initState();
     context.read<ChatBloc>().add(EventMarkMsgAsRead(receiver: widget.user));
     context
         .read<ChatBloc>()
         .add(EventFetchPrevMessages(offset: 0, receiver: widget.user));
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    controllerScroll.dispose();
-    super.dispose();
   }
 
   @override
@@ -149,118 +173,151 @@ class _BuildMessagesState extends State<_BuildMessages> {
       height: size.height * .7,
       child: BlocBuilder<ChatBloc, ChatState>(
         buildWhen: (previous, current) {
-          return current is! StateNothing && previous != current;
+          return current is! StateNothing;
         },
         builder: (context, state) {
           final currentState = state;
-          if (currentState is StateChatLoading) {
+          if (currentState is StateNothing) {
+            return messageBody();
+          }
+          if (currentState is StateChatLoading ||
+              currentState is StateUserLoaded) {
             return const CustomCircularProgressIndicator();
           }
 
           if (currentState is StateChatError) {
-            handleErrorsBlocBuilder(context, currentState.errorMessage);
+            handleErrorsBlocBuilder(context, currentState.exception);
+            context.read<ChatBloc>().add(EventNothing());
+            return messageBody();
           }
 
           if (currentState is StateChatLoaded) {
-            // Set to avoid duplicacy
-            Set<Message> messageSet = currentState.messages.toSet();
-            messageSet.addAll(messages);
-            messages = messageSet.toList()
-              ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
+            messages = currentState.messages + messages;
             offset = currentState.nextOffset;
 
             // Scroll to the bottom
             if (messages.length <= 9) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
-                controllerScroll
-                    .jumpTo(controllerScroll.position.maxScrollExtent);
+                widget.controllerScroll
+                    .jumpTo(widget.controllerScroll.position.maxScrollExtent);
               });
             } else {
               // Scroll lil bit downwards when old message is loaded
               // Else it's gonna request for older messages again & again
               WidgetsBinding.instance.addPostFrameCallback((_) {
-                controllerScroll.jumpTo(70);
+                widget.controllerScroll.jumpTo(70);
               });
             }
+            context.read<ChatBloc>().add(EventNothing());
+            return messageBody();
           }
 
+          // New Msg
+          // TODO: Handle bug when 1st msg is sent
           if (currentState is StateNewMsgReceived) {
             if (currentState.message.error != "") {
               handleErrorsBlocBuilder(context, currentState.message.error);
-            } else if (currentState.message.messageType == "Message" &&
-                messages.isNotEmpty &&
-                messages.last.messageContent !=
-                    currentState.message.messageContent &&
-                messages.last.dateTime != currentState.message.dateTime) {
-              if (currentState.message.sender == widget.user ||
-                  currentState.message.selfMessage) {
-                // Retain only the last 18 messages
-                int keepLastN = 18;
-                if (messages.length > 27) {
-                  // Remove 18 messages if msg list size is more than 27
-                  messages = messages.sublist(messages.length - keepLastN);
-                  offset = 18;
-                }
+              context.read<ChatBloc>().add(EventNothing());
+              return messageBody();
+            }
 
-                messages.add(
-                  Message(
-                    sender: currentState.message.sender,
-                    receiver: currentState.message.receiver,
-                    messageContent: currentState.message.messageContent,
-                    dateTime: currentState.message.dateTime,
-                    status: currentState.message.status,
-                  ),
-                );
-
-                // Acknowledge user that I've read your msg
-                context
-                    .read<ChatBloc>()
-                    .add(EventMarkMsgAsRead(receiver: widget.user));
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  controllerScroll
-                      .jumpTo(controllerScroll.position.maxScrollExtent);
-                });
-              } else {
+            if (currentState.message.sender != widget.user &&
+                !currentState.message.selfMessage) {
+              if (currentState.message.messageType == "Message") {
                 showNotificationDialog(
-                  context,
-                  currentState.message.sender,
-                  currentState.message.messageContent,
-                  () => navigateToChatPage(currentState.message.sender),
-                );
+                    context,
+                    currentState.message.sender,
+                    currentState.message.messageContent,
+                    () => navigateToChatPage(currentState.message.sender));
               }
-            } else if (currentState.message.messageType == "Read") {
+              context.read<ChatBloc>().add(EventNothing());
+              return messageBody();
+            }
+
+            if (messages.isEmpty) {
+              messages.add(
+                Message(
+                  sender: currentState.message.sender,
+                  receiver: currentState.message.receiver,
+                  messageContent: currentState.message.messageContent,
+                  dateTime: currentState.message.dateTime,
+                  status: currentState.message.status,
+                ),
+              );
+              context.read<ChatBloc>().add(EventNothing());
+              return messageBody();
+            }
+
+            if (currentState.message.messageType == "Read") {
               for (int i = messages.length - 1; i >= 0; --i) {
                 if (messages[i].status == "Read") break;
                 messages[i].status = "Read";
               }
-            } else if (currentState.message.messageType == "Delivered") {
+              context.read<ChatBloc>().add(EventNothing());
+              return messageBody();
+            }
+
+            if (currentState.message.messageType == "Delivered") {
               for (int i = messages.length - 1; i >= 0; --i) {
                 if (messages[i].status == "Read" ||
                     messages[i].status == "Delivered") break;
                 messages[i].status = "Delivered";
               }
+              context.read<ChatBloc>().add(EventNothing());
+              return messageBody();
             }
-          }
 
-          return ListView.builder(
-            physics: const BouncingScrollPhysics(),
-            itemCount: messages.length + 1,
-            controller: controllerScroll,
-            itemBuilder: (context, index) {
-              if (index == 0) {
-                return _LoadMoreMessages(
-                  offset: offset,
-                  user: widget.user,
-                );
-              }
-              return MessageCard(
-                user: widget.user,
-                message: messages[index - 1],
-              );
-            },
-          );
+            // Remove 17 messages if msg list size is more than 27
+            if (messages.length > 27) {
+              messages = messages.sublist(messages.length - 17);
+              offset = 17;
+            }
+            offset += 1;
+
+            messages.add(
+              Message(
+                sender: currentState.message.sender,
+                receiver: currentState.message.receiver,
+                messageContent: currentState.message.messageContent,
+                dateTime: currentState.message.dateTime,
+                status: currentState.message.status,
+              ),
+            );
+
+            // Acknowledge user that I've read your msg
+            context
+                .read<ChatBloc>()
+                .add(EventMarkMsgAsRead(receiver: widget.user));
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              widget.controllerScroll
+                  .jumpTo(widget.controllerScroll.position.maxScrollExtent);
+            });
+            context.read<ChatBloc>().add(EventNothing());
+            return messageBody();
+          }
+          return const Text("Nemu Chat");
         },
       ),
+    );
+  }
+
+  ListView messageBody() {
+    return ListView.builder(
+      physics: const BouncingScrollPhysics(),
+      itemCount: messages.length + 1,
+      controller: widget.controllerScroll,
+      itemBuilder: (context, index) {
+        if (index == 0) {
+          return _LoadMoreMessages(
+            offset: offset,
+            user: widget.user,
+          );
+        }
+        return MessageCard(
+          user: widget.user,
+          message: messages[index - 1],
+        );
+      },
     );
   }
 }

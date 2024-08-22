@@ -30,7 +30,8 @@ class ChatHomePage extends StatelessWidget {
             return;
           }
           ChatRepo().dispose();
-          Navigator.pushReplacementNamed(context, "home");
+          Navigator.pushNamedAndRemoveUntil(
+              context, "home", (Route<dynamic> route) => false);
         },
         child: Container(
           width: size.width,
@@ -70,16 +71,15 @@ class __BlocBuilderState extends State<_BlocBuilder> {
 
   @override
   void initState() {
-    context.read<ChatBloc>().add(EventSearchUser(searchPattern: ""));
     super.initState();
+    context.read<ChatBloc>().add(EventSearchUser(searchPattern: ""));
   }
 
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<ChatBloc, ChatState>(
       buildWhen: (previous, current) {
-        // Only rebuild if the current state is not StateNothing and is different from the previous state.
-        return current is! StateNothing && previous != current;
+        return current is! StateNothing;
       },
       builder: (context, state) {
         final currentState = state;
@@ -87,16 +87,37 @@ class __BlocBuilderState extends State<_BlocBuilder> {
           return const ChatHomeSkeletonPage();
         }
 
+        if (currentState is StateNothing) {
+          return userBody();
+        }
+
         if (currentState is StateChatError) {
-          handleErrorsBlocBuilder(context, currentState.errorMessage);
+          handleErrorsBlocBuilder(context, currentState.exception);
+          context.read<ChatBloc>().add(EventNothing());
+          return userBody();
         }
 
         if (currentState is StateUserLoaded) {
           usersAndLastMsg = currentState.usersAndLastMsg;
+          context.read<ChatBloc>().add(EventNothing());
+          return userBody();
         }
 
         if (currentState is StateNewMsgReceived) {
-          if (currentState.message.messageType == "Message") {
+          if (currentState.message.messageContent == "") {
+            for (int i = 0; i < usersAndLastMsg.length; ++i) {
+              if (usersAndLastMsg[i].username == currentState.message.sender) {
+                usersAndLastMsg[i].lastMessage.status =
+                    currentState.message.messageType;
+                context.read<ChatBloc>().add(EventNothing());
+                return userBody();
+              }
+            }
+            context.read<ChatBloc>().add(EventNothing());
+            return userBody();
+          }
+
+          if (!currentState.message.selfMessage) {
             for (int i = 0; i < usersAndLastMsg.length; ++i) {
               if (usersAndLastMsg[i].username == currentState.message.sender) {
                 usersAndLastMsg[i].lastMessage = Message(
@@ -115,27 +136,24 @@ class __BlocBuilderState extends State<_BlocBuilder> {
               currentState.message.messageContent,
               () => navigateToChatPage(currentState.message.sender),
             );
-          } else {
-            for (int i = 0; i < usersAndLastMsg.length; ++i) {
-              if (usersAndLastMsg[i].username == currentState.message.sender) {
-                usersAndLastMsg[i].lastMessage.status =
-                    currentState.message.messageType;
-                break;
-              }
-            }
           }
         }
 
-        return ListView(
-          children: List.generate(
-            usersAndLastMsg.length,
-            (index) => UserMessageCard(
-              usersAndLastMessage: usersAndLastMsg[index],
-              navigateToChatPage: navigateToChatPage,
-            ),
-          ),
-        );
+        context.read<ChatBloc>().add(EventNothing());
+        return userBody();
       },
+    );
+  }
+
+  ListView userBody() {
+    return ListView(
+      children: List.generate(
+        usersAndLastMsg.length,
+        (index) => UserMessageCard(
+          usersAndLastMessage: usersAndLastMsg[index],
+          navigateToChatPage: navigateToChatPage,
+        ),
+      ),
     );
   }
 }

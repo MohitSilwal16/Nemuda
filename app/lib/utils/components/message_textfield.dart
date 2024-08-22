@@ -5,10 +5,12 @@ class MyMessageTextField extends StatefulWidget {
     super.key,
     required this.controller,
     required this.sendMessage,
+    required this.focusNode,
   });
 
   final TextEditingController controller;
   final Function sendMessage;
+  final FocusNode focusNode;
 
   @override
   State<MyMessageTextField> createState() => _MyMessageTextFieldState();
@@ -20,6 +22,7 @@ class _MyMessageTextFieldState extends State<MyMessageTextField> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10),
       child: TextField(
+        focusNode: widget.focusNode,
         controller: widget.controller,
         buildCounter: (context,
             {required currentLength, required isFocused, maxLength}) {

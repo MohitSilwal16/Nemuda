@@ -119,16 +119,16 @@ class _ViewBlogPageState extends State<ViewBlogPage>
       isBlogUpdatableDeletable = res.isBlogUpdatableDeletable;
     } catch (err) {
       if (mounted) {
-        handleErrors(context, err);
+        handleErrors(context, err.toString());
       }
     }
   }
 
   @override
   void initState() {
+    super.initState();
     blog = widget.blog;
     _futureBlog = futureFunction();
-    super.initState();
     WidgetsBinding.instance.addObserver(this);
   }
 
@@ -159,7 +159,7 @@ class _ViewBlogPageState extends State<ViewBlogPage>
       future: _futureBlog,
       builder: (context, snapshot) {
         if (snapshot.hasError) {
-          handleErrorsFutureBuilder(context, snapshot.error!);
+          handleErrorsFutureBuilder(context, snapshot.error.toString());
         }
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const ViewBlogSkeletonPage();

@@ -105,11 +105,10 @@ class _UpdateBlogPageState extends State<UpdateBlogPage> {
 
   @override
   void initState() {
+    super.initState();
     controllerTitle.text = widget.blog.title;
     controllerDescription.text = widget.blog.description;
     selectedTag = widget.blog.tag;
-
-    super.initState();
   }
 
   @override

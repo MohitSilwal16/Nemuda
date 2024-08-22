@@ -3,6 +3,7 @@ import 'package:double_back_to_close_app/double_back_to_close_app.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
 import 'package:app/main.dart';
+import 'package:app/bloc/chat_bloc.dart';
 import 'package:app/bloc/chat_repo.dart';
 import 'package:app/pb/blogs.pb.dart';
 import 'package:app/services/auth.dart';
@@ -32,6 +33,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void initState() {
+    super.initState();
     getBlogsWithPagination("All", 0).then((res) {
       setState(() {
         blogs = res.blogs;
@@ -40,8 +42,6 @@ class _HomePageState extends State<HomePage> {
     }).catchError((err) {
       handleErrors(context, err);
     });
-
-    super.initState();
   }
 
   loadMoreBlogs(int index, Size size) {
@@ -246,6 +246,8 @@ class _HomePageDrawer extends StatelessWidget {
                   IconButton(
                     onPressed: () {
                       ChatRepo().init(); // Init WebSocket
+                      ChatBloc().updateStreamSubscription(
+                          ChatRepo()); // Update StreamSubscription
                       Navigator.of(context)
                         ..pop() // Close menu bar
                         ..pushReplacementNamed(

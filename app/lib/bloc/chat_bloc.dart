@@ -10,8 +10,14 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   final ChatRepo repo;
   late StreamSubscription messageSubscription;
 
-  ChatBloc({required this.repo}) : super(StateChatInitial()) {
-    messageSubscription = repo.messagesStream.listen(
+  static final ChatBloc _instance = ChatBloc._internal(repo: ChatRepo());
+
+  factory ChatBloc() {
+    return _instance;
+  }
+
+  void updateStreamSubscription(ChatRepo repo) {
+    messageSubscription = messageSubscription = repo.messagesStream.listen(
       (message) {
         add(EventNewMsgReceived(message: message));
       },
@@ -19,18 +25,21 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       onDone: () => add(EventError(message: "WebSocket Disconnected")),
       cancelOnError: true,
     );
+  }
 
+  ChatBloc._internal({required this.repo}) : super(StateChatInitial()) {
     on<EventSendMessage>(_sendMessage);
     on<EventFetchPrevMessages>(_fetchPrevMessages);
     on<EventNewMsgReceived>(_newMsgReceived);
     on<EventSearchUser>(_searchUser);
     on<EventMarkMsgAsRead>(_markMsgAsRead);
     on<EventError>(_onerror);
+    on<EventNothing>(_onNothing);
   }
 
   Future<void> _fetchPrevMessages(
       EventFetchPrevMessages event, Emitter<ChatState> emit) async {
-    if (state is StateChatInitial || state is StateUserLoaded) {
+    if (state is StateUserLoaded) {
       emit(StateChatLoading());
     }
     try {
@@ -38,24 +47,25 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       emit(StateChatLoaded(messages: res.messages, nextOffset: res.nextOffset));
     } catch (err) {
       final errMsg = trimGrpcErrorMessage(err.toString());
-      emit(StateChatError(errorMessage: errMsg));
+      emit(StateChatError(exception: errMsg));
     }
   }
 
-  void _sendMessage(EventSendMessage event, Emitter<ChatState> emit) {
+  Future<void> _sendMessage(
+      EventSendMessage event, Emitter<ChatState> emit) async {
     try {
       repo.sendMessage(event.message, event.receiver);
-      emit(StateNothing());
     } catch (err) {
-      emit(StateChatError(errorMessage: err.toString()));
+      emit(StateChatError(exception: err.toString()));
     }
   }
 
-  void _newMsgReceived(EventNewMsgReceived event, Emitter<ChatState> emit) {
+  Future<void> _newMsgReceived(
+      EventNewMsgReceived event, Emitter<ChatState> emit) async {
     try {
       emit(StateNewMsgReceived(message: event.message));
     } catch (err) {
-      emit(StateChatError(errorMessage: err.toString()));
+      emit(StateChatError(exception: err.toString()));
     }
   }
 
@@ -67,20 +77,30 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       emit(StateUserLoaded(usersAndLastMsg: res));
     } catch (err) {
       final errMsg = trimGrpcErrorMessage(err.toString());
-      emit(StateChatError(errorMessage: errMsg));
+      emit(StateChatError(exception: errMsg));
     }
   }
 
-  void _markMsgAsRead(EventMarkMsgAsRead event, Emitter<ChatState> emit) {
+  Future<void> _markMsgAsRead(
+      EventMarkMsgAsRead event, Emitter<ChatState> emit) async {
     try {
       repo.markMsgAsRead(event.receiver);
-      emit(StateNothing());
     } catch (err) {
-      emit(StateChatError(errorMessage: err.toString()));
+      emit(StateChatError(exception: err.toString()));
     }
   }
 
-  void _onerror(EventError event, Emitter<ChatState> emit) {
-    emit(StateChatError(errorMessage: event.message));
+  Future<void> _onerror(EventError event, Emitter<ChatState> emit) async {
+    emit(StateChatError(exception: event.message));
+  }
+
+  Future<void> _onNothing(EventNothing event, Emitter<ChatState> emit) async {
+    emit(StateNothing());
+  }
+
+  @override
+  Future<void> close() {
+    messageSubscription.cancel();
+    return super.close();
   }
 }

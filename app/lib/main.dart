@@ -5,11 +5,9 @@ import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'package:app/bloc/chat_bloc.dart';
-import 'package:app/bloc/chat_repo.dart';
 import 'package:app/services/service_init.dart';
 import 'package:app/pages/register_login.dart';
 import 'package:app/pages/chat_home.dart';
-import 'package:app/pages/static/server_error.dart';
 import 'package:app/pages/static/server_busy_page.dart';
 import 'package:app/pages/init_page.dart';
 import 'package:app/pages/post_blog.dart';
@@ -35,7 +33,7 @@ void main() async {
     MultiBlocProvider(
       providers: [
         BlocProvider(
-          create: (context) => ChatBloc(repo: ChatRepo()),
+          create: (context) => ChatBloc(),
         )
       ],
       child: const MyApp(),
@@ -70,7 +68,6 @@ class MyApp extends StatelessWidget {
         "login": (context) => const RegisterLoginPage(),
         "post_blog": (context) => const PostBlogPage(),
         "chat_home": (context) => const ChatHomePage(),
-        "server_error": (context) => const ServerErrorPage(),
         "server_busy": (context) => const ServerBusyPage(),
       },
       home: const InitPage(),
