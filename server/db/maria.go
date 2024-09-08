@@ -42,7 +42,6 @@ func Init_MariaDB() error {
 		return errors.New("DATABASE NAME, USER & PASS NOT SPECIFIED IN .ENV FILE")
 	}
 
-	// On port 3306 MYSQL is running
 	// username:password@tcp(localhost:3306)/mydb
 	dbURL := fmt.Sprintf("%s:%s@tcp(localhost:%s)/%s", dbUser, dbPass, dbPort, dbName)
 

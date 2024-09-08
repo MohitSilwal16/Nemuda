@@ -177,10 +177,6 @@ func (s *BlogsServer) UpdateBlog(ctx context.Context, req *pb.UpdateBlogRequest)
 	// INTERNAL SERVER ERROR
 	// XSS DETECTED
 
-	if req.OldTitle == "" {
-		return nil, ErrInvalidBlogTitleFormat
-	}
-
 	username, err := db.GetUsernameBySessionToken(req.SessionToken)
 
 	if err != nil {
@@ -252,7 +248,7 @@ func (s *BlogsServer) UpdateBlog(ctx context.Context, req *pb.UpdateBlogRequest)
 	newImagePath, err := db.UploadImageToAWS(utils.BytesToMultipartFile(image, filename), filename)
 
 	if err != nil {
-		log.Println("Error: ", err)
+		log.Println("Error:", err)
 		log.Println("Description: Cannot Upload Blog Image to S3\nSource: UpdateBlog()")
 
 		return nil, ErrInternalServerError
@@ -282,10 +278,6 @@ func (s *BlogsServer) DeleteBlog(ctx context.Context, req *pb.DeleteBlogRequest)
 	// INTERNAL SERVER ERROR
 	// INVALID SESSION TOKEN
 
-	if req.Title == "" {
-		return nil, ErrInvalidBlogTitleFormat
-	}
-
 	username, err := db.GetUsernameBySessionToken(req.SessionToken)
 	if err != nil {
 		log.Println("Error:", err)
@@ -314,7 +306,7 @@ func (s *BlogsServer) DeleteBlog(ctx context.Context, req *pb.DeleteBlogRequest)
 	err = db.DeleteImageFromAWS(req.Title + ".png")
 
 	if err != nil {
-		log.Println("Error: ", err)
+		log.Println("Error:", err)
 		log.Println("Description: Cannot Delete Blog Image from S3\nSource: DeleteBlog()")
 
 		return nil, ErrInternalServerError

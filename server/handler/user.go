@@ -122,7 +122,7 @@ func (s *UserServer) GetMessagesWithPagination(ctx context.Context, req *pb.GetM
 
 	messages, err := db.GetMessagesWithOffset(user, req.User1, int(req.Offset), MESSAGE_LIMIT)
 	if err != nil {
-		log.Println("Error: ", err)
+		log.Println("Error:", err)
 		log.Println("Description: Cannot fetch messages\nSource: GetMessagesWithPagination()")
 
 		return nil, ErrInternalServerError

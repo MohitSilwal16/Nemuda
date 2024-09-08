@@ -6,11 +6,13 @@ class MyMessageTextField extends StatefulWidget {
     required this.controller,
     required this.sendMessage,
     required this.focusNode,
+    required this.user,
   });
 
   final TextEditingController controller;
   final Function sendMessage;
   final FocusNode focusNode;
+  final String user;
 
   @override
   State<MyMessageTextField> createState() => _MyMessageTextFieldState();
@@ -36,7 +38,7 @@ class _MyMessageTextFieldState extends State<MyMessageTextField> {
           border: const OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(10)),
           ),
-          hintText: "Enter Message ...",
+          hintText: "Message ${widget.user} ...",
           hintStyle: const TextStyle(color: Colors.white),
           counterStyle: const TextStyle(color: Colors.white),
           filled: true,

@@ -121,6 +121,7 @@ class _ChatUserPageState extends State<ChatUserPage> {
                 controller: controllerMessage,
                 sendMessage: sendMessage,
                 focusNode: focusNode,
+                user: widget.user,
               ),
 
               // END
@@ -215,9 +216,9 @@ class _BuildMessagesState extends State<_BuildMessages> {
           // New Msg
           // TODO: Handle bug when 1st msg is sent
           if (currentState is StateNewMsgReceived) {
+            context.read<ChatBloc>().add(EventNothing());
             if (currentState.message.error != "") {
               handleErrorsBlocBuilder(context, currentState.message.error);
-              context.read<ChatBloc>().add(EventNothing());
               return messageBody();
             }
 
@@ -230,7 +231,6 @@ class _BuildMessagesState extends State<_BuildMessages> {
                     currentState.message.messageContent,
                     () => navigateToChatPage(currentState.message.sender));
               }
-              context.read<ChatBloc>().add(EventNothing());
               return messageBody();
             }
 
@@ -244,7 +244,6 @@ class _BuildMessagesState extends State<_BuildMessages> {
                   status: currentState.message.status,
                 ),
               );
-              context.read<ChatBloc>().add(EventNothing());
               return messageBody();
             }
 
@@ -253,7 +252,6 @@ class _BuildMessagesState extends State<_BuildMessages> {
                 if (messages[i].status == "Read") break;
                 messages[i].status = "Read";
               }
-              context.read<ChatBloc>().add(EventNothing());
               return messageBody();
             }
 
@@ -263,7 +261,6 @@ class _BuildMessagesState extends State<_BuildMessages> {
                     messages[i].status == "Delivered") break;
                 messages[i].status = "Delivered";
               }
-              context.read<ChatBloc>().add(EventNothing());
               return messageBody();
             }
 
@@ -292,7 +289,6 @@ class _BuildMessagesState extends State<_BuildMessages> {
               widget.controllerScroll
                   .jumpTo(widget.controllerScroll.position.maxScrollExtent);
             });
-            context.read<ChatBloc>().add(EventNothing());
             return messageBody();
           }
           return const Text("Nemu Chat");

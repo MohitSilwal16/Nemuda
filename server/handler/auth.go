@@ -16,7 +16,6 @@ type AuthServer struct {
 
 func (s *AuthServer) Login(ctx context.Context, req *pb.AuthRequest) (*pb.AuthResponse, error) {
 	// Errors:
-	// USERNAME OR PASSWORD IS EMPTY
 	// USERNAME MUST BE B'TWIN 5-20 CHARS & ALPHANUMERIC
 	// INVALID CREDENTIALS
 	// USER DOESN'T EXISTS
@@ -29,7 +28,7 @@ func (s *AuthServer) Login(ctx context.Context, req *pb.AuthRequest) (*pb.AuthRe
 		return nil, ErrInvalidCredentials
 	}
 
-	userVerified, err := db.VerifyIdPass(&pb.User{Username: req.Username, Password: req.Password})
+	isUserVerified, err := db.VerifyIdPass(&pb.User{Username: req.Username, Password: req.Password})
 
 	if err != nil {
 		if err.Error() == "USER DOESN'T EXISTS" {
@@ -41,7 +40,7 @@ func (s *AuthServer) Login(ctx context.Context, req *pb.AuthRequest) (*pb.AuthRe
 		return nil, ErrInternalServerError
 	}
 
-	if !userVerified {
+	if !isUserVerified {
 		return nil, ErrInvalidCredentials
 	}
 
@@ -60,7 +59,6 @@ func (s *AuthServer) Login(ctx context.Context, req *pb.AuthRequest) (*pb.AuthRe
 
 func (s *AuthServer) Register(ctx context.Context, req *pb.AuthRequest) (*pb.AuthResponse, error) {
 	// Errors:
-	// USERNAME OR PASSWORD IS EMPTY
 	// USERNAME MUST BE B'TWIN 5-20 CHARS & ALPHANUMERIC
 	// PASSWORD MUST BE B'TWIN 8-20 CHARS, ATLEAST 1 UPPER, LOWER CASE & SPECIAL CHARACTER
 	// USERNAME IS ALREADY USED
@@ -141,7 +139,7 @@ func (s *AuthServer) Logout(ctx context.Context, req *pb.LogoutRequest) (*pb.Log
 			return nil, ErrInvalidSessionToken
 		}
 
-		log.Println("Error: ", err)
+		log.Println("Error:", err)
 		log.Println("Description: Cannot delete Session Token from DB\nSource: Logout()")
 
 		return nil, ErrInternalServerError
