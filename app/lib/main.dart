@@ -14,7 +14,9 @@ import 'package:app/pages/post_blog.dart';
 import 'package:app/pages/home.dart';
 
 // const serviceURL = "nemuda.hopto.org";
-const serviceURL = "13.60.113.45";
+// const serviceURL = "10.0.2.2"; // URL when we're running Android Simulator
+// const serviceURL = "192.168.1.2"; // URL when we're running Android Simulator
+const serviceURL = "13.60.113.45"; // URL for AWS Server
 const servicePort = 8080;
 const wsPort = 3000;
 late Size size;

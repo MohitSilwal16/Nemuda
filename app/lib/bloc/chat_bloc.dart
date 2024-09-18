@@ -17,7 +17,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   }
 
   void updateStreamSubscription(ChatRepo repo) {
-    messageSubscription = messageSubscription = repo.messagesStream.listen(
+    messageSubscription = repo.messagesStream.listen(
       (message) {
         add(EventNewMsgReceived(message: message));
       },

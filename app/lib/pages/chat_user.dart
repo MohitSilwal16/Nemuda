@@ -173,9 +173,6 @@ class _BuildMessagesState extends State<_BuildMessages> {
     return SizedBox(
       height: size.height * .7,
       child: BlocBuilder<ChatBloc, ChatState>(
-        buildWhen: (previous, current) {
-          return current is! StateNothing;
-        },
         builder: (context, state) {
           final currentState = state;
           if (currentState is StateNothing) {
@@ -215,6 +212,7 @@ class _BuildMessagesState extends State<_BuildMessages> {
 
           // New Msg
           // TODO: Handle bug when 1st msg is sent
+          // TODO: Self Messages're not displayed
           if (currentState is StateNewMsgReceived) {
             context.read<ChatBloc>().add(EventNothing());
             if (currentState.message.error != "") {
@@ -280,15 +278,18 @@ class _BuildMessagesState extends State<_BuildMessages> {
                 status: currentState.message.status,
               ),
             );
-
-            // Acknowledge user that I've read your msg
-            context
-                .read<ChatBloc>()
-                .add(EventMarkMsgAsRead(receiver: widget.user));
             WidgetsBinding.instance.addPostFrameCallback((_) {
               widget.controllerScroll
                   .jumpTo(widget.controllerScroll.position.maxScrollExtent);
             });
+
+            // It's not Self Message so we need to send Ack
+            if (!currentState.message.selfMessage) {
+              context
+                  .read<ChatBloc>()
+                  .add(EventMarkMsgAsRead(receiver: widget.user));
+            }
+
             return messageBody();
           }
           return const Text("Nemu Chat");
