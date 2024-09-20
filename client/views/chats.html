@@ -279,7 +279,9 @@
 
       // If it's self message then no need to mark it as read
       if (!responseData.selfMessage) {
-        markMessageAsRead(responseData.sender);
+        setTimeout(() => {
+          markMessageAsRead(responseData.sender);
+        }, 1000);
       }
 
       const messagesContainer = document.getElementById("messages");

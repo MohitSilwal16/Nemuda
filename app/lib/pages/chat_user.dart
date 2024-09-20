@@ -189,6 +189,7 @@ class _BuildMessagesState extends State<_BuildMessages> {
             return messageBody();
           }
 
+          // Fetch Prev Messages
           if (currentState is StateChatLoaded) {
             messages = currentState.messages + messages;
             offset = currentState.nextOffset;
@@ -211,8 +212,6 @@ class _BuildMessagesState extends State<_BuildMessages> {
           }
 
           // New Msg
-          // TODO: Handle bug when 1st msg is sent
-          // TODO: Self Messages're not displayed
           if (currentState is StateNewMsgReceived) {
             context.read<ChatBloc>().add(EventNothing());
             if (currentState.message.error != "") {
@@ -285,9 +284,14 @@ class _BuildMessagesState extends State<_BuildMessages> {
 
             // It's not Self Message so we need to send Ack
             if (!currentState.message.selfMessage) {
-              context
-                  .read<ChatBloc>()
-                  .add(EventMarkMsgAsRead(receiver: widget.user));
+              Future.delayed(const Duration(seconds: 1), () {
+                if (mounted) {
+                  // Check if the widget is still in the tree
+                  context
+                      .read<ChatBloc>()
+                      .add(EventMarkMsgAsRead(receiver: widget.user));
+                }
+              });
             }
 
             return messageBody();
