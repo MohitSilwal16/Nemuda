@@ -10,7 +10,7 @@ class Validators {
       return 'Alphanumeric & b\'twin 5-20 chars';
     }
 
-    if (errorMessage != null ){
+    if (errorMessage != "" ){
       return errorMessage;
     }
 

@@ -5,10 +5,10 @@ import (
 	"net"
 	"os"
 
-	"github.com/MohitSilwal16/Nemuda/server/db"
-	"github.com/MohitSilwal16/Nemuda/server/handler"
-	pb "github.com/MohitSilwal16/Nemuda/server/pb"
-	"github.com/MohitSilwal16/Nemuda/server/utils"
+	"github.com/Nemuda/server/db"
+	"github.com/Nemuda/server/handler"
+	pb "github.com/Nemuda/server/pb"
+	"github.com/Nemuda/server/utils"
 	"google.golang.org/grpc"
 )
 

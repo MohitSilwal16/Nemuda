@@ -66,7 +66,7 @@ func main() {
 	r.PUT("/blogs/:title", handler.UpdateBlog)
 	r.DELETE("/blogs/:title", handler.DeleteBlog)
 
-	// // Other Blog Operations
+	// Other Blog Operations
 	r.GET("/blogs/title/:title", handler.GetBlogByTitle)
 	r.POST("/blogs/like/:title", handler.LikeBlog)
 	r.DELETE("/blogs/like/:title", handler.DislikeBlog)

@@ -2,13 +2,15 @@ package handler
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"regexp"
 
-	"github.com/MohitSilwal16/Nemuda/server/db"
-	pb "github.com/MohitSilwal16/Nemuda/server/pb"
-	"github.com/MohitSilwal16/Nemuda/server/utils"
+	"github.com/Nemuda/server/db"
+	pb "github.com/Nemuda/server/pb"
+	"github.com/Nemuda/server/utils"
 )
 
 type BlogsServer struct {
@@ -74,17 +76,31 @@ func (s *BlogsServer) PostBlog(ctx context.Context, req *pb.PostBlogRequest) (*p
 		return nil, ErrInvalidBlogImageSize
 	}
 
-	filename := req.Title + ".png"
+	// COMMENT THIS:
+	// START
+	imagePath := req.Title + ".png"
+
+	file, err := os.Create(imagePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create file: %w", err)
+	}
+	defer file.Close()
+
+	_, err = file.Write(image)
+	if err != nil {
+		return nil, fmt.Errorf("failed to write to file: %w", err)
+	}
+	// END
 
 	// Save file in S3 Bucket
-	imagePath, err := db.UploadImageToAWS(utils.BytesToMultipartFile(image, filename), filename)
+	// imagePath, err := db.UploadImageToAWS(utils.BytesToMultipartFile(image, filename), filename)
 
-	if err != nil {
-		log.Println("Error:", err)
-		log.Println("Description: Cannot upload images to S3\nSource: PostBlog()")
+	// if err != nil {
+	// 	log.Println("Error:", err)
+	// 	log.Println("Description: Cannot upload images to S3\nSource: PostBlog()")
 
-		return nil, ErrInternalServerError
-	}
+	// 	return nil, ErrInternalServerError
+	// }
 
 	blog := pb.Blog{
 		Username:      username,
@@ -94,7 +110,8 @@ func (s *BlogsServer) PostBlog(ctx context.Context, req *pb.PostBlogRequest) (*p
 		Likes:         0,
 		LikedUsername: []string{},
 		Comments:      []*pb.Comment{},
-		ImagePath:     imagePath,
+		ImagePath:     "static/images/blogs/" + imagePath, // COMMENT THIS
+		// ImagePath:     imagePath,
 	}
 
 	err = db.AddBlog(&blog)
@@ -236,23 +253,29 @@ func (s *BlogsServer) UpdateBlog(ctx context.Context, req *pb.UpdateBlogRequest)
 		return nil, ErrInvalidBlogImageSize
 	}
 
-	err = db.DeleteImageFromAWS(req.OldTitle + ".png")
-	if err != nil {
-		log.Println("Error:", err)
-		log.Println("Description: Cannot Delete Blog Image from S3\nSource: UpdateBlog()")
+	// err = db.DeleteImageFromAWS(req.OldTitle + ".png")
+	// if err != nil {
+	// 	log.Println("Error:", err)
+	// 	log.Println("Description: Cannot Delete Blog Image from S3\nSource: UpdateBlog()")
 
-		return nil, ErrInternalServerError
-	}
+	// 	return nil, ErrInternalServerError
+	// }
 
 	filename := req.NewTitle + ".png"
-	newImagePath, err := db.UploadImageToAWS(utils.BytesToMultipartFile(image, filename), filename)
 
-	if err != nil {
-		log.Println("Error:", err)
-		log.Println("Description: Cannot Upload Blog Image to S3\nSource: UpdateBlog()")
+	// COMMENT THIS:
+	// START
+	newImagePath := "static/images/blogs/" + filename
+	// END
 
-		return nil, ErrInternalServerError
-	}
+	// newImagePath, err := db.UploadImageToAWS(utils.BytesToMultipartFile(image, filename), filename)
+
+	// if err != nil {
+	// 	log.Println("Error:", err)
+	// 	log.Println("Description: Cannot Upload Blog Image to S3\nSource: UpdateBlog()")
+
+	// 	return nil, ErrInternalServerError
+	// }
 
 	err = db.UpdateBlog(req.OldTitle, username, req.NewTitle, req.NewDescription, newImagePath, req.NewTag)
 	if err != nil {
@@ -303,13 +326,13 @@ func (s *BlogsServer) DeleteBlog(ctx context.Context, req *pb.DeleteBlogRequest)
 		return nil, ErrInternalServerError
 	}
 
-	err = db.DeleteImageFromAWS(req.Title + ".png")
+	// err = db.DeleteImageFromAWS(req.Title + ".png")
 
-	if err != nil {
-		log.Println("Error:", err)
-		log.Println("Description: Cannot Delete Blog Image from S3\nSource: DeleteBlog()")
+	// if err != nil {
+	// 	log.Println("Error:", err)
+	// 	log.Println("Description: Cannot Delete Blog Image from S3\nSource: DeleteBlog()")
 
-		return nil, ErrInternalServerError
-	}
+	// 	return nil, ErrInternalServerError
+	// }
 	return &pb.DeleteBlogResponse{IsBlogDeleted: true}, nil
 }

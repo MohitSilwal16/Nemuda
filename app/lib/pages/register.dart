@@ -47,7 +47,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
       Navigator.pushReplacementNamed(context, "home");
     }).catchError((err) {
-      handleErrors(context, err);
+      handleErrors(context, err.toString());
     });
   }
 

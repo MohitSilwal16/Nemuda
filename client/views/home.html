@@ -56,10 +56,10 @@ class="flex flex-col h-screen pb-2 overflow-hidden text-3xl text-white lg:text-2
   <hr/>
   <div class="relative flex flex-col h-full overflow-hidden lg:flex-row">
     <nav class="absolute hidden w-3/5 h-screen pt-6 overflow-y-auto text-3xl font-semibold text-center border-r-2 lg:mx-10 lg:text-2xl bg-gradient-image lg:relative lg:bg-transparent lg:text-start lg:w-1/6 lg:block" id="nav-bar">
-      <p class="m-2 cursor-pointer" {{if eq .RequestedTag "All"}}style="text-decoration: underline;"{{end}} hx-get="/home/All" hx-target="#home-body" hx-swap="outerHTML" hx-push-url="true">All</p>
+      <p class="m-2 cursor-pointer" {{if eq .RequestedTag "All"}}style="text-decoration: underline;"{{end}} hx-get="/home/All" hx-target="#home-body" hx-swap="outerHTML">All</p>
       <div class="h-10 lg:hidden"></div>
       {{ range .TagsList }}
-      <p class="m-2 cursor-pointer" {{if eq $.RequestedTag . }}style="text-decoration: underline;"{{end}} hx-get="/home/{{ . }}" hx-target="#home-body" hx-swap="outerHTML" hx-push-url="true">{{ . }}</p>
+      <p class="m-2 cursor-pointer" {{if eq $.RequestedTag . }}style="text-decoration: underline;"{{end}} hx-get="/home/{{ . }}" hx-target="#home-body" hx-swap="outerHTML" >{{ . }}</p>
       <div class="h-10 lg:hidden"></div>
       {{ end }}
     </nav>

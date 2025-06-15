@@ -1,4 +1,4 @@
-module github.com/MohitSilwal16/Nemuda/server
+module github.com/Nemuda/server
 
 go 1.21.6
 

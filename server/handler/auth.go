@@ -5,9 +5,9 @@ import (
 	"log"
 	"regexp"
 
-	"github.com/MohitSilwal16/Nemuda/server/db"
-	pb "github.com/MohitSilwal16/Nemuda/server/pb"
-	"github.com/MohitSilwal16/Nemuda/server/utils"
+	"github.com/Nemuda/server/db"
+	pb "github.com/Nemuda/server/pb"
+	"github.com/Nemuda/server/utils"
 )
 
 type AuthServer struct {

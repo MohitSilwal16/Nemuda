@@ -12,7 +12,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
-	pb "github.com/MohitSilwal16/Nemuda/server/pb"
+	pb "github.com/Nemuda/server/pb"
 )
 
 var mongoDBCollection *mongo.Collection

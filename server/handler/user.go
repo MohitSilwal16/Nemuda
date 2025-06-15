@@ -4,8 +4,8 @@ import (
 	"context"
 	"log"
 
-	"github.com/MohitSilwal16/Nemuda/server/db"
-	pb "github.com/MohitSilwal16/Nemuda/server/pb"
+	"github.com/Nemuda/server/db"
+	pb "github.com/Nemuda/server/pb"
 )
 
 type UserServer struct {

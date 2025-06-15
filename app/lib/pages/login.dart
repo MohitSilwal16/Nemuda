@@ -47,7 +47,7 @@ class _LoginPageState extends State<LoginPage> {
       Navigator.pushNamedAndRemoveUntil(
           context, "home", (Route<dynamic> route) => false);
     }).catchError((err) {
-      handleErrors(context, err);
+      handleErrors(context, err.toString());
     });
   }
 

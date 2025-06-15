@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"regexp"
 	"strconv"
 	"text/template"
@@ -103,6 +104,22 @@ func PostBlog(ctx *gin.Context) {
 		RenderPostBlogPage(ctx, msg)
 		return
 	}
+	// COMMENT THIS:
+	// START
+	newImagePath := "static/images/blogs/" + blog.Title + ".png"
+
+	file, err := os.Create(newImagePath)
+	if err != nil {
+		return
+	}
+	defer file.Close()
+
+	_, err = file.Write(imageData)
+	if err != nil {
+		return
+	}
+	// END
+
 	RenderHomePage(ctx, sessionToken)
 }
 
@@ -280,6 +297,22 @@ func UpdateBlog(ctx *gin.Context) {
 		RenderUpdateBlogPage(ctx, &blog, msg)
 		return
 	}
+	// COMMENT THIS:
+	// START
+	newImagePath := "static/images/blogs/" + blog.Title + ".png"
+
+	file, err := os.Create(newImagePath)
+	if err != nil {
+		return
+	}
+	defer file.Close()
+
+	_, err = file.Write(imageData)
+	if err != nil {
+		return
+	}
+	// END
+
 	RenderHomePage(ctx, sessionToken)
 }
 

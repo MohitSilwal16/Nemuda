@@ -145,7 +145,6 @@ func (f *memoryFile) ReadAt(p []byte, off int64) (n int, err error) {
 	return f.reader.ReadAt(p, off)
 }
 
-// StructuredLoggerInterceptor logs requests in a format similar to Gin Gonic’s logger
 func StructuredLoggerInterceptor() grpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,

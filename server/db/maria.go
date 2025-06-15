@@ -8,8 +8,8 @@ import (
 	"os"
 	"strings"
 
-	pb "github.com/MohitSilwal16/Nemuda/server/pb"
-	"github.com/MohitSilwal16/Nemuda/server/utils"
+	pb "github.com/Nemuda/server/pb"
+	"github.com/Nemuda/server/utils"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
 )

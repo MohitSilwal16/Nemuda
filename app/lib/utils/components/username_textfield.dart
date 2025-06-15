@@ -16,7 +16,7 @@ class MyUsernameTextField extends StatefulWidget {
 }
 
 class _MyUsernameTextFieldState extends State<MyUsernameTextField> {
-  String? errorText;
+  String errorText = "";
 
   @override
   Widget build(BuildContext context) {
