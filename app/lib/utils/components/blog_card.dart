@@ -32,7 +32,7 @@ class BlogCard extends StatelessWidget {
               .start, // Aligns the text properly with the image
           children: [
             Image(
-              image: NetworkImage(blog.imagePath),
+              image: AssetImage(Uri.decodeComponent(blog.imagePath)),
               height: size.height * .13,
               width: size.width * .33,
               fit: BoxFit.fill,

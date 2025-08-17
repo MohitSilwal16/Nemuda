@@ -28,7 +28,6 @@ var stmtSearchUsersByPattern *sql.Stmt
 
 func Init_MariaDB() error {
 	err := godotenv.Load("main.env")
-
 	if err != nil {
 		return err
 	}

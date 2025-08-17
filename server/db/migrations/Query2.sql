@@ -13,7 +13,7 @@ ORDER BY DATETIME;
 
 SELECT *
 FROM messages_konark
-WHERE Sender = "Konark"
+WHERE Sender = "Konark";
 
 DELETE
 FROM messages_nimesh

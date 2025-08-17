@@ -16,19 +16,12 @@ const BASE_URL = "0.0.0.0:8080"
 
 func init() {
 	err := db.Init_MariaDB()
-
 	if err != nil {
 		log.Print(err)
 		os.Exit(1)
 	}
 
 	err = db.Init_Mongo()
-	if err != nil {
-		log.Print(err)
-		os.Exit(1)
-	}
-
-	err = db.Init_S3()
 	if err != nil {
 		log.Print(err)
 		os.Exit(1)

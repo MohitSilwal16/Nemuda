@@ -1,3 +1,4 @@
+CREATE DATABASE Nemuda;
 USE Nemuda;
 
 CREATE TABLE Users(
