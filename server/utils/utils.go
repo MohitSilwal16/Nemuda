@@ -10,8 +10,8 @@ import (
 	"net"
 	"os"
 	"os/exec"
-	"regexp"
 	"runtime"
+	"slices"
 	"time"
 	"unicode"
 
@@ -78,42 +78,7 @@ func IsPasswordInFormat(s string) bool {
 }
 
 func Contains(slice []string, item string) bool {
-	for _, v := range slice {
-		if v == item {
-			return true
-		}
-	}
-	return false
-}
-
-func IsMessageMalicious(message string) bool {
-	// List of potentially dangerous patterns
-	dangerousPatterns := []string{
-		`(?i)<script.*?>`,
-		`(?i)javascript:`,
-		`(?i)on\w+\s*=`,
-		`(?i)data:`,
-		`(?i)vbscript:`,
-		`(?i)<iframe`,
-		`(?i)<embed`,
-		`(?i)<object`,
-		`(?i)<img.*?onerror`,
-		`(?i)<[^>]*on\w+\s*=`,
-		`(?i)data:[^,]*;base64,`,
-		`(?i)<marquee`,
-		`(?i)<blink`,
-		`(?i)<svg`,
-		`(?i)<xml`,
-		`<[^>]*>`,
-	}
-
-	// Check for dangerous patterns
-	for _, pattern := range dangerousPatterns {
-		if matched, _ := regexp.MatchString(pattern, message); matched {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(slice, item)
 }
 
 func BytesToMultipartFile(fileBytes []byte, fileName string) multipart.File {
@@ -149,10 +114,10 @@ func (f *memoryFile) ReadAt(p []byte, off int64) (n int, err error) {
 func StructuredLoggerInterceptor() grpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,
-		req interface{},
+		req any,
 		info *grpc.UnaryServerInfo,
 		handler grpc.UnaryHandler,
-	) (interface{}, error) {
+	) (any, error) {
 		// Log start time and method
 		start := time.Now()
 		method := info.FullMethod

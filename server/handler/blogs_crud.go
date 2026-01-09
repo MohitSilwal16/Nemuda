@@ -50,11 +50,7 @@ func (s *BlogsServer) PostBlog(ctx context.Context, req *pb.PostBlogRequest) (*p
 		return nil, ErrInvalidBlogDescriptionFormat
 	}
 
-	isMalicious := utils.IsMessageMalicious(req.Description)
-
-	if isMalicious {
-		return nil, ErrXSSDetected
-	}
+	description := policy.Sanitize(req.Description)
 
 	image := req.GetImageData()
 	contentType := http.DetectContentType(image)
@@ -90,7 +86,7 @@ func (s *BlogsServer) PostBlog(ctx context.Context, req *pb.PostBlogRequest) (*p
 		Username:      username,
 		Title:         req.Title,
 		Tag:           req.Tag,
-		Description:   req.Description,
+		Description:   description,
 		Likes:         0,
 		LikedUsername: []string{},
 		Comments:      []*pb.Comment{},
@@ -212,11 +208,7 @@ func (s *BlogsServer) UpdateBlog(ctx context.Context, req *pb.UpdateBlogRequest)
 		return nil, ErrInvalidBlogDescriptionFormat
 	}
 
-	isMalicious := utils.IsMessageMalicious(req.NewDescription)
-
-	if isMalicious {
-		return nil, ErrXSSDetected
-	}
+	newDescription := policy.Sanitize(req.NewDescription)
 
 	image := req.GetNewImageData()
 	contentType := http.DetectContentType(image)
@@ -254,7 +246,7 @@ func (s *BlogsServer) UpdateBlog(ctx context.Context, req *pb.UpdateBlogRequest)
 		return nil, ErrInternalServerError
 	}
 
-	err = db.UpdateBlog(req.OldTitle, username, req.NewTitle, req.NewDescription, newImagePath, req.NewTag)
+	err = db.UpdateBlog(req.OldTitle, username, req.NewTitle, newDescription, newImagePath, req.NewTag)
 	if err != nil {
 		if err.Error() == "USER CANNOT UPDATE THIS BLOG" {
 			return nil, err

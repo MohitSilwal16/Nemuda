@@ -6,12 +6,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/MohitSilwal16/Nemuda/chat/utils"
 	"github.com/gorilla/websocket"
+	"github.com/microcosm-cc/bluemonday"
 )
 
 // Define the date format
 const dateFormat = "2006-01-02 15:04:05"
+
+var policy = bluemonday.UGCPolicy()
 
 func (client *Client) readMessages() {
 	defer func() {
@@ -66,13 +68,7 @@ func (client *Client) readMessages() {
 			continue
 		}
 
-		isMalicious := utils.IsMessageMalicious(wsMessage.Message)
-		if isMalicious {
-			client.SendMessage <- Message{
-				Error: "Whoops! Looks like someone tried to sprinkle some XSS magic. Nice attempt son",
-			}
-			continue
-		}
+		wsMessage.Message = policy.Sanitize(wsMessage.Message)
 
 		if len(wsMessage.Message) > 100 {
 			client.SendMessage <- Message{

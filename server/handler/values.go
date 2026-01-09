@@ -1,6 +1,10 @@
 package handler
 
-import "errors"
+import (
+	"errors"
+
+	"github.com/microcosm-cc/bluemonday"
+)
 
 var (
 	// Auth
@@ -13,7 +17,6 @@ var (
 	ErrInternalServerError = errors.New("INTERNAL SERVER ERROR")
 	ErrInvalidSessionToken = errors.New("INVALID SESSION TOKEN")
 	ErrUserNotFound        = errors.New("USER NOT FOUND")
-	ErrXSSDetected         = errors.New("XSS DETECTED")
 	ErrInvalidOffset       = errors.New("INVALID OFFSET") // Used in Messages & Blogs Pagination
 
 	// Blogs
@@ -35,3 +38,5 @@ const (
 
 // Tags' slice
 var tagsList = []string{"Political", "Technical", "Educational", "Geographical", "Programming", "Other"}
+
+var policy = bluemonday.UGCPolicy()
