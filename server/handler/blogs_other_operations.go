@@ -6,7 +6,6 @@ import (
 
 	"github.com/Nemuda/server/db"
 	pb "github.com/Nemuda/server/pb"
-	"github.com/Nemuda/server/utils"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -147,15 +146,12 @@ func (s *BlogsServer) AddComment(ctx context.Context, req *pb.AddCommentRequest)
 	if len(req.CommentDescription) < 5 || len(req.CommentDescription) > 50 {
 		return nil, ErrInvalidBlogCommentFormat
 	}
-	isMalicious := utils.IsMessageMalicious(req.CommentDescription)
 
-	if isMalicious {
-		return nil, ErrXSSDetected
-	}
+	commentDescription := policy.Sanitize(req.CommentDescription)
 
 	comment := &pb.Comment{
 		Username:    username,
-		Description: req.CommentDescription,
+		Description: commentDescription,
 	}
 
 	err = db.AddComment(req.Title, comment)
