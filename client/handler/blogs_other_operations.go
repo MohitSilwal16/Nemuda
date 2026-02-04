@@ -102,7 +102,7 @@ func AddComment(ctx *gin.Context) {
 	title := ctx.Param("title")
 	sessionToken := getSessionTokenFromCookie(ctx.Request)
 
-	commentDescription := ctx.Query("comment")
+	commentDescription := ctx.Request.FormValue("comment")
 	if len(commentDescription) < 5 || len(commentDescription) > 50 {
 		RenderGetBlogPage(ctx, title, "Comment: Min 5 & Max 50 letters")
 		return
@@ -154,9 +154,10 @@ func SearcBlogTitle_BeforePosting(ctx *gin.Context) {
 
 	if res.DoesBlogExists {
 		method := ctx.Param("method")
-		if method == "post" {
+		switch method {
+		case "post":
 			RenderPostBlogPage(ctx, "Title is already used")
-		} else if method == "update" {
+		case "update":
 			RenderUpdateBlogPage(ctx, &pb.Blog{}, "Title is already used")
 		}
 	}
