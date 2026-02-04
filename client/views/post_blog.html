@@ -1,18 +1,18 @@
-<!DOCTYPE html>
+<!doctype html>
 <div
   class="grid w-screen h-screen grid-rows-4 text-5xl font-semibold text-white bg-no-repeat bg-cover lg:text-2xl bg-register-login"
   id="post-blog-page"
 >
   <head>
     <title>Nemuda</title>
-    <script src="./static/js/htmx.min.js"></script>
+    <script src="/static/js/htmx.min.js"></script>
     <link
       href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="icon" type="image/x-icon" href="../static/images/favico.svg" />
+    <link rel="icon" type="image/x-icon" href="./static/images/favico.svg" />
 
-    <link rel="stylesheet" href="./static/css/output.css" />
+    <link rel="stylesheet" href="/static/css/output.css" />
   </head>
   <h1 class="font-bold text-center text-7xl lg:text-5xl mt-60 lg:mt-36">
     Post Blog
@@ -73,7 +73,10 @@
     <p id="imageError" class="text-3xl text-red-600 lg:text-lg"></p>
     <div class="h-8 lg:h-4"></div>
     <!-- Display Server's Response -->
-    <div id="output" class="flex justify-center text-3xl text-red-600 lg:text-xl">
+    <div
+      id="output"
+      class="flex justify-center text-3xl text-red-600 lg:text-xl"
+    >
       {{ .Message }}
     </div>
     <input

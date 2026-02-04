@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 
 <div
   class="grid w-screen h-screen grid-rows-4 text-5xl font-semibold text-white bg-no-repeat bg-cover lg:text-2xl bg-register-login"
@@ -6,17 +6,17 @@
 >
   <head>
     <title>Nemuda</title>
-    <script src="./static/js/htmx.min.js"></script>
+    <script src="/static/js/htmx.min.js"></script>
     <link
       href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="icon" type="image/x-icon" href="../static/images/favico.svg" />
+    <link rel="icon" type="image/x-icon" href="./static/images/favico.svg" />
 
-    <link rel="stylesheet" href="./static/css/output.css" />
+    <link rel="stylesheet" href="/static/css/output.css" />
 
     <!-- Extension to send data in JSON Format using hx-ext="json-enc" -->
-    <script src="./static/js/json-enc.js"></script>
+    <script src="/static/js/json-enc.js"></script>
   </head>
   <h1
     id="login-page-heading"
@@ -49,7 +49,7 @@
       />
       <img
         class="h-8 absolute lg:right-3 lg:top-1 right-3 top-2.5 cursor-text"
-        src="./static/images/profile.png"
+        src="/static/images/profile.png"
         alt=""
         draggable="false"
         onclick="document.getElementById('username').focus()"
@@ -68,10 +68,14 @@
       />
       <img
         class="h-8 absolute lg:right-3 lg:top-1 right-3 top-2.5 cursor-pointer"
-        src="./static/images/eye.png"
+        src="/static/images/eye.png"
         alt=""
         draggable="false"
-        onclick="document.getElementById('pass').getAttribute('type') == 'password' ? document.getElementById('pass').setAttribute('type','text') : document.getElementById('pass').setAttribute('type','password')"
+        onclick="
+          document.getElementById('pass').getAttribute('type') == 'password'
+            ? document.getElementById('pass').setAttribute('type', 'text')
+            : document.getElementById('pass').setAttribute('type', 'password')
+        "
       />
     </div>
     <p id="passError" class="text-3xl text-red-600 lg:text-lg"></p>
@@ -195,7 +199,7 @@
 
       if (
         !pass.value.match(
-          /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@#$%^&+=])[a-zA-Z\d@#$%^&+=]{8,}$/
+          /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@#$%^&+=])[a-zA-Z\d@#$%^&+=]{8,}$/,
         )
       ) {
         document.getElementById("output").innerHTML = "Invalid Credentials";
