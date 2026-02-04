@@ -1,17 +1,17 @@
-<!DOCTYPE html>
+<!doctype html>
 <div
   id="chat-body"
   class="relative flex w-screen h-screen px-10 py-5 overflow-hidden text-4xl text-white bg-gray-500 lg:text-xl bg-gradient-image"
 >
   <head>
     <title>Nemuda</title>
-    <script src="./static/js/htmx.min.js"></script>
+    <script src="/static/js/htmx.min.js"></script>
     <link
       href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="icon" type="image/x-icon" href="./static/images/favico.svg" />
-    <link rel="stylesheet" href="./static/css/output.css" />
+    <link rel="icon" type="image/x-icon" href="/static/images/favico.svg" />
+    <link rel="stylesheet" href="/static/css/output.css" />
     <script>
       // Function to scroll to the bottom of the message container
       function scrollToBottom(element) {
@@ -28,7 +28,7 @@
     <!-- Nemu, home & logout -->
     <div class="flex h-28 lg:h-20">
       <img
-        src="../static/images/menu-bar.png"
+        src="./static/images/menu-bar.png"
         class="block h-20 mt-3 ml-4 mr-4 lg:hidden"
         alt=""
         id="menu"
@@ -71,7 +71,7 @@
         hx-trigger="input delay:500ms"
       />
       <img
-        src="./static/images/search.png"
+        src="/static/images/search.png"
         class="absolute h-6 lg:h-5 top-4 left-3 lg:top-3 lg:left-3 cursor-text"
         onclick="search.focus()"
       />
@@ -115,7 +115,7 @@
             class="absolute h-8 mt-10 bottom-1 right-7 lg:h-5 lg:right-5 lg:bottom-6"
           >
             <img
-              src="./static/images/send-message.png"
+              src="/static/images/send-message.png"
               alt=""
               class="h-8 bottom-5 right-5 lg:h-5 lg:right-5 lg:bottom-6"
             />
@@ -176,7 +176,7 @@
   </div>
 
   <!-- Notification Audio Sound -->
-  <audio src="./static/audio/notification.mp3" id="notificationSound"></audio>
+  <audio src="/static/audio/notification.mp3" id="notificationSound"></audio>
 
   <script>
     try {
@@ -184,7 +184,7 @@
       var socket = new WebSocket(
         // "ws://127.0.0.1:3000/ws/chat/" + sessionToken
         // "ws://nemuda.hopto.org:3000/ws/chat/" + sessionToken
-        "ws://13.60.113.45:3000/ws/chat/" + sessionToken
+        "ws://13.60.113.45:3000/ws/chat/" + sessionToken,
       );
     } catch (e) {
       openAlert("WebSocket not Connected", "Try Refresing Browser");
@@ -248,12 +248,12 @@
         }
         // Update msg status in search chat cards
         let searchUserCard = document.getElementById(
-          "search-user-" + responseData.sender
+          "search-user-" + responseData.sender,
         );
 
         if (searchUserCard) {
           let statusElement = document.getElementById(
-            "search-msg-status-" + responseData.sender
+            "search-msg-status-" + responseData.sender,
           );
 
           if (
@@ -312,7 +312,7 @@
       if (message.length > 100) {
         openAlert(
           "Message Limit Exceeded",
-          "Message should be less than 100 characters"
+          "Message should be less than 100 characters",
         );
         return;
       }
@@ -365,7 +365,7 @@
         "p-3",
         "rounded-lg",
         "bg-blue-600",
-        "text-white"
+        "text-white",
       );
 
       // Create the date-time element
@@ -389,7 +389,7 @@
         "text-gray-300",
         "text-lg",
         "lg:text-xs",
-        "message-status"
+        "message-status",
       );
       statusElement.innerHTML = responseData.status;
 
