@@ -6,6 +6,7 @@ import (
 	"github.com/Nemuda/client/constants"
 	"github.com/Nemuda/client/handler"
 	"github.com/Nemuda/client/pb"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -26,6 +27,24 @@ func main() {
 
 	// Add Logger and Recovery middleware
 	r.Use(gin.Logger(), gin.Recovery())
+
+	corsConfig := cors.Config{
+		AllowOrigins:     []string{"http://localhost"},
+		AllowCredentials: true, // Cookie Based Auth Allowed ?
+	}
+	r.Use(cors.New(corsConfig))
+
+	/*
+		store := cookie.NewStore([]byte("secret"))
+		r.Use(sessions.Sessions("sessionToken", store))
+		r.Use(csrf.Middleware(csrf.Options{
+			Secret: "secret123",
+			ErrorFunc: func(c *gin.Context) {
+				c.String(400, "CSRF token mismatch")
+				c.Abort()
+			},
+		}))
+	*/
 
 	r.MaxMultipartMemory = 8 << 20 // 8 MiB
 
@@ -60,7 +79,7 @@ func main() {
 	r.GET("/search-users", handler.SearchUsersByPattern)
 	r.GET("/message/:user", handler.GetMessagesWithOffset)
 
-	// // CRUD Blogs
+	// CRUD Blogs
 	r.POST("/blogs", handler.PostBlog)
 	r.GET("/blogs/:tag", handler.GetMoreBlogsByTagWithOffset)
 	r.PUT("/blogs/:title", handler.UpdateBlog)
@@ -70,7 +89,7 @@ func main() {
 	r.GET("/blogs/title/:title", handler.GetBlogByTitle)
 	r.POST("/blogs/like/:title", handler.LikeBlog)
 	r.DELETE("/blogs/like/:title", handler.DislikeBlog)
-	r.GET("/blogs/comment/:title", handler.AddComment)
+	r.POST("/blogs/comment/:title", handler.AddComment)
 	r.GET("/blogs/search_title/:method", handler.SearcBlogTitle_BeforePosting)
 
 	r.NoRoute(handler.RenderPageNotFound)

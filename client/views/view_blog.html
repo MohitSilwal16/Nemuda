@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <div
   id="view-blog-page"
   class="h-screen px-10 pb-10 overflow-y-auto text-2xl text-white lg:px-44 scroll-bar bg-gradient-image"
@@ -107,7 +107,7 @@
   <div class="hidden mt-16 lg:flex lg:justify-between">
     <form
       class="border border-white w-96 backdrop-blur-md rounded-xl"
-      hx-get="/blogs/comment/{{ .Blog.Title }}"
+      hx-post="/blogs/comment/{{ .Blog.Title }}"
       hx-trigger="submit[onValidate()]"
       hx-target="#view-blog-page"
       hx-swap="outerHTML"
@@ -174,7 +174,7 @@
   <div class="flex justify-between mt-16 lg:hidden">
     <form
       class="border border-white w-96 h-96 backdrop-blur-md rounded-xl"
-      hx-get="/blogs/comment/{{ .Blog.Title }}"
+      hx-post="/blogs/comment/{{ .Blog.Title }}"
       hx-trigger="submit[onValidate()]"
       hx-target="#view-blog-page"
       hx-swap="outerHTML"
