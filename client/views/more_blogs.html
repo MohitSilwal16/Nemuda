@@ -35,8 +35,10 @@
   id="load-more-blogs"
   hx-get="/blogs/{{ $.RequestedTag }}?offset={{ $.Offset }}"
   hx-swap="outerHTML"
-  hx-trigger="intersect once"
-></div>
+  hx-trigger="intersect"
+>
+  END - 1
+</div>
 {{ else }}
 <!-- No More Blogs Container -->
 <div class="flex items-center justify-center cursor-not-allowed">
