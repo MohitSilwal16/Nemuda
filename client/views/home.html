@@ -67,10 +67,10 @@ class="flex flex-col h-screen pb-2 overflow-hidden text-3xl text-white lg:text-2
       {{ template "blog.html" . }}
 
     {{ if .Blogs }}
-    <div class="justify-center" id="load-more-blogs"   hx-get="/blogs/{{ $.RequestedTag }}?offset={{ $.Offset }}"
+    <div class="justify-center" id="load-more-blogs"  hx-get="/blogs/{{ $.RequestedTag }}?offset={{ $.Offset }}"
     hx-swap="outerHTML"
-    hx-trigger="intersect once"
-    >
+    hx-trigger="intersect"
+    >END
     </div>
     {{ end }}
     </main>
